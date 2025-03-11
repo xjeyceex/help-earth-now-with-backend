@@ -1,23 +1,27 @@
 "use client";
 
-import Link from "next/link";
-
 import { userRegister } from "@/actions/post";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const RegisterPage = () => {
+  const router = useRouter();
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
     const res = await userRegister(formData);
 
-    if (res.error) {
+    if (res?.error) {
       alert(res.message);
       return;
     }
 
-    alert("Registered successfully");
+    alert("Registration successful! Please confirm your email.");
+    router.push("/login"); // Redirect to login page after success
   };
+
   return (
     <form onSubmit={onSubmit}>
       <label htmlFor="name">Full name:</label>

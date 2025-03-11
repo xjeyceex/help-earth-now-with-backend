@@ -10,20 +10,6 @@ const AuthCallback = () => {
   const { user, setUser } = useUserStore();
 
   useEffect(() => {
-    const redirectTimer = setTimeout(() => {
-      if (user?.user_role === "PURCHASER") {
-        redirect("/purchaser");
-      } else if (user?.user_role === "SUPERVISOR") {
-        redirect("/supervisor");
-      } else if (user?.user_role === "MANAGER") {
-        redirect("/manager");
-      }
-    }, 1500);
-
-    return () => clearTimeout(redirectTimer);
-  }, [user?.user_role]);
-
-  useEffect(() => {
     const fetchUser = async () => {
       const res = await getCurrentUser();
 
@@ -34,6 +20,7 @@ const AuthCallback = () => {
 
       if (res.success) {
         setUser(res.data as User);
+        redirect("/dashboard");
       }
     };
 

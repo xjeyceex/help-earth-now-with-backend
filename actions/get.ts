@@ -19,8 +19,6 @@ export const getCurrentUser = async () => {
     };
   }
 
-  console.log(user);
-
   const { data: userData, error: userError } = await supabase
     .from("user_table")
     .select("user_role, user_avatar")

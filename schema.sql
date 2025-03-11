@@ -14,9 +14,7 @@ CREATE TYPE user_role_enum AS ENUM ('PURCHASER', 'SUPERVISOR', 'MANAGER');
 DROP TABLE IF EXISTS user_table CASCADE;
 CREATE TABLE user_table (
     user_id UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-    user_role user_role_enum DEFAULT 'PURCHASER' NOT NULL ,
-    user_full_name TEXT,
-    user_email TEXT NOT NULL UNIQUE,
+    user_role user_role_enum DEFAULT 'ADMIN' NOT NULL ,
     user_avatar TEXT
 );
 
@@ -113,21 +111,20 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_form_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON approval_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_status_history_table TO authenticated;
 
-create or replace function public.create_user() 
-returns trigger as $$
-begin
-  insert into public.user_table (user_id, user_full_name, user_email)
-  values (
+CREATE OR REPLACE FUNCTION public.create_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.user_table (user_id, user_role, user_avatar)
+  VALUES (
     new.id,
-    new.raw_user_meta_data->>'display_name',
-    new.email
   );
-  return new;
-end;
-$$ language plpgsql security definer;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- trigger the function every time a user is created
-drop trigger if exists after_user_signup on auth.users;
-create trigger after_user_signup
-  after insert on auth.users
-  for each row execute procedure public.create_user();
+-- Trigger the function every time a user is created
+DROP TRIGGER IF EXISTS after_user_signup ON auth.users;
+CREATE TRIGGER after_user_signup
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.create_user();
+

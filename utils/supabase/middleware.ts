@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
     "/manager",
     "/purchaser",
     "/supervisor",
+    "/dashboard",
     "/auth/callback",
   ];
 

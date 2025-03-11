@@ -11,7 +11,7 @@ const LoginPage = () => {
       <input id="password" name="password" type="password" required />
       <button formAction={userLogin}>Log in</button>
       <div>
-        Don't have an account? <Link href="/register">Sign up</Link>
+        Dont have an account? <Link href="/register">Sign up</Link>
       </div>
     </form>
   );
