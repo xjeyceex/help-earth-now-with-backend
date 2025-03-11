@@ -1,5 +1,6 @@
 "use client";
 
+import { dummyTickets } from "@/dummyTickets";
 import {
   Badge,
   Button,
@@ -11,34 +12,6 @@ import {
 } from "@mantine/core";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-
-// Dummy ticket data
-const dummyTickets = [
-  {
-    ticket_id: 1,
-    title: "Request for Laptop Quotes",
-    status: "PENDING",
-    description: "Need 5 new laptops for the team.",
-  },
-  {
-    ticket_id: 2,
-    title: "Compare Office Chair Prices",
-    status: "APPROVED",
-    description: "Looking for ergonomic chairs.",
-  },
-  {
-    ticket_id: 3,
-    title: "Find Best Supplier for Monitors",
-    status: "PENDING",
-    description: "Searching for 27-inch monitors.",
-  },
-  {
-    ticket_id: 4,
-    title: "Bulk Order for Keyboards",
-    status: "APPROVED",
-    description: "Ordering mechanical keyboards.",
-  },
-];
 
 const TicketDetailsPage = () => {
   const { ticket_id } = useParams();

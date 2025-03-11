@@ -1,5 +1,6 @@
 "use client";
 
+import { dummyTickets } from "@/dummyTickets";
 import { useUserStore } from "@/stores/userStore";
 import {
   Badge,
@@ -7,6 +8,7 @@ import {
   Card,
   Container,
   Flex,
+  Select,
   Stack,
   Table,
   Text,
@@ -14,23 +16,50 @@ import {
 } from "@mantine/core";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-// Dummy ticket data
-const dummyTickets = [
-  { ticket_id: 1, title: "Request for Laptop Quotes", status: "PENDING" },
-  { ticket_id: 2, title: "Compare Office Chair Prices", status: "APPROVED" },
-  { ticket_id: 3, title: "Find Best Supplier for Monitors", status: "PENDING" },
-  { ticket_id: 4, title: "Bulk Order for Keyboards", status: "APPROVED" },
-];
+import { useState } from "react";
 
 const DashboardPage = () => {
   const { user, setUser } = useUserStore();
   const router = useRouter();
+  const [filter, setFilter] = useState("ALL");
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "yellow";
+      case "APPROVED":
+        return "green";
+      case "IN PROGRESS":
+        return "blue";
+      case "COMPLETED":
+        return "teal";
+      case "REJECTED":
+        return "red";
+      case "ON HOLD":
+        return "orange";
+      default:
+        return "gray";
+    }
+  };
 
   const handleLogout = () => {
     setUser(null);
     router.push("/login");
   };
+
+  // Filter logic
+  const filteredTickets = dummyTickets.filter((ticket) => {
+    if (filter === "MINE" && ticket.assigned_to !== user?.user_full_name) {
+      return false;
+    }
+    if (filter === "PENDING" && ticket.status !== "PENDING") {
+      return false;
+    }
+    if (filter === "APPROVED" && ticket.status !== "APPROVED") {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <Container size="md" py="xl">
@@ -62,19 +91,35 @@ const DashboardPage = () => {
 
       {/* Ticket List */}
       <Card shadow="sm" padding="lg" mt="lg" radius="md" withBorder>
-        <Title size="h3" ta="center">
-          Ticket List
-        </Title>
+        <Flex justify="space-between" align="center">
+          <Title size="h3">Ticket List</Title>
+          <Flex gap="sm">
+            <Select
+              value={filter}
+              onChange={(value) => setFilter(value || "ALL")}
+              data={[
+                { value: "ALL", label: "All Tickets" },
+                { value: "MINE", label: "Assigned to Me" },
+                { value: "PENDING", label: "Pending Tickets" },
+                { value: "APPROVED", label: "Approved Tickets" },
+              ]}
+              placeholder="Filter tickets"
+            />
+            <Button onClick={() => setFilter("ALL")}>Reset</Button>
+          </Flex>
+        </Flex>
+
         <Table mt="md" striped highlightOnHover>
           <thead>
             <tr>
               <th style={{ textAlign: "left" }}>Ticket ID</th>
               <th style={{ textAlign: "left" }}>Title</th>
+              <th style={{ textAlign: "left" }}>Assigned To</th>
               <th style={{ textAlign: "left" }}>Status</th>
             </tr>
           </thead>
           <tbody>
-            {dummyTickets.map((ticket) => (
+            {filteredTickets.map((ticket) => (
               <tr key={ticket.ticket_id}>
                 <td>
                   <Link
@@ -85,10 +130,9 @@ const DashboardPage = () => {
                   </Link>
                 </td>
                 <td>{ticket.title}</td>
+                <td>{ticket.assigned_to}</td>
                 <td>
-                  <Badge
-                    color={ticket.status === "PENDING" ? "yellow" : "green"}
-                  >
+                  <Badge color={getStatusColor(ticket.status)}>
                     {ticket.status}
                   </Badge>
                 </td>
