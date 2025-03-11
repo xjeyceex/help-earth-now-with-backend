@@ -11,7 +11,6 @@ import {
 } from "@mantine/core";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
 
 // Dummy ticket data
 const dummyTickets = [
@@ -43,16 +42,7 @@ const dummyTickets = [
 
 const TicketDetailsPage = () => {
   const { ticket_id } = useParams();
-  const [ticket, setTicket] = useState<null | (typeof dummyTickets)[0]>(null);
-
-  useEffect(() => {
-    if (ticket_id) {
-      const foundTicket = dummyTickets.find(
-        (t) => t.ticket_id === Number(ticket_id),
-      );
-      setTicket(foundTicket || null);
-    }
-  }, [ticket_id]);
+  const ticket = dummyTickets.find((t) => t.ticket_id === Number(ticket_id));
 
   if (!ticket) {
     return (
@@ -77,12 +67,14 @@ const TicketDetailsPage = () => {
           <Text size="lg">
             <strong>Title:</strong> {ticket.title}
           </Text>
-          <Text size="lg">
+          <div>
+            {" "}
+            {/* ✅ Changed from <Text> to <div> to avoid hydration issue */}
             <strong>Status:</strong>{" "}
             <Badge color={ticket.status === "PENDING" ? "yellow" : "green"}>
               {ticket.status}
             </Badge>
-          </Text>
+          </div>
           <Text size="lg">
             <strong>Description:</strong> {ticket.description}
           </Text>
