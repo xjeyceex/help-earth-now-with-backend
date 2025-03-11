@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { useEffect } from "react";
 
 import { getCurrentUser } from "@/actions/get";
-import { useUserStore } from "@/stores/userStore";
+import { User, useUserStore } from "@/stores/userStore";
 
 const AuthCallback = () => {
   const { user, setUser } = useUserStore();
@@ -33,7 +33,7 @@ const AuthCallback = () => {
       }
 
       if (res.success) {
-        setUser(res.data);
+        setUser(res.data as User);
       }
     };
 

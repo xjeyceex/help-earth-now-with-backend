@@ -1,7 +1,7 @@
 import { create, StateCreator } from "zustand";
 import { createJSONStorage, persist, PersistOptions } from "zustand/middleware";
 
-interface User {
+export interface User {
   user_id: string;
   user_role: string;
   user_full_name: string;

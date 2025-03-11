@@ -1,4 +1,15 @@
+"use client";
+
+import { useUserStore } from "@/stores/userStore";
+
 const PurchaserPage = () => {
-  return <div>PurchaserPage</div>;
+  const { user } = useUserStore();
+
+  return (
+    <div>
+      PurchaserPage
+      {JSON.stringify(user)}
+    </div>
+  );
 };
 export default PurchaserPage;

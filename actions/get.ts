@@ -1,5 +1,6 @@
 "use server";
 
+import { User } from "@/stores/userStore";
 import { createClient } from "@/utils/supabase/server";
 
 export const getCurrentUser = async () => {
@@ -18,9 +19,11 @@ export const getCurrentUser = async () => {
     };
   }
 
+  console.log(user);
+
   const { data: userData, error: userError } = await supabase
     .from("user_table")
-    .select("*")
+    .select("user_role, user_avatar")
     .eq("user_id", user.id)
     .single();
 
@@ -34,6 +37,12 @@ export const getCurrentUser = async () => {
 
   return {
     success: true,
-    data: userData,
+    data: {
+      user_id: user.id,
+      user_role: userData?.user_role,
+      user_full_name: user.user_metadata.display_name,
+      user_email: user.user_metadata.email,
+      user_avatar: userData?.user_avatar,
+    } as User,
   };
 };
