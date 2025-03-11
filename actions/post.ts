@@ -97,7 +97,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string
+  newPassword: string,
 ) => {
   const supabase = await createClient();
 

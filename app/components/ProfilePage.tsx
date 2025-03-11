@@ -7,7 +7,6 @@ import {
   Button,
   Card,
   Container,
-  Divider,
   Group,
   LoadingOverlay,
   Modal,
@@ -17,14 +16,10 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import {
-  IconArrowLeft,
-  IconLock,
-  IconLogout,
-  IconUser,
-} from "@tabler/icons-react";
+import { IconArrowLeft, IconLock, IconUser } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Navbar from "./Navbar";
 
 const ProfilePage = () => {
   const { user, setUser } = useUserStore();
@@ -51,11 +46,6 @@ const ProfilePage = () => {
       </Container>
     );
   }
-
-  const handleLogout = () => {
-    setUser(null);
-    router.push("/login");
-  };
 
   const handleUpdateName = async () => {
     if (!newName.trim() || newName === user.user_full_name) return;
@@ -112,154 +102,145 @@ const ProfilePage = () => {
   };
 
   return (
-    <Container size="sm" py="xl">
-      <Card shadow="sm" padding="xl" radius="md" withBorder>
-        <LoadingOverlay visible={loading} />
-        <Stack align="center">
-          {/* Avatar */}
-          <Avatar
-            src={user.user_avatar || "/default-avatar.png"}
-            size={120}
-            radius="xl"
-          />
+    <>
+      <Navbar />
+      <Container size="sm" py="xl">
+        <Card shadow="sm" padding="xl" radius="md" withBorder>
+          <LoadingOverlay visible={loading} />
+          <Stack align="center">
+            {/* Avatar */}
+            <Avatar
+              src={user.user_avatar || "/default-avatar.png"}
+              size={120}
+              radius="xl"
+            />
 
-          {/* User Details */}
-          <Title order={2}>{user.user_full_name}</Title>
-          <Paper p="md" radius="md" withBorder>
-            <Stack>
-              <Group>
-                <Text size="md" c="dimmed">
-                  <Text component="span" fw={700}>
-                    Email:
-                  </Text>{" "}
-                  {user.user_email}
-                </Text>
-              </Group>
-              <Group>
-                <Text size="md" c="dimmed">
-                  <Text component="span" fw={700}>
-                    Role:
-                  </Text>{" "}
-                  {user.user_role}
-                </Text>
-              </Group>
-            </Stack>
-          </Paper>
+            {/* User Details */}
+            <Title order={2}>{user.user_full_name}</Title>
+            <Paper p="md" radius="md" withBorder>
+              <Stack>
+                <Group>
+                  <Text size="md" c="dimmed">
+                    <Text component="span" fw={700}>
+                      Email:
+                    </Text>{" "}
+                    {user.user_email}
+                  </Text>
+                </Group>
+                <Group>
+                  <Text size="md" c="dimmed">
+                    <Text component="span" fw={700}>
+                      Role:
+                    </Text>{" "}
+                    {user.user_role}
+                  </Text>
+                </Group>
+              </Stack>
+            </Paper>
 
-          {/* Action Buttons */}
-          <Button
-            leftSection={<IconUser size={18} />}
-            onClick={() => setIsEditingName(true)}
-            fullWidth
-            variant="light"
-          >
-            Change Name
-          </Button>
+            {/* Action Buttons */}
+            <Button
+              leftSection={<IconUser size={18} />}
+              onClick={() => setIsEditingName(true)}
+              fullWidth
+              variant="light"
+            >
+              Change Name
+            </Button>
 
-          <Button
-            leftSection={<IconLock size={18} />}
-            onClick={() => setIsChangingPassword(true)}
-            fullWidth
-            variant="light"
-            color="red"
-          >
-            Change Password
-          </Button>
+            <Button
+              leftSection={<IconLock size={18} />}
+              onClick={() => setIsChangingPassword(true)}
+              fullWidth
+              variant="light"
+              color="red"
+            >
+              Change Password
+            </Button>
 
-          <Divider my="sm" />
+            <Button
+              leftSection={<IconArrowLeft size={18} />}
+              variant="subtle"
+              onClick={() => router.push("/dashboard")}
+              fullWidth
+            >
+              Back to Dashboard
+            </Button>
+          </Stack>
+        </Card>
 
-          <Button
-            leftSection={<IconLogout size={18} />}
-            color="red"
-            variant="outline"
-            onClick={handleLogout}
-            fullWidth
-          >
-            Logout
-          </Button>
+        {/* Change Name Modal */}
+        <Modal
+          opened={isEditingName}
+          onClose={() => setIsEditingName(false)}
+          title="Update Name"
+          centered
+        >
+          <Stack>
+            <TextInput
+              label="New Name"
+              placeholder="Enter new name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              disabled={loading}
+            />
+            <Button
+              onClick={handleUpdateName}
+              loading={loading}
+              fullWidth
+              mt="md"
+            >
+              Save Changes
+            </Button>
+          </Stack>
+        </Modal>
 
-          <Button
-            leftSection={<IconArrowLeft size={18} />}
-            variant="subtle"
-            onClick={() => router.push("/dashboard")}
-            fullWidth
-          >
-            Back to Dashboard
-          </Button>
-        </Stack>
-      </Card>
-
-      {/* Change Name Modal */}
-      <Modal
-        opened={isEditingName}
-        onClose={() => setIsEditingName(false)}
-        title="Update Name"
-        centered
-      >
-        <Stack>
-          <TextInput
-            label="New Name"
-            placeholder="Enter new name"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            disabled={loading}
-          />
-          <Button
-            onClick={handleUpdateName}
-            loading={loading}
-            fullWidth
-            mt="md"
-          >
-            Save Changes
-          </Button>
-        </Stack>
-      </Modal>
-
-      {/* Change Password Modal */}
-      <Modal
-        opened={isChangingPassword}
-        onClose={() => setIsChangingPassword(false)}
-        title="Change Password"
-        centered
-      >
-        <Stack>
-          <TextInput
-            type="password"
-            label="Old Password"
-            placeholder="Enter old password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            disabled={loading}
-          />
-          <TextInput
-            type="password"
-            label="New Password"
-            placeholder="Enter new password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            disabled={loading}
-          />
-          <TextInput
-            type="password"
-            label="Confirm New Password"
-            placeholder="Confirm new password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={loading}
-          />
-          {error && <Text c="red">{error}</Text>}
-          <Button
-            onClick={handleChangePassword}
-            loading={loading}
-            fullWidth
-            mt="md"
-            color="red"
-          >
-            Update Password
-          </Button>
-        </Stack>
-      </Modal>
-    </Container>
+        {/* Change Password Modal */}
+        <Modal
+          opened={isChangingPassword}
+          onClose={() => setIsChangingPassword(false)}
+          title="Change Password"
+          centered
+        >
+          <Stack>
+            <TextInput
+              type="password"
+              label="Old Password"
+              placeholder="Enter old password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              disabled={loading}
+            />
+            <TextInput
+              type="password"
+              label="New Password"
+              placeholder="Enter new password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={loading}
+            />
+            <TextInput
+              type="password"
+              label="Confirm New Password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={loading}
+            />
+            {error && <Text c="red">{error}</Text>}
+            <Button
+              onClick={handleChangePassword}
+              loading={loading}
+              fullWidth
+              mt="md"
+              color="red"
+            >
+              Update Password
+            </Button>
+          </Stack>
+        </Modal>
+      </Container>
+    </>
   );
 };
 
