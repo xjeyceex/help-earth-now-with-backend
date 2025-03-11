@@ -48,7 +48,7 @@ const TicketDetailsPage = () => {
   useEffect(() => {
     if (ticket_id) {
       const foundTicket = dummyTickets.find(
-        (t) => t.ticket_id === Number(ticket_id)
+        (t) => t.ticket_id === Number(ticket_id),
       );
       setTicket(foundTicket || null);
     }

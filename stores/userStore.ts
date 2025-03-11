@@ -19,7 +19,7 @@ interface UserState {
 
 type UserPersist = (
   config: StateCreator<UserState>,
-  options: PersistOptions<UserState, Partial<UserState>>
+  options: PersistOptions<UserState, Partial<UserState>>,
 ) => StateCreator<UserState>;
 
 export const useUserStore = create<UserState>()(
@@ -37,6 +37,6 @@ export const useUserStore = create<UserState>()(
       partialize: (state) => ({
         user: state.user,
       }),
-    }
-  )
+    },
+  ),
 );
