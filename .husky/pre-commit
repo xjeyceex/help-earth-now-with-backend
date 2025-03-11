@@ -1,0 +1,21 @@
+echo "🧹 Running Prettier to format your code..."
+npx prettier --write .
+
+# Check for formatting issues
+if [ $? -ne 0 ]; then
+  echo "❌ Prettier found formatting issues. Please fix them before committing."
+  exit 1
+fi
+
+echo "🧪 Running Jest tests in the __tests__ directory before committing..."
+# Run Jest tests in the __tests__ directory
+npm run test -- __tests__
+
+# Check if Jest tests passed
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Aborting commit."
+  exit 1
+fi
+
+echo "✅ All tests passed and formatting fixed. Proceeding with the commit."
+exit 0

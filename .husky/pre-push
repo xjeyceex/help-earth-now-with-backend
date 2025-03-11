@@ -1,0 +1,29 @@
+echo "Running Cypress tests before pushing to remote..."
+echo "Make sure the app is running on localhost:3000"
+echo "Make sure the credentials are set in cypress.env.json"
+
+# Check for console.log statements in the app directory
+if grep -r "console\.log" app/; then
+  echo "❌ Found console.log statements in the app directory. Please remove them before pushing."
+  exit 1
+fi
+
+# Check if any Cypress test files exist
+if ls cypress/e2e/**/*.ts 1> /dev/null 2>&1; then
+  echo "✅ Cypress test files found. Running tests..."
+
+  # Run the Cypress tests
+  npx cypress run --spec 'cypress/e2e/**/*.ts'
+
+  # Check the result of the Cypress tests
+  if [ $? -eq 0 ]; then
+    echo "✅ Cypress tests passed. Proceeding with push."
+    exit 0
+  else
+    echo "❌ Cypress tests failed. Fix the issues before pushing."
+    exit 1
+  fi
+else
+  echo "⚠️ No Cypress tests found. Proceeding with push."
+  exit 0
+fi
