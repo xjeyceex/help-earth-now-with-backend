@@ -21,14 +21,14 @@ const filterUserTickets = (userFullName: string, isAdmin: boolean) => {
     : dummyTickets.filter(
         (ticket) =>
           ticket.ticket_created_by === userFullName ||
-          ticket.ticket_assigned_to === userFullName
+          ticket.ticket_assigned_to === userFullName,
       );
 };
 
 // Function to count tickets by status
 const countUserTicketsByStatus = (
   tickets: typeof dummyTickets,
-  status: string
+  status: string,
 ) => tickets.filter((ticket) => ticket.ticket_status === status).length;
 
 const DashboardPage = () => {
@@ -98,10 +98,10 @@ const DashboardPage = () => {
                   ticket.ticket_status === "PENDING"
                     ? "yellow"
                     : ticket.ticket_status === "IN PROGRESS"
-                    ? "blue"
-                    : ticket.ticket_status === "COMPLETED"
-                    ? "green"
-                    : "gray"
+                      ? "blue"
+                      : ticket.ticket_status === "COMPLETED"
+                        ? "green"
+                        : "gray"
                 }
                 mt="sm"
               >

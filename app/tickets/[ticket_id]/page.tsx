@@ -72,14 +72,14 @@ const TicketDetailsPage = () => {
                 ticket.ticket_status === "PENDING"
                   ? "yellow"
                   : ticket.ticket_status === "APPROVED"
-                  ? "green"
-                  : ticket.ticket_status === "IN PROGRESS"
-                  ? "blue"
-                  : ticket.ticket_status === "COMPLETED"
-                  ? "teal"
-                  : ticket.ticket_status === "REJECTED"
-                  ? "red"
-                  : "gray"
+                    ? "green"
+                    : ticket.ticket_status === "IN PROGRESS"
+                      ? "blue"
+                      : ticket.ticket_status === "COMPLETED"
+                        ? "teal"
+                        : ticket.ticket_status === "REJECTED"
+                          ? "red"
+                          : "gray"
               }
             >
               {ticket.ticket_status}
