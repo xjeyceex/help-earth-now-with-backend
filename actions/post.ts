@@ -18,7 +18,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -141,7 +141,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string
+  newPassword: string,
 ) => {
   const supabase = await createClient();
 
