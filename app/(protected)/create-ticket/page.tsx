@@ -19,26 +19,42 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconSend, IconTrash, IconUsers } from "@tabler/icons-react";
-import { useEffect, useState, useTransition } from "react";
+import { notifications } from "@mantine/notifications";
+import { IconCheck, IconTrash, IconUsers, IconX } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import {
+  RichTextEditor,
+  RichTextEditorRef,
+} from "@/components/ui/RichTextEditor";
 
+import { getReviewers } from "@/actions/get";
+import { createTicket } from "@/actions/post";
+import { useUserStore } from "@/stores/userStore";
 import { TicketFormSchema } from "@/utils/zod/schema";
 
+export type ReviewerType = {
+  user_id: string;
+  user_full_name: string;
+  user_email: string;
+};
+
 const CreateTicketPage = () => {
+  const router = useRouter();
+
+  const { user } = useUserStore();
+
+  const editorRef = useRef<RichTextEditorRef>(null);
+
   const [isPending, startTransition] = useTransition();
   const [noteValue, setNoteValue] = useState<string>("");
-  const [selectedReviewers, setSelectedReviewers] = useState<
-    Array<{
-      id: string;
-      name: string;
-      email: string;
-      role: string;
-    }>
-  >([]);
+  const [reviewerOptions, setReviewerOptions] = useState<ReviewerType[]>([]);
+  const [selectedReviewers, setSelectedReviewers] = useState<ReviewerType[]>(
+    []
+  );
 
   const form = useForm<z.infer<typeof TicketFormSchema>>({
     resolver: zodResolver(TicketFormSchema),
@@ -52,67 +68,39 @@ const CreateTicketPage = () => {
     },
   });
 
-  // Extended reviewer options with email and fixed role
-  const reviewerOptions = [
-    {
-      value: "12314",
-      label: "John Doe",
-      email: "john.doe@company.com",
-      role: "Supervisor",
-    },
-    {
-      value: "123987",
-      label: "Jane Doe",
-      email: "jane.doe@company.com",
-      role: "Manager",
-    },
-    {
-      value: "123908123",
-      label: "Juan Dela Cruz",
-      email: "juan.delacruz@company.com",
-      role: "Supervisor",
-    },
-    {
-      value: "456789",
-      label: "Maria Garcia",
-      email: "maria.garcia@company.com",
-      role: "Manager",
-    },
-    {
-      value: "987654",
-      label: "Robert Smith",
-      email: "robert.smith@company.com",
-      role: "Supervisor",
-    },
-  ];
-
   const getFilteredOptions = () => {
-    return reviewerOptions.filter(
+    const filteredReviewers = reviewerOptions.filter(
       (option) =>
-        !selectedReviewers.some((reviewer) => reviewer.id === option.value)
+        !selectedReviewers.some(
+          (reviewer) => reviewer.user_id === option.user_id
+        )
     );
+
+    return filteredReviewers.map((reviewer) => ({
+      value: reviewer.user_id,
+      label: reviewer.user_full_name,
+    }));
   };
 
   const addReviewer = (value: string | null) => {
     if (!value) return;
 
     const selectedOption = reviewerOptions.find(
-      (option) => option.value === value
+      (option) => option.user_id === value
     );
     if (
       selectedOption &&
-      !selectedReviewers.some((reviewer) => reviewer.id === value)
+      !selectedReviewers.some((reviewer) => reviewer.user_id === value)
     ) {
-      const newReviewer = {
-        id: selectedOption.value,
-        name: selectedOption.label,
-        email: selectedOption.email,
-        role: selectedOption.role,
+      const newReviewer: ReviewerType = {
+        user_id: selectedOption.user_id,
+        user_full_name: selectedOption.user_full_name,
+        user_email: selectedOption.user_email,
       };
 
       setSelectedReviewers([...selectedReviewers, newReviewer]);
       form.setValue("ticketReviewer", [
-        ...selectedReviewers.map((r) => r.id),
+        ...selectedReviewers.map((r) => r.user_id),
         value,
       ]);
 
@@ -122,23 +110,50 @@ const CreateTicketPage = () => {
 
   const removeReviewer = (id: string) => {
     const updatedReviewers = selectedReviewers.filter(
-      (reviewer) => reviewer.id !== id
+      (reviewer) => reviewer.user_id !== id
     );
     setSelectedReviewers(updatedReviewers);
     form.setValue(
       "ticketReviewer",
-      updatedReviewers.map((r) => r.id)
+      updatedReviewers.map((r) => r.user_id)
     );
   };
 
-  const onSubmit = (values: z.infer<typeof TicketFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof TicketFormSchema>) => {
+    if (!user || !user.user_id) return;
+
     values.ticketNotes = noteValue;
 
     const validatedFields = TicketFormSchema.safeParse(values);
 
     if (validatedFields.success) {
-      startTransition(() => {
-        console.log("data:", validatedFields.data);
+      startTransition(async () => {
+        const res = await createTicket(validatedFields.data, user.user_id);
+
+        if (res.success) {
+          notifications.show({
+            variant: "success",
+            title: "Success",
+            message: "Your ticket has been created successfully.",
+            color: "green",
+            icon: <IconCheck size={16} />,
+          });
+          form.clearErrors();
+          form.reset();
+          setSelectedReviewers([]);
+          setNoteValue("");
+
+          // Reset rich text editor
+          editorRef.current?.reset();
+        } else {
+          notifications.show({
+            variant: "error",
+            title: "Error ",
+            message: "Failed to create ticket.",
+            color: "red",
+            icon: <IconX size={16} />,
+          });
+        }
       });
     }
   };
@@ -146,13 +161,9 @@ const CreateTicketPage = () => {
   useEffect(() => {
     const fetchReviewers = async () => {
       const res = await getReviewers();
-
-      if (res.error) {
-        console.log(res.message);
-        return;
+      if (res) {
+        setReviewerOptions(res as ReviewerType[]);
       }
-
-      console.log("reviwers", res.data);
     };
 
     fetchReviewers();
@@ -160,7 +171,7 @@ const CreateTicketPage = () => {
 
   return (
     <Container size={800} my={40}>
-      <Card padding="lg" radius="md" withBorder>
+      <Card padding="lg">
         <Stack gap="md">
           <Box>
             <Title fw={600} order={3} mb={4}>
@@ -168,7 +179,7 @@ const CreateTicketPage = () => {
             </Title>
             <Text c="dimmed" size="sm">
               Fill out the form below to create a new ticket. All fields marked
-              with * are required.
+              with <span style={{ color: "red" }}>*</span> are required.
             </Text>
           </Box>
 
@@ -242,6 +253,7 @@ const CreateTicketPage = () => {
                   Notes
                 </Text>
                 <RichTextEditor
+                  ref={editorRef}
                   value={noteValue}
                   onChange={(value) => {
                     setNoteValue(value);
@@ -279,7 +291,7 @@ const CreateTicketPage = () => {
                       {selectedReviewers.map((reviewer, index) => (
                         <div key={index}>
                           <Paper
-                            key={reviewer.id}
+                            key={reviewer.user_id}
                             p="xs"
                             withBorder
                             radius="md"
@@ -287,18 +299,20 @@ const CreateTicketPage = () => {
                             <Grid align="center">
                               <Grid.Col span={1}>
                                 <Avatar radius="xl" color="blue" size="md">
-                                  {reviewer.name.substring(0, 2).toUpperCase()}
+                                  {reviewer.user_full_name
+                                    .substring(0, 2)
+                                    .toUpperCase()}
                                 </Avatar>
                               </Grid.Col>
                               <Grid.Col span={8}>
                                 <Box>
                                   <Group gap="xs">
                                     <Text fw={500} size="sm">
-                                      {reviewer.name}
+                                      {reviewer.user_full_name}
                                     </Text>
                                   </Group>
                                   <Text size="xs" c="dimmed">
-                                    {reviewer.email}
+                                    {reviewer.user_email}
                                   </Text>
                                 </Box>
                               </Grid.Col>
@@ -306,7 +320,9 @@ const CreateTicketPage = () => {
                                 <ActionIcon
                                   color="red"
                                   variant="subtle"
-                                  onClick={() => removeReviewer(reviewer.id)}
+                                  onClick={() =>
+                                    removeReviewer(reviewer.user_id)
+                                  }
                                 >
                                   <IconTrash size={16} />
                                 </ActionIcon>
@@ -335,6 +351,7 @@ const CreateTicketPage = () => {
                   disabled={isPending}
                   color="gray"
                   radius="md"
+                  onClick={() => router.push("/tickets")}
                 >
                   Cancel
                 </Button>
@@ -342,7 +359,6 @@ const CreateTicketPage = () => {
                   type="submit"
                   disabled={isPending}
                   loading={isPending}
-                  leftSection={<IconSend size={16} />}
                   radius="md"
                 >
                   Submit Ticket

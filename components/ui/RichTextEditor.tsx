@@ -6,13 +6,21 @@ import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { forwardRef, useImperativeHandle } from "react";
 
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
+export interface RichTextEditorRef {
+  reset: () => void;
+}
+
+export const RichTextEditor = forwardRef<
+  RichTextEditorRef,
+  RichTextEditorProps
+>(({ value, onChange }, ref) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -28,6 +36,13 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
       onChange(editor.getHTML());
     },
   });
+
+  // Expose the reset method through ref
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      editor?.commands.setContent("");
+    },
+  }));
 
   return (
     <MantineRichTextEditor editor={editor} mih={150}>
@@ -79,4 +94,4 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
       <MantineRichTextEditor.Content />
     </MantineRichTextEditor>
   );
-}
+});

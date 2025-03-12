@@ -17,8 +17,10 @@ CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CANVASSER', 'REVIEWER');
 DROP TABLE IF EXISTS user_table CASCADE;
 CREATE TABLE user_table (
     user_id UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-    user_role user_role_enum DEFAULT 'ADMIN' NOT NULL,
-    user_avatar TEXT
+    user_role user_role_enum DEFAULT 'CANVASSER' NOT NULL,
+    user_avatar TEXT,
+    user_full_name TEXT,
+    user_email TEXT
 );
 
 -- RLS for User Table
@@ -30,9 +32,11 @@ CREATE POLICY "Users can view their own role data" ON user_table
 DROP TABLE IF EXISTS ticket_table CASCADE;
 CREATE TABLE public.ticket_table (
     ticket_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ticket_item_name TEXT NOT NULL,
     ticket_item_description TEXT NOT NULL,
     ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
     ticket_specifications TEXT,
+    ticket_notes TEXT,
     ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
     ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     ticket_assigned_to UUID REFERENCES public.user_table(user_id) ON DELETE SET NULL, 
@@ -114,12 +118,20 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_form_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON approval_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_status_history_table TO authenticated;
 
--- AUTO-CREATE USER ON SIGNUP
+-- Update the create_user function to rely on default values
 CREATE OR REPLACE FUNCTION public.create_user() 
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.user_table (user_id, user_role, user_avatar)
-  VALUES (NEW.id, 'CANVASSER', NULL);
+  INSERT INTO public.user_table (
+    user_id, 
+    user_full_name, 
+    user_email
+  )
+  VALUES (
+    NEW.id, 
+    NEW.raw_user_meta_data->>'display_name', 
+    NEW.email
+  );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
