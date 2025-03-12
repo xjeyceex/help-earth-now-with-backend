@@ -5,22 +5,23 @@ ALTER TABLE IF EXISTS canvass_form_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS approval_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ticket_status_history_table ENABLE ROW LEVEL SECURITY;
 
-CREATE TYPE ticket_status_enum AS ENUM ('FOR CANVASS', 'WORK IN PROGRESS', 'FOR REVIEW OF SUBMISSIONS',
-                                        'IN REVIEW', 'WAITING FOR PURCHASER', 'FOR APPROVAL', 'DONE', 'DECLINED', 'CANCELED');
+-- ENUM TYPES
+CREATE TYPE ticket_status_enum AS ENUM (
+    'FOR CANVASS', 'WORK IN PROGRESS', 'FOR REVIEW OF SUBMISSIONS',
+    'IN REVIEW', 'WAITING FOR PURCHASER', 'FOR APPROVAL', 'DONE', 'DECLINED', 'CANCELED'
+);
 CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED');
-CREATE TYPE user_role_enum AS ENUM ('PURCHASER', 'SUPERVISOR', 'MANAGER');
+CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CANVASSER', 'REVIEWER');
 
 -- USER TABLE (Manages User Roles)
 DROP TABLE IF EXISTS user_table CASCADE;
 CREATE TABLE user_table (
     user_id UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-    user_role user_role_enum DEFAULT 'ADMIN' NOT NULL ,
-    user_full_name TEXT,
-    user_email TEXT NOT NULL UNIQUE,
+    user_role user_role_enum DEFAULT 'ADMIN' NOT NULL,
     user_avatar TEXT
 );
 
--- Apply RLS for User Table
+-- RLS for User Table
 DROP POLICY IF EXISTS "Users can view their own role data" ON user_table;
 CREATE POLICY "Users can view their own role data" ON user_table
     FOR SELECT USING (auth.uid() = user_id);
@@ -39,14 +40,14 @@ CREATE TABLE public.ticket_table (
     ticket_last_updated TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Apply RLS for Ticket Table
+-- RLS for Ticket Table
 DROP POLICY IF EXISTS "Users can view their own tickets" ON ticket_table;
 CREATE POLICY "Users can view their own tickets" ON ticket_table
     FOR SELECT USING (auth.uid() = ticket_created_by OR auth.uid() = ticket_assigned_to);
 
-DROP POLICY IF EXISTS "Purchasers can create tickets" ON ticket_table;
-CREATE POLICY "Purchasers can create tickets" ON ticket_table
-    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'PURCHASER'));
+DROP POLICY IF EXISTS "Canvassers can create tickets" ON ticket_table;
+CREATE POLICY "Canvassers can create tickets" ON ticket_table
+    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'CANVASSER'));
 
 DROP POLICY IF EXISTS "Assigned users can update tickets" ON ticket_table;
 CREATE POLICY "Assigned users can update tickets" ON ticket_table
@@ -65,14 +66,14 @@ CREATE TABLE public.canvass_form_table (
     canvass_form_date_submitted TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Apply RLS for Canvass Form Table
-DROP POLICY IF EXISTS "Purchasers can submit canvass forms" ON canvass_form_table;
-CREATE POLICY "Purchasers can submit canvass forms" ON canvass_form_table
-    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'PURCHASER'));
+-- RLS for Canvass Form Table
+DROP POLICY IF EXISTS "Canvassers can submit canvass forms" ON canvass_form_table;
+CREATE POLICY "Canvassers can submit canvass forms" ON canvass_form_table
+    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'CANVASSER'));
 
-DROP POLICY IF EXISTS "Supervisors & Managers can view canvass forms" ON canvass_form_table;
-CREATE POLICY "Supervisors & Managers can view canvass forms" ON canvass_form_table
-    FOR SELECT USING (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role IN ('SUPERVISOR', 'MANAGER')));
+DROP POLICY IF EXISTS "Reviewers can view canvass forms" ON canvass_form_table;
+CREATE POLICY "Reviewers can view canvass forms" ON canvass_form_table
+    FOR SELECT USING (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'REVIEWER'));
 
 -- APPROVAL TABLE (Tracks Review & Approvals)
 DROP TABLE IF EXISTS approval_table CASCADE;
@@ -85,10 +86,10 @@ CREATE TABLE public.approval_table (
     approval_review_date TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Apply RLS for Approval Table
-DROP POLICY IF EXISTS "Supervisors & Managers can review" ON approval_table;
-CREATE POLICY "Supervisors & Managers can review" ON approval_table
-    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role IN ('SUPERVISOR', 'MANAGER')));
+-- RLS for Approval Table
+DROP POLICY IF EXISTS "Reviewers can review" ON approval_table;
+CREATE POLICY "Reviewers can review" ON approval_table
+    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'REVIEWER'));
 
 -- TICKET STATUS HISTORY TABLE (Tracks Status Changes for Workflow)
 DROP TABLE IF EXISTS ticket_status_history_table CASCADE;
@@ -101,7 +102,7 @@ CREATE TABLE public.ticket_status_history_table (
     ticket_status_history_change_date TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Apply RLS for Ticket Status History Table
+-- RLS for Ticket Status History Table
 DROP POLICY IF EXISTS "Users can view ticket status history of their assigned tickets" ON ticket_status_history_table;
 CREATE POLICY "Users can view ticket status history of their assigned tickets" ON ticket_status_history_table
     FOR SELECT USING (auth.uid() IN (SELECT ticket_assigned_to FROM ticket_table WHERE ticket_table.ticket_id = ticket_status_history_table.ticket_status_history_ticket_id));
@@ -113,21 +114,18 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_form_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON approval_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_status_history_table TO authenticated;
 
-create or replace function public.create_user() 
-returns trigger as $$
-begin
-  insert into public.user_table (user_id, user_full_name, user_email)
-  values (
-    new.id,
-    new.user_metadata->>'display_name',
-    new.email
-  );
-  return new;
-end;
-$$ language plpgsql security definer;
+-- AUTO-CREATE USER ON SIGNUP
+CREATE OR REPLACE FUNCTION public.create_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.user_table (user_id, user_role, user_avatar)
+  VALUES (NEW.id, 'CANVASSER', NULL);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- trigger the function every time a user is created
-drop trigger if exists after_user_signup on auth.users;
-create trigger after_user_signup
-  after insert on auth.users
-  for each row execute procedure public.create_user();
+-- Trigger the function every time a user is created
+DROP TRIGGER IF EXISTS after_user_signup ON auth.users;
+CREATE TRIGGER after_user_signup
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.create_user();

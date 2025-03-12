@@ -2,8 +2,7 @@ export default function Home() {
   return (
     <div>
       <main>
-        <h1>Sourcing & Canvassing</h1>
-        <p>TODO: LANDING PAGE</p>
+        <h1>TODO: LANDING PAGE</h1>
       </main>
     </div>
   );

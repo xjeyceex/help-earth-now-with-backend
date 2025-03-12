@@ -26,7 +26,6 @@ import * as z from "zod";
 
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
-import { getReviewers } from "@/actions/get";
 import { TicketFormSchema } from "@/utils/zod/schema";
 
 const CreateTicketPage = () => {
