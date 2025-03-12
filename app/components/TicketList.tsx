@@ -112,7 +112,20 @@ const TicketList = () => {
                 <td>
                   <Link
                     href={`/tickets/${ticket.ticket_id}`}
-                    style={{ textDecoration: "none", color: "blue" }}
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition:
+                        "color 0.2s ease-in-out, text-decoration 0.2s ease-in-out",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "blue";
+                      e.currentTarget.style.textDecoration = "underline";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "inherit";
+                      e.currentTarget.style.textDecoration = "none";
+                    }}
                   >
                     {ticket.ticket_id}
                   </Link>
