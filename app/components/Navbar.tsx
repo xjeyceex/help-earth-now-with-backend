@@ -2,7 +2,7 @@
 
 import { userLogout } from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
-import { Avatar, Button, Flex, Menu, Text, Title } from "@mantine/core";
+import { Avatar, Button, Flex, Menu, Title } from "@mantine/core";
 import Link from "next/link";
 import { useTransition } from "react";
 
@@ -17,8 +17,6 @@ const Navbar = () => {
     });
   };
 
-  if (!user) return null;
-
   return (
     <Flex
       justify="space-between"
@@ -29,34 +27,62 @@ const Navbar = () => {
       style={{
         position: "sticky",
         top: 0,
-        zIndex: 1000, // Ensures it's above other elements
-        width: "100%", // Full-width
-        boxShadow: "0px 2px 10px rgba(0,0,0,0.1)", // Optional shadow for visibility
+        zIndex: 1000, // Navbar stays on top
+        width: "100%",
+        boxShadow: "0px 2px 10px rgba(0,0,0,0.1)",
       }}
     >
       <Title size="h2">Sourcing & Canvassing</Title>
 
-      {/* Profile Menu */}
-      <Menu shadow="md" width={200}>
-        <Menu.Target>
-          <Button variant="subtle" p="xs">
-            <Flex align="center" gap="sm">
-              <Avatar src={user.user_avatar} radius="xl" size="md" />
-              <Text>{user.user_full_name}</Text>
-            </Flex>
-          </Button>
-        </Menu.Target>
+      {user ? (
+        // Profile Menu if user is logged in
+        <Menu shadow="md" width={200} withinPortal>
+          <Menu.Target>
+            <Avatar
+              src={user.user_avatar}
+              radius="xl"
+              size="md"
+              style={{
+                cursor: "pointer",
+                transition: "transform 0.2s ease",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "scale(1.1)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "scale(1)")
+              }
+            />
+          </Menu.Target>
 
-        <Menu.Dropdown>
-          <Menu.Label>Account</Menu.Label>
-          <Menu.Item component={Link} href="/profile">
-            View Profile
-          </Menu.Item>
-          <Menu.Item color="red" onClick={handleLogout}>
-            Logout
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+          <Menu.Dropdown style={{ zIndex: 1100 }}>
+            {" "}
+            {/* Higher than navbar */}
+            <Menu.Label>Account</Menu.Label>
+            <Menu.Item component={Link} href="/profile">
+              View Profile
+            </Menu.Item>
+            <Menu.Item color="red" onClick={handleLogout}>
+              Logout
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      ) : (
+        // Sign In / Sign Up if user is not logged in
+        <Flex gap="sm">
+          <Button component={Link} href="/sign-in" variant="outline">
+            Sign In
+          </Button>
+          <Button
+            component={Link}
+            href="/sign-up"
+            variant="filled"
+            color="blue"
+          >
+            Sign Up
+          </Button>
+        </Flex>
+      )}
     </Flex>
   );
 };

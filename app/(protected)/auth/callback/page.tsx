@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from "@/actions/get";
 import { User, useUserStore } from "@/stores/userStore";
+import { Center, Loader } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -23,14 +24,22 @@ const AuthCallback = () => {
 
       if (res.success) {
         setUser(res.data as User);
-        router.replace("/dashboard"); // Correct way to redirect
+        router.replace("/dashboard");
       }
     };
 
     fetchUser();
-  }, [setUser, router]); // No empty array to ensure fresh data is always fetched
+  }, [setUser, router]);
 
-  return <div>{loading ? "Redirecting..." : "Failed to fetch user data"}</div>;
+  if (loading) {
+    return (
+      <Center style={{ height: "100vh" }}>
+        <Loader size="lg" color="blue" />
+      </Center>
+    );
+  }
+
+  return null;
 };
 
 export default AuthCallback;
