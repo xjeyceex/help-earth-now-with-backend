@@ -4,26 +4,53 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
+import { z } from "zod";
 
-export async function userLogin(formData: FormData) {
+type LoginError = {
+  email?: string;
+  password?: string;
+  form?: string;
+};
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export async function userLogin(
+  formData: FormData
+): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
+  // Validate input data
   const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
+    email: formData.get("email"),
+    password: formData.get("password"),
   };
 
-  const { error } = await supabase.auth.signInWithPassword(data);
-
-  if (error) {
-    console.error("Error:", error.message);
-    redirect("/error");
+  const result = loginSchema.safeParse(data);
+  if (!result.success) {
+    return {
+      error: {
+        email: result.error.flatten().fieldErrors.email?.[0],
+        password: result.error.flatten().fieldErrors.password?.[0],
+      },
+    };
   }
 
+  // Attempt login
+  const { error } = await supabase.auth.signInWithPassword(result.data);
+
+  if (error) {
+    console.error("Login Error:", error.message);
+    return {
+      error: { form: "Incorrect email or password. Please try again." },
+    };
+  }
+
+  // Refresh cache and redirect on success
   revalidatePath("/", "layout");
-  redirect("/auth/callback");
+  redirect("/dashboard");
 }
 
 export const userLogout = async () => {
@@ -114,7 +141,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
