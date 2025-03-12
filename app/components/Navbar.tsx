@@ -100,12 +100,12 @@ const Navbar = () => {
           </Menu>
         ) : (
           <Flex gap="sm">
-            <Button component={Link} href="/sign-in" variant="outline">
+            <Button component={Link} href="/login" variant="outline">
               Sign In
             </Button>
             <Button
               component={Link}
-              href="/sign-up"
+              href="/register"
               variant="filled"
               color="blue"
             >
