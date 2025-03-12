@@ -18,12 +18,29 @@ export async function userLogin(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
+    console.error("Error:", error.message);
     redirect("/error");
   }
 
   revalidatePath("/", "layout");
   redirect("/auth/callback");
 }
+
+export const userLogout = async () => {
+  const supabase = await createClient();
+
+  const { error: logoutError } = await supabase.auth.signOut();
+
+  if (logoutError) {
+    return {
+      error: true,
+      message: "Failed to logout!",
+    };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/");
+};
 
 export const userRegister = async (formData: FormData) => {
   const supabase = await createClient();
@@ -97,7 +114,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 

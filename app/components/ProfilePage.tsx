@@ -19,7 +19,6 @@ import {
 import { IconArrowLeft, IconLock, IconUser } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Navbar from "./Navbar";
 
 const ProfilePage = () => {
   const { user, setUser } = useUserStore();
@@ -77,7 +76,7 @@ const ProfilePage = () => {
     }
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       setError(
-        "Password must contain at least one uppercase letter and one number.",
+        "Password must contain at least one uppercase letter and one number."
       );
       return;
     }
@@ -103,17 +102,12 @@ const ProfilePage = () => {
 
   return (
     <>
-      <Navbar />
       <Container size="sm" py="xl">
         <Card shadow="sm" padding="xl" radius="md" withBorder>
           <LoadingOverlay visible={loading} />
           <Stack align="center">
             {/* Avatar */}
-            <Avatar
-              src={user.user_avatar || "/default-avatar.png"}
-              size={120}
-              radius="xl"
-            />
+            <Avatar src={user.user_avatar} size={120} radius="xl" />
 
             {/* User Details */}
             <Title order={2}>{user.user_full_name}</Title>
