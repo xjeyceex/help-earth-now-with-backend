@@ -1,6 +1,6 @@
 "use server";
 
-import { ReviewerType } from "@/app/(protected)/create-ticket/page";
+import { ReviewerType } from "@/app/(protected)/tickets/create-ticket/page";
 import { User } from "@/stores/userStore";
 import { createClient } from "@/utils/supabase/server";
 

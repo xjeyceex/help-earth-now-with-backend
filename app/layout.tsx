@@ -9,7 +9,7 @@ import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/tiptap/styles.css";
-import Navbar from "./components/Navbar";
+import Navbar from "../components/Navbar";
 
 export const metadata = {
   title: "My Mantine app",
