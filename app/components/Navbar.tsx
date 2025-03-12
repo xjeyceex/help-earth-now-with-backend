@@ -4,12 +4,10 @@ import { userLogout } from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
 import { Avatar, Button, Flex, Menu, Text, Title } from "@mantine/core";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 const Navbar = () => {
   const { user, clearUser } = useUserStore();
-  const router = useRouter();
   const [, startTransition] = useTransition();
 
   const handleLogout = () => {
@@ -19,11 +17,23 @@ const Navbar = () => {
     });
   };
 
-  // Don't render Navbar if no user is logged in
   if (!user) return null;
 
   return (
-    <Flex justify="space-between" align="center" py="md" px="lg" bg="gray.1">
+    <Flex
+      justify="space-between"
+      align="center"
+      py="md"
+      px="lg"
+      bg="gray.1"
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 1000, // Ensures it's above other elements
+        width: "100%", // Full-width
+        boxShadow: "0px 2px 10px rgba(0,0,0,0.1)", // Optional shadow for visibility
+      }}
+    >
       <Title size="h2">Sourcing & Canvassing</Title>
 
       {/* Profile Menu */}
