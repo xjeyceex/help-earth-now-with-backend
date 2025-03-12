@@ -46,7 +46,7 @@ const TicketList = () => {
 
   // Define available filters based on user role
   const filterOptions =
-    user.user_role === "PURCHASER"
+    user.user_role === "CANVASSER"
       ? [
           { value: "ALL", label: "My Tickets" },
           { value: "PENDING", label: "Pending" },
@@ -61,7 +61,7 @@ const TicketList = () => {
 
   const filteredTickets = dummyTickets.filter((ticket) => {
     if (
-      user.user_role === "PURCHASER" &&
+      user.user_role === "CANVASSER" &&
       ticket.ticket_assigned_to !== user.user_full_name
     ) {
       return false;
