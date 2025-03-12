@@ -1,29 +1,16 @@
 "use client";
 
 import TicketList from "@/components/TicketList";
-import { useUserStore } from "@/stores/userStore";
-import { Button, Container, Stack, Title } from "@mantine/core";
-import { useRouter } from "next/navigation";
+import { Container, Title } from "@mantine/core";
 
 const TicketListPage = () => {
-  const { user } = useUserStore();
-  const router = useRouter();
-
   return (
-    <Container size="md" py="xl">
-      <Stack align="center">
+    <>
+      <Container size="md" py="xl">
         <Title ta="center">Ticket List</Title>
-
-        {/* Show button only if user role is 'canvasser' */}
-        {user?.user_role === "CANVASSER" && (
-          <Button onClick={() => router.push("/tickets/create-ticket")}>
-            Create Ticket
-          </Button>
-        )}
-
         <TicketList />
-      </Stack>
-    </Container>
+      </Container>
+    </>
   );
 };
 

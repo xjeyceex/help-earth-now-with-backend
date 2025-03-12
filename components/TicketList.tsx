@@ -11,6 +11,7 @@ import {
   Title,
 } from "@mantine/core";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const getStatusColor = (status: string) => {
@@ -35,6 +36,7 @@ const getStatusColor = (status: string) => {
 const TicketList = () => {
   const { user } = useUserStore();
   const [filter, setFilter] = useState<string>("ALL");
+  const router = useRouter();
 
   if (!user) {
     return (
@@ -94,6 +96,11 @@ const TicketList = () => {
               placeholder="Filter tickets"
             />
             <Button onClick={() => setFilter("ALL")}>Reset</Button>
+            {user.user_role === "CANVASSER" && (
+              <Button onClick={() => router.push("/tickets/create-ticket")}>
+                Create Ticket
+              </Button>
+            )}
           </Flex>
         </Flex>
 
