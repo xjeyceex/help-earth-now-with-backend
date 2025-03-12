@@ -14,7 +14,7 @@ CREATE TYPE user_role_enum AS ENUM ('PURCHASER', 'SUPERVISOR', 'MANAGER');
 DROP TABLE IF EXISTS user_table CASCADE;
 CREATE TABLE user_table (
     user_id UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-    user_role user_role_enum DEFAULT 'PURCHASER' NOT NULL ,
+    user_role user_role_enum DEFAULT 'ADMIN' NOT NULL ,
     user_full_name TEXT,
     user_email TEXT NOT NULL UNIQUE,
     user_avatar TEXT
@@ -119,7 +119,7 @@ begin
   insert into public.user_table (user_id, user_full_name, user_email)
   values (
     new.id,
-    new.raw_user_meta_data->>'display_name',
+    new.user_metadata->>'display_name',
     new.email
   );
   return new;

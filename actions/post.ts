@@ -52,12 +52,11 @@ export const userRegister = async (formData: FormData) => {
     // If error includes "already registered", it means email exists
     if (error.message.toLowerCase().includes("already registered")) {
       return {
+        error: true,
         emailError: true,
         message: "Email is already taken",
       };
     }
-
-    console.log(error);
 
     return {
       error: true,

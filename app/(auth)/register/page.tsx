@@ -11,7 +11,7 @@ const RegisterPage = () => {
     const formData = new FormData(e.currentTarget);
     const res = await userRegister(formData);
 
-    if (res.error) {
+    if (res?.error) {
       alert(res.message);
       return;
     }

@@ -34,6 +34,7 @@ const AuthCallback = () => {
 
       if (res.success) {
         setUser(res.data as User);
+        console.log(res.data);
       }
     };
 
