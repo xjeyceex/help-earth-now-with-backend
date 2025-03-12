@@ -1,11 +1,14 @@
-//layout.tsx
-import "@mantine/core/styles.css";
-
 import {
   ColorSchemeScript,
   MantineProvider,
   mantineHtmlProps,
 } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
+
+import "@mantine/core/styles.css";
+import "@mantine/dates/styles.css";
+import "@mantine/notifications/styles.css";
+import "@mantine/tiptap/styles.css";
 import Navbar from "./components/Navbar";
 
 export const metadata = {
@@ -25,6 +28,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <MantineProvider>
+          <Notifications />
           <Navbar />
           {children}
         </MantineProvider>

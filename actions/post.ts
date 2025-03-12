@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
+import { TicketFormSchema } from "@/utils/zod/schema";
 import { z } from "zod";
 
 type LoginError = {
@@ -18,7 +19,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -94,13 +95,11 @@ export const userRegister = async (formData: FormData) => {
     // If error includes "already registered", it means email exists
     if (error.message.toLowerCase().includes("already registered")) {
       return {
+        error: true,
         emailError: true,
         message: "Email is already taken",
       };
     }
-
-    console.log(error);
-
     return {
       error: true,
       message: error.message,
@@ -141,7 +140,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -178,4 +177,35 @@ export const changePassword = async (
 
   console.log("Password updated successfully!");
   return { success: true };
+};
+
+export const createTicket = async (
+  values: z.infer<typeof TicketFormSchema>,
+  userId: string
+) => {
+  const supabase = await createClient();
+  const validatedData = TicketFormSchema.parse(values);
+
+  const { data, error } = await supabase
+    .from("ticket_table")
+    .insert({
+      ticket_item_name: validatedData.ticketItemName,
+      ticket_item_description: validatedData.ticketItemDescription,
+      ticket_quantity: validatedData.ticketQuantity,
+      ticket_specifications: validatedData.ticketSpecification,
+      ticket_notes: validatedData.ticketNotes,
+      ticket_created_by: userId,
+      ticket_assigned_to: userId,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return {
+      success: false,
+      message: "Failed to create ticket",
+    };
+  }
+
+  return { success: true, data };
 };
