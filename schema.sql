@@ -139,7 +139,7 @@ CREATE POLICY "Users can share tickets with others" ON ticket_shared_with_table
             WHERE ticket_id = ticket_shared_with_table.ticket_id
         ) 
         OR auth.uid() IN (
-            SELECT user_id FROM ticket_shared_with_table 
+            SELECT shared_user_id FROM ticket_shared_with_table 
             WHERE ticket_id = ticket_shared_with_table.ticket_id
         )
     );
