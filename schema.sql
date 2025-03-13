@@ -285,18 +285,24 @@ RETURNS TABLE (
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_created_by UUID,
-  shared_user_id UUID,
+  shared_users JSON,
   reviewers JSON
 )
 LANGUAGE sql
-AS $$
+AS $$  
   SELECT
     t.ticket_id,
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
-    ts.shared_user_id,
 
+    -- ✅ Combine all shared users into an array
+    COALESCE(
+      JSON_AGG(DISTINCT ts.shared_user_id) FILTER (WHERE ts.shared_user_id IS NOT NULL),
+      '[]'::JSON
+    ) AS shared_users,
+
+    -- ✅ Get all reviewers
     COALESCE(
       JSON_AGG(
         JSON_BUILD_OBJECT(
@@ -309,8 +315,12 @@ AS $$
 
   FROM
     ticket_table t
+
+  -- ✅ Left join for shared users
   LEFT JOIN
     ticket_shared_with_table ts ON ts.ticket_id = t.ticket_id
+
+  -- ✅ Left join for reviewers
   LEFT JOIN
     (
       SELECT DISTINCT ON (a.approval_reviewed_by, a.approval_ticket_id)
@@ -325,7 +335,7 @@ AS $$
     ) a ON a.approval_ticket_id = t.ticket_id
 
   WHERE
-    (t.ticket_created_by = user_id OR ts.shared_user_id = user_id)
+    user_id = ANY(ARRAY[t.ticket_created_by, ts.shared_user_id, a.approval_reviewed_by])
     AND (ticket_status IS NULL OR t.ticket_status = ticket_status)
     AND (ticket_uuid IS NULL OR t.ticket_id = ticket_uuid)
 
@@ -333,8 +343,7 @@ AS $$
     t.ticket_id,
     t.ticket_status,
     t.ticket_item_description,
-    t.ticket_created_by,
-    ts.shared_user_id
+    t.ticket_created_by
 $$;
 
 --function for getting specific ticket
@@ -362,7 +371,7 @@ as $$
     t.ticket_quantity,
     t.ticket_specifications,
 
-    -- ✅ Get the overall approval status
+    -- Get the overall approval status
     coalesce(
       (
         select a.approval_review_status
@@ -375,7 +384,7 @@ as $$
     t.ticket_date_created,
     t.ticket_last_updated,
 
-    -- ✅ Separate Subquery for shared_users
+    -- Separate Subquery for shared_users
     (
       select coalesce(
         json_agg(
@@ -391,7 +400,7 @@ as $$
       where ts.ticket_id = t.ticket_id
     )::json as shared_users,
 
-    -- ✅ Separate Subquery for reviewers
+    -- Separate Subquery for reviewers
     (
       select coalesce(
         json_agg(
@@ -411,4 +420,27 @@ as $$
     ticket_table t
 
   where t.ticket_id = ticket_uuid
+$$;
+
+-- share ticket function
+create or replace function share_ticket(
+  _ticket_id uuid,
+  _shared_user_id uuid,
+  _assigned_by uuid
+)
+returns void
+language sql
+as $$
+  insert into ticket_shared_with_table (
+    ticket_id,
+    shared_user_id,
+    assigned_by
+  )
+  select 
+    _ticket_id,
+    _shared_user_id,
+    _assigned_by
+  from ticket_table
+  where ticket_id = _ticket_id
+  and ticket_created_by != _shared_user_id;
 $$;

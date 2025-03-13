@@ -19,7 +19,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -139,7 +139,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -179,7 +179,7 @@ export const changePassword = async (
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -234,7 +234,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -266,4 +266,29 @@ export const updateProfilePicture = async (file: File) => {
   }
 
   return { success: true, url: publicUrl };
+};
+
+export const shareTicket = async (ticket_id: string, user_id: string) => {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error("Error fetching user:", userError.message);
+    throw new Error("Failed to fetch current user.");
+  }
+
+  const { error } = await supabase.rpc("share_ticket", {
+    _ticket_id: ticket_id,
+    _shared_user_id: user_id,
+    _assigned_by: user?.id,
+  });
+
+  if (error) {
+    console.error("Error sharing ticket:", error.message);
+    throw new Error("Failed to share ticket");
+  }
 };

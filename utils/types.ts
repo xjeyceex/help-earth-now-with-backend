@@ -4,6 +4,12 @@ export type ReviewerType = {
   user_email: string;
 };
 
+export type DropdownType = {
+  value: string;
+  label: string;
+  disabled: boolean;
+};
+
 export type TicketDetailsType = {
   ticket_id: string;
   ticket_item_description: string;
