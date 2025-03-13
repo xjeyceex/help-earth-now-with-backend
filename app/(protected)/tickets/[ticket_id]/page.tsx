@@ -58,10 +58,9 @@ const TicketDetailsPage = () => {
       </Container>
     );
   }
-  console.log(ticket.shared_users);
   const isAdmin = user?.user_role === "ADMIN";
   const isAssigned = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+    (u) => u.user_id === user?.user_id
   );
 
   if (!isAdmin && !isAssigned) {
@@ -88,14 +87,14 @@ const TicketDetailsPage = () => {
                 ticket.ticket_status === "PENDING"
                   ? "yellow"
                   : ticket.ticket_status === "APPROVED"
-                    ? "green"
-                    : ticket.ticket_status === "IN PROGRESS"
-                      ? "blue"
-                      : ticket.ticket_status === "COMPLETED"
-                        ? "teal"
-                        : ticket.ticket_status === "REJECTED"
-                          ? "red"
-                          : "gray"
+                  ? "green"
+                  : ticket.ticket_status === "IN PROGRESS"
+                  ? "blue"
+                  : ticket.ticket_status === "COMPLETED"
+                  ? "teal"
+                  : ticket.ticket_status === "REJECTED"
+                  ? "red"
+                  : "gray"
               }
             >
               {ticket.ticket_status}
@@ -123,10 +122,10 @@ const TicketDetailsPage = () => {
                 ticket.approval_status === "PENDING"
                   ? "yellow"
                   : ticket.approval_status === "APPROVED"
-                    ? "green"
-                    : ticket.approval_status === "REJECTED"
-                      ? "red"
-                      : "gray"
+                  ? "green"
+                  : ticket.approval_status === "REJECTED"
+                  ? "red"
+                  : "gray"
               }
             >
               {ticket.approval_status}

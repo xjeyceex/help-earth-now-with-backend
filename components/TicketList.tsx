@@ -50,7 +50,6 @@ const TicketList = () => {
   const fetchTickets = async () => {
     setLoading(true);
     const fetchedTickets = await getTickets({ user_role: user?.user_role });
-    console.log("fetchedTickets", fetchedTickets);
     if (!Array.isArray(fetchedTickets)) {
       console.error(fetchedTickets.message); // Log the error
     } else {
@@ -88,7 +87,7 @@ const TicketList = () => {
     if (
       user.user_role === "CANVASSER" &&
       !ticket.shared_users.some(
-        (sharedUser) => sharedUser.user_full_name === user.user_full_name,
+        (sharedUser) => sharedUser.user_full_name === user.user_full_name
       )
     ) {
       return false;
