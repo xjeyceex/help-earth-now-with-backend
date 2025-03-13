@@ -259,17 +259,14 @@ as $$
   from 
     ticket_table t
 
-  -- ✅ Admin can see all tickets
   where _user_id is null 
 
-  -- ✅ For Canvasser: Show created tickets or shared tickets
   or t.ticket_created_by = _user_id
   or exists (
     select 1 from ticket_shared_with_table s
     where s.ticket_id = t.ticket_id and s.shared_user_id = _user_id
   )
 
-  -- ✅ For Reviewer: Show tickets assigned to them in approval table
   or exists (
     select 1 from approval_table a
     where a.approval_ticket_id = t.ticket_id 
@@ -300,7 +297,6 @@ AS $$
     t.ticket_created_by,
     ts.shared_user_id,
 
-    -- ✅ Group reviewers per ticket (Fixed version)
     COALESCE(
       JSON_AGG(
         JSON_BUILD_OBJECT(
