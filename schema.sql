@@ -28,6 +28,27 @@ DROP POLICY IF EXISTS "Users can view their own role data" ON user_table;
 CREATE POLICY "Users can view their own role data" ON user_table
     FOR SELECT USING (auth.uid() = user_id);
 
+--RLS for Avatars
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects
+FOR INSERT
+WITH CHECK (auth.uid() = owner);
+
+CREATE POLICY "Users can delete their own avatar"
+ON storage.objects
+FOR DELETE
+USING (auth.uid() = owner);
+
+CREATE POLICY "Allow public read access to avatars"
+ON storage.objects
+FOR SELECT
+USING (TRUE);
+
+CREATE POLICY "Allow users to update their own avatar"
+ON user_table
+FOR UPDATE
+USING (auth.uid() = user_id);
+
 -- TICKET TABLE (Tracks Canvassing Requests)
 DROP TABLE IF EXISTS ticket_table CASCADE;
 CREATE TABLE public.ticket_table (

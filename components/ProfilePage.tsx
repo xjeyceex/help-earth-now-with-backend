@@ -1,12 +1,17 @@
 "use client";
 
-import { changePassword, updateDisplayName } from "@/actions/post";
+import {
+  changePassword,
+  updateDisplayName,
+  updateProfilePicture,
+} from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
 import {
   Avatar,
   Button,
   Card,
   Container,
+  FileInput,
   Group,
   LoadingOverlay,
   Modal,
@@ -16,7 +21,12 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconArrowLeft, IconLock, IconUser } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconCamera,
+  IconLock,
+  IconUser,
+} from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -27,9 +37,11 @@ const ProfilePage = () => {
   // Modal state
   const [isEditingName, setIsEditingName] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   // Input state
   const [newName, setNewName] = useState(user?.user_full_name || "");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -45,6 +57,25 @@ const ProfilePage = () => {
       </Container>
     );
   }
+
+  const handleAvatarUpload = async () => {
+    if (!selectedFile) return;
+    setLoading(true);
+
+    const result = await updateProfilePicture(selectedFile);
+    setLoading(false);
+
+    if (result?.error) {
+      alert("Failed to update profile picture: " + result.error);
+    } else {
+      alert("Profile picture updated successfully!");
+
+      // ✅ Ensure `user_avatar` is always a string
+      setUser({ ...user, user_avatar: result.url ?? "" });
+
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleUpdateName = async () => {
     if (!newName.trim() || newName === user.user_full_name) return;
@@ -76,7 +107,7 @@ const ProfilePage = () => {
     }
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       setError(
-        "Password must contain at least one uppercase letter and one number.",
+        "Password must contain at least one uppercase letter and one number."
       );
       return;
     }
@@ -108,7 +139,13 @@ const ProfilePage = () => {
           <Stack align="center">
             {/* Avatar */}
             <Avatar src={user.user_avatar} size={120} radius="xl" />
-
+            <Button
+              leftSection={<IconCamera size={18} />}
+              variant="light"
+              onClick={() => setIsUploadingAvatar(true)}
+            >
+              Change Profile Picture
+            </Button>
             {/* User Details */}
             <Title order={2}>{user.user_full_name}</Title>
             <Paper p="md" radius="md" withBorder>
@@ -162,6 +199,30 @@ const ProfilePage = () => {
             </Button>
           </Stack>
         </Card>
+
+        {/* Update Profile Picture Modal */}
+        <Modal
+          opened={isUploadingAvatar}
+          onClose={() => setIsUploadingAvatar(false)}
+          title="Update Profile Picture"
+          centered
+        >
+          <Stack>
+            <FileInput
+              label="Upload New Profile Picture"
+              accept="image/*"
+              onChange={(file) => setSelectedFile(file)}
+            />
+            <Button
+              onClick={handleAvatarUpload}
+              loading={loading}
+              fullWidth
+              mt="md"
+            >
+              Upload
+            </Button>
+          </Stack>
+        </Modal>
 
         {/* Change Name Modal */}
         <Modal

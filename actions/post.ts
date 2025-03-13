@@ -19,7 +19,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -140,7 +140,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -181,7 +181,7 @@ export const changePassword = async (
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -208,4 +208,65 @@ export const createTicket = async (
   }
 
   return { success: true, data };
+};
+
+export const updateProfilePicture = async (file: File) => {
+  const supabase = await createClient();
+
+  // Get logged-in user
+  const { data: user, error: userError } = await supabase.auth.getUser();
+  if (userError || !user?.user) {
+    console.error("Error fetching user:", userError?.message);
+    return { error: "User not authenticated." };
+  }
+
+  const userId = user.user.id;
+
+  // Fetch current avatar URL
+  const { data: userData, error: fetchError } = await supabase
+    .from("user_table")
+    .select("user_avatar")
+    .eq("user_id", userId)
+    .single();
+
+  if (fetchError) {
+    console.error("Error fetching user avatar:", fetchError.message);
+    return { error: fetchError.message };
+  }
+
+  // Remove old avatar if it exists
+  const oldFilePath = userData?.user_avatar?.replace(
+    /^.*\/avatars\//,
+    "avatars/"
+  );
+  if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
+
+  // Upload new avatar
+  const filePath = `avatars/${userId}-${file.name}`;
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(filePath, file, { upsert: true });
+
+  if (uploadError) {
+    console.error("Upload error:", uploadError.message);
+    return { error: uploadError.message };
+  }
+
+  // Get new public URL
+  const publicUrl = supabase.storage.from("avatars").getPublicUrl(filePath)
+    .data?.publicUrl;
+  if (!publicUrl) return { error: "Failed to retrieve image URL" };
+
+  // Update user profile
+  const { error: updateError } = await supabase
+    .from("user_table")
+    .update({ user_avatar: publicUrl })
+    .eq("user_id", userId);
+
+  if (updateError) {
+    console.error("Database update error:", updateError.message);
+    return { error: updateError.message };
+  }
+
+  return { success: true, url: publicUrl };
 };
