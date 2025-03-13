@@ -210,7 +210,7 @@ CREATE POLICY "Users can view ticket status history of their shared tickets"
 ON ticket_status_history_table
 FOR SELECT USING (
     auth.uid() IN (
-        SELECT user_id 
+        SELECT shared_user_id 
         FROM ticket_shared_with_table 
         WHERE ticket_shared_with_table.ticket_id = ticket_status_history_table.ticket_status_history_ticket_id
     )
