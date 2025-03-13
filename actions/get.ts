@@ -2,7 +2,7 @@
 
 import { User } from "@/stores/userStore";
 import { createClient } from "@/utils/supabase/server";
-import { ReviewerType, TicketType } from "@/utils/types";
+import { DashboardTicketType, ReviewerType, TicketType } from "@/utils/types";
 
 export const getCurrentUser = async () => {
   const supabase = await createClient();
@@ -40,6 +40,35 @@ export const getCurrentUser = async () => {
   };
 };
 
+export const getDashboardTickets = async (filters: {
+  shared_with?: string;
+}) => {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("ticket_table")
+    .select("ticket_id, ticket_status, ticket_item_description");
+
+  if (filters.shared_with) {
+    query = query.contains(
+      "shared_users->user_table->user_id",
+      filters.shared_with
+    );
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error fetching tickets:", error);
+    return {
+      error: true,
+      message: "An unexpected error occurred while fetching tickets.",
+    };
+  }
+  console.log("data", data);
+  return data as DashboardTicketType[];
+};
+
 export const getTickets = async (filters: {
   user_role?: string;
   ticket_status?: string;
@@ -52,7 +81,7 @@ export const getTickets = async (filters: {
     `*, 
       creator_user:ticket_created_by(user_id, user_full_name, user_email),
       approval:approval_table(approval_id, approval_review_status, reviewer:user_table(user_id, user_full_name, user_email)),
-      shared_users:ticket_shared_with_table(user_table!ticket_shared_with_table_user_id_fkey(user_id, user_full_name, user_email))`,
+      shared_users:ticket_shared_with_table(user_table!ticket_shared_with_table_user_id_fkey(user_id, user_full_name, user_email))`
   );
 
   // Apply filters
@@ -67,7 +96,7 @@ export const getTickets = async (filters: {
   if (filters.shared_with) {
     query = query.contains(
       "shared_users->user_table->user_id",
-      filters.shared_with,
+      filters.shared_with
     );
   }
 
@@ -104,7 +133,7 @@ export const getTickets = async (filters: {
             user_id: u.user_table.user_id,
             user_full_name: u.user_table.user_full_name ?? "Unknown",
             user_email: u.user_table.user_email ?? "No Email",
-          }),
+          })
         )
       : [],
   }));

@@ -1,8 +1,8 @@
 "use client";
 
-import { getTickets } from "@/actions/get";
+import { getDashboardTickets } from "@/actions/get";
 import { useUserStore } from "@/stores/userStore";
-import { TicketType } from "@/utils/types";
+import { DashboardTicketType } from "@/utils/types";
 import {
   Badge,
   Button,
@@ -16,34 +16,47 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-// Function to count tickets by status
-const countUserTicketsByStatus = (tickets: TicketType[], status: string) =>
-  tickets.filter((ticket) => ticket.ticket_status === status).length;
-
 const DashboardPage = () => {
   const { user } = useUserStore(); // Get logged-in user
-  const [tickets, setTickets] = useState<TicketType[]>([]);
+  const [tickets, setTickets] = useState<DashboardTicketType[]>([]);
   const [loading, setLoading] = useState(true);
 
   const userFullName = user?.user_full_name ?? "";
-  const isAdmin = user?.user_role === "ADMIN"; // Check if user is admin
+  const isAdmin = user?.user_role === "ADMIN";
 
-  // Fetch tickets when the component mounts
+  const countUserTicketsByStatus = (
+    tickets: DashboardTicketType[],
+    statusType: "OPEN" | "COMPLETED"
+  ) => {
+    if (statusType === "OPEN") {
+      return tickets.filter(
+        (ticket) =>
+          ticket.ticket_status === "FOR CANVASS" ||
+          ticket.ticket_status === "IN PROGRESS"
+      ).length;
+    }
+
+    if (statusType === "COMPLETED") {
+      return tickets.filter((ticket) => ticket.ticket_status === "COMPLETED")
+        .length;
+    }
+
+    return 0; // Fallback
+  };
+
   useEffect(() => {
     const fetchTickets = async () => {
       setLoading(true);
 
       const filters = isAdmin ? {} : { shared_with: userFullName };
-      const data = await getTickets(filters);
+      const data = await getDashboardTickets(filters);
 
-      // Ensure data is an array before setting state
-      if (!Array.isArray(data)) {
-        console.error("Error fetching tickets:", data.message);
-        setLoading(false);
-        return;
+      if (Array.isArray(data)) {
+        setTickets(data as DashboardTicketType[]); // ✅ Fixed TypeScript Error
+      } else {
+        console.error("Error fetching tickets:", data?.message);
       }
 
-      setTickets(data);
       setLoading(false);
     };
 
@@ -56,31 +69,20 @@ const DashboardPage = () => {
         Dashboard
       </Title>
 
-      {/* Stats Section */}
+      {/* ✅ Status Count Section */}
       <Grid gutter="md">
-        <Grid.Col span={{ base: 12, sm: 4 }}>
+        <Grid.Col span={{ base: 12, sm: 6 }}>
           <Card shadow="sm" padding="lg" radius="md" withBorder>
             <Text size="lg" fw={500}>
-              Pending Tickets
-            </Text>
-            <Badge color="yellow" size="xl" mt="md">
-              {countUserTicketsByStatus(tickets, "FOR CANVASS")}
-            </Badge>
-          </Card>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
-            <Text size="lg" fw={500}>
-              In Progress
+              Open Tickets
             </Text>
             <Badge color="blue" size="xl" mt="md">
-              {countUserTicketsByStatus(tickets, "IN PROGRESS")}
+              {countUserTicketsByStatus(tickets, "OPEN")}
             </Badge>
           </Card>
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, sm: 4 }}>
+        <Grid.Col span={{ base: 12, sm: 6 }}>
           <Card shadow="sm" padding="lg" radius="md" withBorder>
             <Text size="lg" fw={500}>
               Completed Tickets
@@ -92,13 +94,15 @@ const DashboardPage = () => {
         </Grid.Col>
       </Grid>
 
-      {/* Recent Tickets Section */}
+      {/* ✅ Recent Tickets Section */}
       <Title order={2} mt="xl">
         {isAdmin ? "Recent Tickets" : "Your Recent Tickets"}
       </Title>
 
       {loading ? (
         <Text>Loading tickets...</Text>
+      ) : tickets.length === 0 ? (
+        <Text>No tickets found.</Text>
       ) : (
         <Stack mt="md">
           {tickets.slice(0, 5).map((ticket) => (
@@ -108,13 +112,13 @@ const DashboardPage = () => {
               </Text>
               <Badge
                 color={
-                  ticket.ticket_status === "PENDING"
+                  ticket.ticket_status === "FOR CANVASS"
                     ? "yellow"
                     : ticket.ticket_status === "IN PROGRESS"
-                      ? "blue"
-                      : ticket.ticket_status === "COMPLETED"
-                        ? "green"
-                        : "gray"
+                    ? "blue"
+                    : ticket.ticket_status === "COMPLETED"
+                    ? "green"
+                    : "gray"
                 }
                 mt="sm"
               >
@@ -130,7 +134,7 @@ const DashboardPage = () => {
         </Stack>
       )}
 
-      {/* Quick Actions */}
+      {/* ✅ Quick Actions */}
       <Stack mt="xl" align="center">
         <Link href="/tickets">
           <Button size="md">View All Tickets</Button>

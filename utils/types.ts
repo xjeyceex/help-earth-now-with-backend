@@ -21,3 +21,9 @@ export type TicketType = {
     user_email: string;
   }[];
 };
+
+export type DashboardTicketType = {
+  ticket_id: string;
+  ticket_status: string;
+  ticket_item_description: string; // ✅ Fixed field name
+};
