@@ -66,7 +66,15 @@ CREATE TABLE public.ticket_table (
     ticket_last_updated TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
-
+-- SHARED TICKET TABLE
+DROP TABLE IF EXISTS ticket_shared_with_table;
+CREATE TABLE public.ticket_shared_with_table (
+    ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
+    assigned_at TIMESTAMPTZ DEFAULT NOW(),  -- Tracks assignment time
+    assigned_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE, -- Who assigned this user
+    PRIMARY KEY (ticket_id, user_id) -- Ensures a user is not added twice for the same ticket
+);
 
 -- POLICY: Users can view tickets they created or are shared with
 DROP POLICY IF EXISTS "Users can view their own and shared tickets" ON ticket_table;
@@ -98,15 +106,7 @@ CREATE POLICY "Only ticket creator can delete" ON ticket_table
         auth.uid() = ticket_created_by
     );
 
--- SHARED TICKET TABLE
-DROP TABLE IF EXISTS ticket_shared_with_table;
-CREATE TABLE public.ticket_shared_with_table (
-    ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-    assigned_at TIMESTAMPTZ DEFAULT NOW(),  -- Tracks assignment time
-    assigned_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE, -- Who assigned this user
-    PRIMARY KEY (ticket_id, user_id) -- Ensures a user is not added twice for the same ticket
-);
+
 
 -- POLICY: Users can view tickets they are shared with
 DROP POLICY IF EXISTS "Users can view shared tickets" ON ticket_shared_with_table;
