@@ -111,10 +111,10 @@ const DashboardPage = () => {
                   ticket.ticket_status === "PENDING"
                     ? "yellow"
                     : ticket.ticket_status === "IN PROGRESS"
-                    ? "blue"
-                    : ticket.ticket_status === "COMPLETED"
-                    ? "green"
-                    : "gray"
+                      ? "blue"
+                      : ticket.ticket_status === "COMPLETED"
+                        ? "green"
+                        : "gray"
                 }
                 mt="sm"
               >

@@ -52,7 +52,7 @@ export const getTickets = async (filters: {
     `*, 
       creator_user:ticket_created_by(user_id, user_full_name, user_email),
       approval:approval_table(approval_id, approval_review_status, reviewer:user_table(user_id, user_full_name, user_email)),
-      shared_users:ticket_shared_with_table(user_table!ticket_shared_with_table_user_id_fkey(user_id, user_full_name, user_email))`
+      shared_users:ticket_shared_with_table(user_table!ticket_shared_with_table_user_id_fkey(user_id, user_full_name, user_email))`,
   );
 
   // Apply filters
@@ -67,7 +67,7 @@ export const getTickets = async (filters: {
   if (filters.shared_with) {
     query = query.contains(
       "shared_users->user_table->user_id",
-      filters.shared_with
+      filters.shared_with,
     );
   }
 
@@ -104,7 +104,7 @@ export const getTickets = async (filters: {
             user_id: u.user_table.user_id,
             user_full_name: u.user_table.user_full_name ?? "Unknown",
             user_email: u.user_table.user_email ?? "No Email",
-          })
+          }),
         )
       : [],
   }));

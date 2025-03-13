@@ -88,7 +88,7 @@ const TicketList = () => {
     if (
       user.user_role === "CANVASSER" &&
       !ticket.shared_users.some(
-        (sharedUser) => sharedUser.user_full_name === user.user_full_name
+        (sharedUser) => sharedUser.user_full_name === user.user_full_name,
       )
     ) {
       return false;
