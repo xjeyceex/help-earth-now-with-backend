@@ -1,8 +1,8 @@
 "use client";
 
-import { getTickets } from "@/actions/get";
+import { getTicketDetails } from "@/actions/get";
 import { useUserStore } from "@/stores/userStore";
-import { TicketType } from "@/utils/types";
+import { TicketDetailsType } from "@/utils/types";
 import {
   Badge,
   Button,
@@ -21,13 +21,15 @@ const TicketDetailsPage = () => {
   const { ticket_id } = useParams() as { ticket_id?: string };
   const { user } = useUserStore();
 
-  const [ticket, setTicket] = useState<TicketType | null>(null);
+  const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTicket = async () => {
+      if (!ticket_id) return; // ✅ Return early if ticket_id is undefined
+
       setLoading(true);
-      const tickets = await getTickets({ ticket_id });
+      const tickets = await getTicketDetails(ticket_id); // ✅ Now TypeScript is happy 🎉
 
       if (Array.isArray(tickets) && tickets.length > 0) {
         setTicket(tickets[0]);
@@ -58,12 +60,16 @@ const TicketDetailsPage = () => {
       </Container>
     );
   }
+
   const isAdmin = user?.user_role === "ADMIN";
   const isAssigned = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+    (u) => u.user_id === user?.user_id
+  );
+  const isReviewer = ticket.reviewers?.some(
+    (r) => r.reviewer_id === user?.user_id
   );
 
-  if (!isAdmin && !isAssigned) {
+  if (!isAdmin && !isAssigned && !isReviewer) {
     return (
       <Container size="sm" py="xl">
         <Title>Unauthorized Access</Title>
@@ -87,19 +93,20 @@ const TicketDetailsPage = () => {
                 ticket.ticket_status === "PENDING"
                   ? "yellow"
                   : ticket.ticket_status === "APPROVED"
-                    ? "green"
-                    : ticket.ticket_status === "IN PROGRESS"
-                      ? "blue"
-                      : ticket.ticket_status === "COMPLETED"
-                        ? "teal"
-                        : ticket.ticket_status === "REJECTED"
-                          ? "red"
-                          : "gray"
+                  ? "green"
+                  : ticket.ticket_status === "IN PROGRESS"
+                  ? "blue"
+                  : ticket.ticket_status === "COMPLETED"
+                  ? "teal"
+                  : ticket.ticket_status === "REJECTED"
+                  ? "red"
+                  : "gray"
               }
             >
               {ticket.ticket_status}
             </Badge>
           </div>
+
           <Text size="lg">
             <strong>Ticket ID:</strong> {ticket.ticket_id}
           </Text>
@@ -112,9 +119,8 @@ const TicketDetailsPage = () => {
           <Text size="lg">
             <strong>Specifications:</strong> {ticket.ticket_specifications}
           </Text>
-          <Text size="lg">
-            <strong>Reviewer:</strong> {ticket.reviewer}
-          </Text>
+
+          {/* ✅ Approval Status */}
           <div>
             <strong>Approval Status:</strong>{" "}
             <Badge
@@ -122,17 +128,46 @@ const TicketDetailsPage = () => {
                 ticket.approval_status === "PENDING"
                   ? "yellow"
                   : ticket.approval_status === "APPROVED"
-                    ? "green"
-                    : ticket.approval_status === "REJECTED"
-                      ? "red"
-                      : "gray"
+                  ? "green"
+                  : ticket.approval_status === "REJECTED"
+                  ? "red"
+                  : "gray"
               }
             >
               {ticket.approval_status}
             </Badge>
           </div>
 
-          {/* Shared With Section (Display Only) */}
+          {/* ✅ Display Reviewers */}
+          <div>
+            <strong>Reviewers:</strong>
+            {ticket.reviewers.length > 0 ? (
+              <ul>
+                {ticket.reviewers.map((r) => (
+                  <li key={r.reviewer_id}>
+                    {r.reviewer_name} -{" "}
+                    <Badge
+                      color={
+                        r.approval_status === "PENDING"
+                          ? "yellow"
+                          : r.approval_status === "APPROVED"
+                          ? "green"
+                          : r.approval_status === "REJECTED"
+                          ? "red"
+                          : "gray"
+                      }
+                    >
+                      {r.approval_status}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Text color="dimmed">No reviewers assigned.</Text>
+            )}
+          </div>
+
+          {/* ✅ Shared Users */}
           <div>
             <strong>Shared With:</strong>
             {ticket.shared_users.length > 0 ? (

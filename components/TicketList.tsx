@@ -86,7 +86,7 @@ const TicketList = () => {
 
     // Check if user is included in `shared_users`
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser.user_id === user?.user_id,
+      (sharedUser) => sharedUser.user_id === user?.user_id
     );
 
     // For Canvasser, only show tickets shared with them
@@ -148,7 +148,6 @@ const TicketList = () => {
                 <th style={{ textAlign: "left", padding: "12px" }}>
                   Description
                 </th>
-                <th style={{ textAlign: "left", padding: "12px" }}>Reviewer</th>
                 <th style={{ textAlign: "left", padding: "12px" }}>Status</th>
               </tr>
             </thead>
@@ -161,14 +160,6 @@ const TicketList = () => {
                     </Link>
                   </td>
                   <td>{ticket.ticket_item_description}</td>
-                  <td>
-                    {ticket.reviewers.length > 0
-                      ? ticket.reviewers
-                          .map((reviewer) => reviewer.reviewer_name)
-                          .join(", ")
-                      : "Not Yet Reviewed"}
-                  </td>
-
                   <td>
                     <Badge color={getStatusColor(ticket.ticket_status)}>
                       {ticket.ticket_status}

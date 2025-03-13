@@ -4,14 +4,18 @@ export type ReviewerType = {
   user_email: string;
 };
 
-export type TicketType = {
+export type TicketDetailsType = {
   ticket_id: string;
   ticket_item_description: string;
   ticket_status: string;
   ticket_created_by: string;
   ticket_quantity: number;
   ticket_specifications: string;
-  reviewer: string;
+  reviewers: {
+    reviewer_id: string;
+    reviewer_name: string;
+    approval_status: string;
+  }[];
   approval_status: string;
   ticket_date_created: string;
   ticket_last_updated: string;

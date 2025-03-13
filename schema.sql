@@ -336,3 +336,79 @@ AS $$
     t.ticket_created_by,
     ts.shared_user_id
 $$;
+
+--function for getting specific ticket
+create or replace function get_ticket_details(ticket_uuid uuid)
+returns table (
+  ticket_id uuid,
+  ticket_item_description text,
+  ticket_status text,
+  ticket_created_by uuid,
+  ticket_quantity integer,
+  ticket_specifications text,
+  approval_status text,
+  ticket_date_created timestamp,
+  ticket_last_updated timestamp,
+  shared_users json,
+  reviewers json
+)
+language sql
+as $$
+  select 
+    t.ticket_id,
+    t.ticket_item_description,
+    t.ticket_status,
+    t.ticket_created_by,
+    t.ticket_quantity,
+    t.ticket_specifications,
+
+    -- ✅ Get the overall approval status
+    coalesce(
+      (
+        select a.approval_review_status
+        from approval_table a
+        where a.approval_ticket_id = t.ticket_id
+        limit 1
+      ), 'PENDING'
+    ) as approval_status,
+
+    t.ticket_date_created,
+    t.ticket_last_updated,
+
+    -- ✅ Separate Subquery for shared_users
+    (
+      select coalesce(
+        json_agg(
+          json_build_object(
+            'user_id', u.user_id,
+            'user_full_name', u.user_full_name,
+            'user_email', u.user_email
+          )
+        ), '[]'
+      )
+      from ticket_shared_with_table ts
+      left join user_table u on u.user_id = ts.shared_user_id
+      where ts.ticket_id = t.ticket_id
+    )::json as shared_users,
+
+    -- ✅ Separate Subquery for reviewers
+    (
+      select coalesce(
+        json_agg(
+          json_build_object(
+            'reviewer_id', a.approval_reviewed_by,
+            'reviewer_name', u2.user_full_name,
+            'approval_status', a.approval_review_status
+          )
+        ), '[]'
+      )
+      from approval_table a
+      left join user_table u2 on u2.user_id = a.approval_reviewed_by
+      where a.approval_ticket_id = t.ticket_id
+    )::json as reviewers
+
+  from 
+    ticket_table t
+
+  where t.ticket_id = ticket_uuid
+$$;
