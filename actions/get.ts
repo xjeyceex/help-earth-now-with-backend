@@ -29,7 +29,7 @@ export const getCurrentUser = async () => {
   if (userError) {
     return {
       error: true,
-      message: "An unexpected error occurred whiel fetching user data.",
+      message: "An unexpected error occurred while fetching user data.",
       success: false,
     };
   }
@@ -125,6 +125,29 @@ export const getTickets = async (filters: {
   }));
 
   return tickets as TicketType[];
+};
+
+export const getAllMyTickets = async (filters: {
+  user_id: string;
+  user_role: string;
+  ticket_status?: string;
+  ticket_id?: string;
+}) => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("get_all_my_tickets", {
+    user_id: filters.user_id,
+    user_role: filters.user_role,
+    ticket_status: filters.ticket_status || null,
+    ticket_uuid: filters.ticket_id || null,
+  });
+
+  if (error) {
+    console.error(" Supabase Error:", error.message);
+    return { error: true, message: error.message };
+  }
+  console.log("data", data);
+  return data || [];
 };
 
 export const getReviewers = async () => {

@@ -243,11 +243,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger the function every time a user is created
-DROP TRIGGER IF EXISTS after_user_signup ON auth.users;
-CREATE TRIGGER after_user_signup
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.create_user();
-
 create or replace function get_dashboard_tickets(_user_id uuid)
 returns table (
   ticket_id uuid,
@@ -256,18 +251,92 @@ returns table (
 )
 language sql
 as $$
-  -- ✅ Admin can see all tickets
   select 
     t.ticket_id,
     t.ticket_status,
     t.ticket_item_description
-  from ticket_table t
+
+  from 
+    ticket_table t
+
+  -- ✅ Admin can see all tickets
   where _user_id is null 
 
-  -- ✅ If user_id is provided, fetch created tickets or shared tickets
+  -- ✅ For Canvasser: Show created tickets or shared tickets
   or t.ticket_created_by = _user_id
   or exists (
     select 1 from ticket_shared_with_table s
     where s.ticket_id = t.ticket_id and s.shared_user_id = _user_id
   )
+
+  -- ✅ For Reviewer: Show tickets assigned to them in approval table
+  or exists (
+    select 1 from approval_table a
+    where a.approval_ticket_id = t.ticket_id 
+    and a.approval_reviewed_by = _user_id
+  )
+$$;
+
+--function for all user tickets
+CREATE OR REPLACE FUNCTION get_all_my_tickets(
+  user_id UUID, 
+  ticket_status TEXT DEFAULT NULL, 
+  ticket_uuid UUID DEFAULT NULL
+)
+RETURNS TABLE (
+  ticket_id UUID,
+  ticket_status TEXT,
+  ticket_item_description TEXT,
+  ticket_created_by UUID,
+  shared_user_id UUID,
+  reviewers JSON
+)
+LANGUAGE sql
+AS $$
+  SELECT
+    t.ticket_id,
+    t.ticket_status,
+    t.ticket_item_description,
+    t.ticket_created_by,
+    ts.shared_user_id,
+
+    -- ✅ Group reviewers per ticket (Fixed version)
+    COALESCE(
+      JSON_AGG(
+        JSON_BUILD_OBJECT(
+          'reviewer_id', a.approval_reviewed_by,
+          'reviewer_name', a.user_full_name,
+          'approval_status', a.approval_review_status
+        )
+      ) FILTER (WHERE a.approval_reviewed_by IS NOT NULL), '[]'::JSON
+    ) AS reviewers
+
+  FROM
+    ticket_table t
+  LEFT JOIN
+    ticket_shared_with_table ts ON ts.ticket_id = t.ticket_id
+  LEFT JOIN
+    (
+      SELECT DISTINCT ON (a.approval_reviewed_by, a.approval_ticket_id)
+        a.approval_ticket_id,
+        a.approval_review_status,
+        a.approval_reviewed_by,
+        u.user_full_name
+      FROM 
+        approval_table a
+      LEFT JOIN 
+        user_table u ON u.user_id = a.approval_reviewed_by
+    ) a ON a.approval_ticket_id = t.ticket_id
+
+  WHERE
+    (t.ticket_created_by = user_id OR ts.shared_user_id = user_id)
+    AND (ticket_status IS NULL OR t.ticket_status = ticket_status)
+    AND (ticket_uuid IS NULL OR t.ticket_id = ticket_uuid)
+
+  GROUP BY
+    t.ticket_id,
+    t.ticket_status,
+    t.ticket_item_description,
+    t.ticket_created_by,
+    ts.shared_user_id
 $$;

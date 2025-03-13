@@ -25,5 +25,21 @@ export type TicketType = {
 export type DashboardTicketType = {
   ticket_id: string;
   ticket_status: string;
-  ticket_item_description: string; // ✅ Fixed field name
+  ticket_item_description: string;
+};
+
+export type MyTicketType = {
+  ticket_id: string;
+  ticket_status: string;
+  ticket_item_description: string;
+  ticket_created_by: string;
+  shared_user_id: string | null;
+  approval_status: string | null;
+  approval_reviewed_by: string | null;
+  reviewers: {
+    reviewer_id: string;
+    reviewer_name: string;
+    approval_status: string;
+  }[];
+  shared_users?: { user_id: string; user_full_name: string }[]; // ✅ Add this
 };

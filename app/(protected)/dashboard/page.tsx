@@ -96,7 +96,9 @@ const DashboardPage = () => {
 
       {/* ✅ Recent Tickets Section */}
       <Title order={2} mt="xl">
-        {isAdmin ? "Recent Tickets" : "Your Recent Tickets"}
+        {user?.user_role === "ADMIN" && "Recent Tickets"}
+        {user?.user_role === "CANVASSER" && "Your Open Tickets"}
+        {user?.user_role === "REVIEWER" && "Tickets to Review"}
       </Title>
 
       {loading ? (

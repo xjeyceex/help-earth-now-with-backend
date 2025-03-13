@@ -1,6 +1,6 @@
-import { getTickets } from "@/actions/get";
+import { getAllMyTickets } from "@/actions/get";
 import { useUserStore } from "@/stores/userStore";
-import { TicketType } from "@/utils/types";
+import { MyTicketType } from "@/utils/types";
 import {
   Badge,
   Button,
@@ -37,41 +37,38 @@ const getStatusColor = (status: string) => {
 const TicketList = () => {
   const { user } = useUserStore();
   const [filter, setFilter] = useState<string>("ALL");
-  const [tickets, setTickets] = useState<TicketType[]>([]);
+  const [tickets, setTickets] = useState<MyTicketType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
-
-  useEffect(() => {
-    if (user) {
-      fetchTickets();
-    }
-  }, [user]);
-
+  // ✅ Fetch Tickets
   const fetchTickets = async () => {
+    if (!user?.user_id || !user?.user_role) return;
+
     setLoading(true);
-    const fetchedTickets = await getTickets({ user_role: user?.user_role });
+
+    const fetchedTickets = await getAllMyTickets({
+      user_id: user.user_id,
+      user_role: user.user_role,
+    });
+
     if (!Array.isArray(fetchedTickets)) {
-      console.error(fetchedTickets.message); // Log the error
+      console.error("Supabase Error:", fetchedTickets.message);
+      setTickets([]);
     } else {
-      setTickets(fetchedTickets); // ✅ Only update state if it's a valid array
+      setTickets(fetchedTickets);
     }
 
     setLoading(false);
   };
 
-  if (!user || loading) {
-    return (
-      <Container size="md" py="xl">
-        <Title ta="center">
-          {loading ? "Loading Tickets..." : "No User Found"}
-        </Title>
-      </Container>
-    );
-  }
+  // ✅ Fetch when user is available
+  useEffect(() => {
+    fetchTickets();
+  }, [user?.user_id]);
 
-  // Define available filters based on user role
+  // ✅ Filter Options based on User Role
   const filterOptions =
-    user.user_role === "CANVASSER"
+    user?.user_role === "CANVASSER"
       ? [
           { value: "ALL", label: "My Tickets" },
           { value: "PENDING", label: "Pending" },
@@ -83,24 +80,41 @@ const TicketList = () => {
           { value: "APPROVED", label: "Approved" },
         ];
 
+  // ✅ Filter Tickets based on User Role and Status
   const filteredTickets = tickets.filter((ticket) => {
-    if (
-      user.user_role === "CANVASSER" &&
-      !ticket.shared_users.some(
-        (sharedUser) => sharedUser.user_full_name === user.user_full_name,
-      )
-    ) {
+    const isCanvasser = user?.user_role === "CANVASSER";
+
+    // Check if user is included in `shared_users`
+    const isSharedWithUser = ticket.shared_users?.some(
+      (sharedUser) => sharedUser.user_id === user?.user_id
+    );
+
+    // For Canvasser, only show tickets shared with them
+    if (isCanvasser && !isSharedWithUser) {
       return false;
     }
 
+    // Filter by status
     if (filter === "PENDING" && ticket.ticket_status !== "PENDING") {
       return false;
     }
     if (filter === "APPROVED" && ticket.ticket_status !== "APPROVED") {
       return false;
     }
+
     return true;
   });
+
+  // ✅ Loading State
+  if (!user || loading) {
+    return (
+      <Container size="md" py="xl">
+        <Title ta="center">
+          {loading ? "Loading Tickets..." : "No User Found"}
+        </Title>
+      </Container>
+    );
+  }
 
   return (
     <Container size="md" py="xl">
@@ -123,36 +137,52 @@ const TicketList = () => {
           </Flex>
         </Flex>
 
-        <Table mt="md" striped highlightOnHover>
-          <thead>
-            <tr>
-              <th style={{ textAlign: "left", padding: "12px" }}>Ticket ID</th>
-              <th style={{ textAlign: "left", padding: "12px" }}>
-                Description
-              </th>
-              <th style={{ textAlign: "left", padding: "12px" }}>Reviewer</th>
-              <th style={{ textAlign: "left", padding: "12px" }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTickets.map((ticket) => (
-              <tr key={ticket.ticket_id}>
-                <td>
-                  <Link href={`/tickets/${ticket.ticket_id}`}>
-                    <Button variant="subtle">{ticket.ticket_id}</Button>
-                  </Link>
-                </td>
-                <td>{ticket.ticket_item_description}</td>
-                <td>{ticket.reviewer}</td>
-                <td>
-                  <Badge color={getStatusColor(ticket.ticket_status)}>
-                    {ticket.ticket_status}
-                  </Badge>
-                </td>
+        {/* ✅ Show Tickets */}
+        {filteredTickets.length > 0 ? (
+          <Table mt="md" striped highlightOnHover>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left", padding: "12px" }}>
+                  Ticket ID
+                </th>
+                <th style={{ textAlign: "left", padding: "12px" }}>
+                  Description
+                </th>
+                <th style={{ textAlign: "left", padding: "12px" }}>Reviewer</th>
+                <th style={{ textAlign: "left", padding: "12px" }}>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {filteredTickets.map((ticket) => (
+                <tr key={ticket.ticket_id}>
+                  <td>
+                    <Link href={`/tickets/${ticket.ticket_id}`}>
+                      <Button variant="subtle">{ticket.ticket_id}</Button>
+                    </Link>
+                  </td>
+                  <td>{ticket.ticket_item_description}</td>
+                  <td>
+                    {ticket.reviewers.length > 0
+                      ? ticket.reviewers
+                          .map((reviewer) => reviewer.reviewer_name)
+                          .join(", ")
+                      : "Not Yet Reviewed"}
+                  </td>
+
+                  <td>
+                    <Badge color={getStatusColor(ticket.ticket_status)}>
+                      {ticket.ticket_status}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <Title ta="center" mt="md">
+            No Tickets Found
+          </Title>
+        )}
       </Card>
     </Container>
   );
