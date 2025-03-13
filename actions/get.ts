@@ -43,25 +43,32 @@ export const getCurrentUser = async () => {
 export const getTickets = async (filters: {
   user_role?: string;
   ticket_status?: string;
-  assigned_to?: string;
+  ticket_id?: string;
+  shared_with?: string;
 }) => {
   const supabase = await createClient();
 
   let query = supabase.from("ticket_table").select(
     `*, 
-      assigned_user:ticket_assigned_to(user_id, user_full_name, user_email), 
-      creator_user:ticket_created_by(user_id, user_full_name, user_email)`
-  ); // ✅ Corrected table joins
+      creator_user:ticket_created_by(user_id, user_full_name, user_email),
+      approval:approval_table(approval_id, approval_review_status, reviewer:user_table(user_id, user_full_name, user_email)),
+      shared_users:ticket_shared_with_table(user_table!ticket_shared_with_table_user_id_fkey(user_id, user_full_name, user_email))`
+  );
 
-  // Apply user role filtering only if the user is NOT an admin
-  if (filters.user_role && filters.user_role !== "ADMIN") {
-    query = query.eq("user_role", filters.user_role);
-  }
+  // Apply filters
   if (filters.ticket_status) {
     query = query.eq("ticket_status", filters.ticket_status);
   }
-  if (filters.assigned_to) {
-    query = query.eq("ticket_assigned_to", filters.assigned_to);
+
+  if (filters.ticket_id) {
+    query = query.eq("ticket_id", filters.ticket_id);
+  }
+
+  if (filters.shared_with) {
+    query = query.contains(
+      "shared_users->user_table->user_id",
+      filters.shared_with
+    );
   }
 
   const { data, error } = await query;
@@ -74,11 +81,32 @@ export const getTickets = async (filters: {
     };
   }
 
-  // Replace `ticket_assigned_to` and `ticket_created_by` UUIDs with user details
-  const tickets = data.map((ticket) => ({
+  const tickets: TicketType[] = data.map((ticket) => ({
     ...ticket,
-    ticket_assigned_to: ticket.assigned_user?.user_full_name || "Unassigned",
     ticket_created_by: ticket.creator_user?.user_full_name || "Unknown",
+    reviewer:
+      Array.isArray(ticket.approval) && ticket.approval.length > 0
+        ? ticket.approval[0]?.reviewer?.user_full_name || "Reviewer Not Found"
+        : "Reviewer Not Found",
+    approval_status:
+      Array.isArray(ticket.approval) && ticket.approval.length > 0
+        ? ticket.approval[0]?.approval_review_status || "Pending"
+        : "Pending",
+    shared_users: Array.isArray(ticket.shared_users)
+      ? ticket.shared_users.map(
+          (u: {
+            user_table: {
+              user_id: string;
+              user_full_name?: string;
+              user_email?: string;
+            };
+          }) => ({
+            user_id: u.user_table.user_id,
+            user_full_name: u.user_table.user_full_name ?? "Unknown",
+            user_email: u.user_table.user_email ?? "No Email",
+          })
+        )
+      : [],
   }));
 
   return tickets as TicketType[];

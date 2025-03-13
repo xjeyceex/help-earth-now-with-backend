@@ -4,13 +4,14 @@ ALTER TABLE IF EXISTS ticket_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS canvass_form_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS approval_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ticket_status_history_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.ticket_shared_with_table ENABLE ROW LEVEL SECURITY;
 
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
     'FOR CANVASS', 'WORK IN PROGRESS', 'FOR REVIEW OF SUBMISSIONS',
     'IN REVIEW', 'WAITING FOR PURCHASER', 'FOR APPROVAL', 'DONE', 'DECLINED', 'CANCELED'
 );
-CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED');
+CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING');
 CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CANVASSER', 'REVIEWER');
 
 -- USER TABLE (Manages User Roles)
@@ -60,23 +61,85 @@ CREATE TABLE public.ticket_table (
     ticket_notes TEXT,
     ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
     ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-    ticket_assigned_to UUID REFERENCES public.user_table(user_id) ON DELETE SET NULL, 
     ticket_date_created TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     ticket_last_updated TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- RLS for Ticket Table
-DROP POLICY IF EXISTS "Users can view their own tickets" ON ticket_table;
-CREATE POLICY "Users can view their own tickets" ON ticket_table
-    FOR SELECT USING (auth.uid() = ticket_created_by OR auth.uid() = ticket_assigned_to);
 
+
+-- POLICY: Users can view tickets they created or are shared with
+DROP POLICY IF EXISTS "Users can view their own and shared tickets" ON ticket_table;
+CREATE POLICY "Users can view their own and shared tickets" ON ticket_table
+    FOR SELECT USING (
+        auth.uid() = ticket_created_by 
+        OR auth.uid() IN (SELECT user_id FROM ticket_shared_with_table WHERE ticket_id = ticket_table.ticket_id)
+    );
+
+-- POLICY: Canvassers can create tickets
 DROP POLICY IF EXISTS "Canvassers can create tickets" ON ticket_table;
 CREATE POLICY "Canvassers can create tickets" ON ticket_table
-    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'CANVASSER'));
+    FOR INSERT WITH CHECK (
+        auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'CANVASSER')
+    );
 
-DROP POLICY IF EXISTS "Assigned users can update tickets" ON ticket_table;
-CREATE POLICY "Assigned users can update tickets" ON ticket_table
-    FOR UPDATE USING (auth.uid() = ticket_assigned_to);
+-- POLICY: Users can update tickets if they are the creator or shared
+DROP POLICY IF EXISTS "Users can update tickets if shared" ON ticket_table;
+CREATE POLICY "Users can update tickets if shared" ON ticket_table
+    FOR UPDATE USING (
+        auth.uid() = ticket_created_by 
+        OR auth.uid() IN (SELECT user_id FROM ticket_shared_with_table WHERE ticket_id = ticket_table.ticket_id)
+    );
+
+-- POLICY: Only the ticket creator can delete a ticket
+DROP POLICY IF EXISTS "Only ticket creator can delete" ON ticket_table;
+CREATE POLICY "Only ticket creator can delete" ON ticket_table
+    FOR DELETE USING (
+        auth.uid() = ticket_created_by
+    );
+
+-- SHARED TICKET TABLE
+DROP TABLE IF EXISTS ticket_shared_with_table;
+CREATE TABLE public.ticket_shared_with_table (
+    ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
+    assigned_at TIMESTAMPTZ DEFAULT NOW(),  -- Tracks assignment time
+    assigned_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE, -- Who assigned this user
+    PRIMARY KEY (ticket_id, user_id) -- Ensures a user is not added twice for the same ticket
+);
+
+-- POLICY: Users can view tickets they are shared with
+DROP POLICY IF EXISTS "Users can view shared tickets" ON ticket_shared_with_table;
+CREATE POLICY "Users can view shared tickets" ON ticket_shared_with_table
+    FOR SELECT USING (
+        auth.uid() = user_id 
+        OR auth.uid() IN (SELECT ticket_created_by FROM ticket_table WHERE ticket_id = ticket_shared_with_table.ticket_id)
+    );
+
+-- POLICY: Users can add any user to a shared ticket if they are the ticket creator or already shared
+DROP POLICY IF EXISTS "Users can share tickets with others" ON ticket_shared_with_table;
+CREATE POLICY "Users can share tickets with others" ON ticket_shared_with_table
+    FOR INSERT WITH CHECK (
+        auth.uid() IN (
+            SELECT ticket_created_by FROM ticket_table 
+            WHERE ticket_id = ticket_shared_with_table.ticket_id
+        ) 
+        OR auth.uid() IN (
+            SELECT user_id FROM ticket_shared_with_table 
+            WHERE ticket_id = ticket_shared_with_table.ticket_id
+        )
+    );
+
+-- POLICY: Only the ticket creator or the shared user can remove a shared user
+DROP POLICY IF EXISTS "Users can remove shared users" ON ticket_shared_with_table;
+CREATE POLICY "Users can remove shared users" ON ticket_shared_with_table
+    FOR DELETE USING (
+        auth.uid() = user_id 
+        OR auth.uid() IN (
+            SELECT ticket_created_by FROM ticket_table 
+            WHERE ticket_id = ticket_shared_with_table.ticket_id
+        )
+    );
+
 
 -- CANVASS FORM TABLE (Stores Supplier Quotes & Submissions)
 DROP TABLE IF EXISTS canvass_form_table CASCADE;
@@ -128,9 +191,16 @@ CREATE TABLE public.ticket_status_history_table (
 );
 
 -- RLS for Ticket Status History Table
-DROP POLICY IF EXISTS "Users can view ticket status history of their assigned tickets" ON ticket_status_history_table;
-CREATE POLICY "Users can view ticket status history of their assigned tickets" ON ticket_status_history_table
-    FOR SELECT USING (auth.uid() IN (SELECT ticket_assigned_to FROM ticket_table WHERE ticket_table.ticket_id = ticket_status_history_table.ticket_status_history_ticket_id));
+DROP POLICY IF EXISTS "Users can view ticket status history of their shared tickets" ON ticket_status_history_table;
+CREATE POLICY "Users can view ticket status history of their shared tickets" 
+ON ticket_status_history_table
+FOR SELECT USING (
+    auth.uid() IN (
+        SELECT user_id 
+        FROM ticket_shared_with_table 
+        WHERE ticket_shared_with_table.ticket_id = ticket_status_history_table.ticket_status_history_ticket_id
+    )
+);
 
 -- GRANT Permissions (Ensure Permissions Are Set)
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_table TO authenticated;

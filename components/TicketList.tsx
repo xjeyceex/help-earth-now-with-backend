@@ -9,7 +9,6 @@ import {
   Flex,
   Select,
   Table,
-  Text,
   Title,
 } from "@mantine/core";
 import Link from "next/link";
@@ -51,12 +50,11 @@ const TicketList = () => {
   const fetchTickets = async () => {
     setLoading(true);
     const fetchedTickets = await getTickets({ user_role: user?.user_role });
-
-    // ✅ Fix TypeScript Error: Check if fetchedTickets is an error object before using it
-    if ("error" in fetchedTickets) {
+    console.log("fetchedTickets", fetchedTickets);
+    if (!Array.isArray(fetchedTickets)) {
       console.error(fetchedTickets.message); // Log the error
     } else {
-      setTickets(fetchedTickets); // ✅ Only set tickets if there’s no error
+      setTickets(fetchedTickets); // ✅ Only update state if it's a valid array
     }
 
     setLoading(false);
@@ -82,7 +80,6 @@ const TicketList = () => {
         ]
       : [
           { value: "ALL", label: "All Tickets" },
-          { value: "MINE", label: "Assigned to Me" },
           { value: "PENDING", label: "Pending" },
           { value: "APPROVED", label: "Approved" },
         ];
@@ -90,16 +87,13 @@ const TicketList = () => {
   const filteredTickets = tickets.filter((ticket) => {
     if (
       user.user_role === "CANVASSER" &&
-      ticket.ticket_assigned_to !== user.user_full_name
+      !ticket.shared_users.some(
+        (sharedUser) => sharedUser.user_full_name === user.user_full_name
+      )
     ) {
       return false;
     }
-    if (
-      filter === "MINE" &&
-      ticket.ticket_assigned_to !== user.user_full_name
-    ) {
-      return false;
-    }
+
     if (filter === "PENDING" && ticket.ticket_status !== "PENDING") {
       return false;
     }
@@ -137,63 +131,25 @@ const TicketList = () => {
               <th style={{ textAlign: "left", padding: "12px" }}>
                 Description
               </th>
-              <th style={{ textAlign: "left", padding: "12px" }}>
-                Assigned To
-              </th>
+              <th style={{ textAlign: "left", padding: "12px" }}>Reviewer</th>
               <th style={{ textAlign: "left", padding: "12px" }}>Status</th>
-              <th style={{ textAlign: "left", padding: "12px" }}>Created By</th>
-              <th style={{ textAlign: "left", padding: "12px" }}>Quantity</th>
-              <th style={{ textAlign: "left", padding: "12px" }}>
-                Specifications
-              </th>
             </tr>
           </thead>
           <tbody>
             {filteredTickets.map((ticket) => (
               <tr key={ticket.ticket_id}>
-                <Table.Td px="md" py={12} style={{ verticalAlign: "middle" }}>
-                  <Link href={`/tickets/${ticket.ticket_id}`} legacyBehavior>
-                    <Text
-                      component="a"
-                      style={{
-                        textDecoration: "none",
-                        color: "inherit",
-                        transition:
-                          "color 0.2s ease-in-out, text-decoration 0.2s ease-in-out",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "blue";
-                        e.currentTarget.style.textDecoration = "underline";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "inherit";
-                        e.currentTarget.style.textDecoration = "none";
-                      }}
-                    >
-                      {ticket.ticket_id}
-                    </Text>
+                <td>
+                  <Link href={`/tickets/${ticket.ticket_id}`}>
+                    <Button variant="subtle">{ticket.ticket_id}</Button>
                   </Link>
-                </Table.Td>
-                <Table.Td px="md" py={12} style={{ verticalAlign: "left" }}>
-                  <Text size="sm">{ticket.ticket_item_description}</Text>
-                </Table.Td>
-                <Table.Td px="md" py={12} style={{ verticalAlign: "left" }}>
-                  <Text size="sm">{ticket.ticket_assigned_to}</Text>
-                </Table.Td>
-                <Table.Td px="md" py={12} style={{ verticalAlign: "left" }}>
-                  <Badge color={getStatusColor(ticket.ticket_status)} size="md">
+                </td>
+                <td>{ticket.ticket_item_description}</td>
+                <td>{ticket.reviewer}</td>
+                <td>
+                  <Badge color={getStatusColor(ticket.ticket_status)}>
                     {ticket.ticket_status}
                   </Badge>
-                </Table.Td>
-                <Table.Td px="md" py={12} style={{ verticalAlign: "left" }}>
-                  <Text size="sm">{ticket.ticket_created_by}</Text>
-                </Table.Td>
-                <Table.Td px="md" py={12} style={{ verticalAlign: "left" }}>
-                  <Text size="sm">{ticket.ticket_quantity}</Text>
-                </Table.Td>
-                <Table.Td px="md" py={12} style={{ verticalAlign: "left" }}>
-                  <Text size="sm">{ticket.ticket_specifications}</Text>
-                </Table.Td>
+                </td>
               </tr>
             ))}
           </tbody>

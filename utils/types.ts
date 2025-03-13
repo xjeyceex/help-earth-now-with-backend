@@ -7,9 +7,17 @@ export type ReviewerType = {
 export type TicketType = {
   ticket_id: string;
   ticket_item_description: string;
-  ticket_assigned_to: string;
   ticket_status: string;
   ticket_created_by: string;
   ticket_quantity: number;
   ticket_specifications: string;
+  reviewer: string;
+  approval_status: string;
+  ticket_date_created: string;
+  ticket_last_updated: string;
+  shared_users: {
+    user_id: string;
+    user_full_name: string;
+    user_email: string;
+  }[];
 };
