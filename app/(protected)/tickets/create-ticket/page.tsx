@@ -34,13 +34,8 @@ import {
 import { getReviewers } from "@/actions/get";
 import { createTicket } from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
+import { ReviewerType } from "@/utils/types";
 import { TicketFormSchema } from "@/utils/zod/schema";
-
-export type ReviewerType = {
-  user_id: string;
-  user_full_name: string;
-  user_email: string;
-};
 
 const CreateTicketPage = () => {
   const router = useRouter();
@@ -53,7 +48,7 @@ const CreateTicketPage = () => {
   const [noteValue, setNoteValue] = useState<string>("");
   const [reviewerOptions, setReviewerOptions] = useState<ReviewerType[]>([]);
   const [selectedReviewers, setSelectedReviewers] = useState<ReviewerType[]>(
-    [],
+    []
   );
 
   const form = useForm<z.infer<typeof TicketFormSchema>>({
@@ -72,8 +67,8 @@ const CreateTicketPage = () => {
     const filteredReviewers = reviewerOptions.filter(
       (option) =>
         !selectedReviewers.some(
-          (reviewer) => reviewer.user_id === option.user_id,
-        ),
+          (reviewer) => reviewer.user_id === option.user_id
+        )
     );
 
     return filteredReviewers.map((reviewer) => ({
@@ -86,7 +81,7 @@ const CreateTicketPage = () => {
     if (!value) return;
 
     const selectedOption = reviewerOptions.find(
-      (option) => option.user_id === value,
+      (option) => option.user_id === value
     );
     if (
       selectedOption &&
@@ -110,12 +105,12 @@ const CreateTicketPage = () => {
 
   const removeReviewer = (id: string) => {
     const updatedReviewers = selectedReviewers.filter(
-      (reviewer) => reviewer.user_id !== id,
+      (reviewer) => reviewer.user_id !== id
     );
     setSelectedReviewers(updatedReviewers);
     form.setValue(
       "ticketReviewer",
-      updatedReviewers.map((r) => r.user_id),
+      updatedReviewers.map((r) => r.user_id)
     );
   };
 
