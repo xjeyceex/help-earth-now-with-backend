@@ -66,47 +66,61 @@ CREATE TABLE public.ticket_table (
     ticket_last_updated TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- SHARED TICKET TABLE
+-- ✅ DROP TABLE IF EXISTS
 DROP TABLE IF EXISTS ticket_shared_with_table;
+
+-- ✅ CREATE SHARED TICKET TABLE
 CREATE TABLE public.ticket_shared_with_table (
     ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
+    shared_user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     assigned_at TIMESTAMPTZ DEFAULT NOW(),  -- Tracks assignment time
-    assigned_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE, -- Who assigned this user
-    PRIMARY KEY (ticket_id, user_id) -- Ensures a user is not added twice for the same ticket
+    assigned_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
+    PRIMARY KEY (ticket_id, shared_user_id) -- Ensures a user is not added twice for the same ticket
 );
 
--- POLICY: Users can view tickets they created or are shared with
+-- ✅ POLICY: Users can view tickets they created or are shared with
 DROP POLICY IF EXISTS "Users can view their own and shared tickets" ON ticket_table;
+
 CREATE POLICY "Users can view their own and shared tickets" ON ticket_table
-    FOR SELECT USING (
-        auth.uid() = ticket_created_by 
-        OR auth.uid() IN (SELECT user_id FROM ticket_shared_with_table WHERE ticket_id = ticket_table.ticket_id)
-    );
+FOR SELECT USING (
+  auth.uid() = ticket_created_by 
+  OR auth.uid() IN (
+    SELECT shared_user_id FROM ticket_shared_with_table 
+    WHERE ticket_id = ticket_table.ticket_id
+  )
+);
 
--- POLICY: Canvassers can create tickets
+-- ✅ POLICY: Canvassers can create tickets
 DROP POLICY IF EXISTS "Canvassers can create tickets" ON ticket_table;
+
 CREATE POLICY "Canvassers can create tickets" ON ticket_table
-    FOR INSERT WITH CHECK (
-        auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'CANVASSER')
-    );
+FOR INSERT WITH CHECK (
+  auth.uid() IN (
+    SELECT user_id FROM user_table 
+    WHERE user_role = 'CANVASSER'
+  )
+);
 
--- POLICY: Users can update tickets if they are the creator or shared
+-- ✅ POLICY: Users can update tickets if they are the creator or shared
 DROP POLICY IF EXISTS "Users can update tickets if shared" ON ticket_table;
+
 CREATE POLICY "Users can update tickets if shared" ON ticket_table
-    FOR UPDATE USING (
-        auth.uid() = ticket_created_by 
-        OR auth.uid() IN (SELECT user_id FROM ticket_shared_with_table WHERE ticket_id = ticket_table.ticket_id)
-    );
+FOR UPDATE USING (
+  auth.uid() = ticket_created_by 
+  OR auth.uid() IN (
+    SELECT shared_user_id FROM ticket_shared_with_table 
+    WHERE ticket_id = ticket_table.ticket_id
+  )
+);
 
--- POLICY: Only the ticket creator can delete a ticket
+
+-- ✅ POLICY: Only the ticket creator can delete a ticket
 DROP POLICY IF EXISTS "Only ticket creator can delete" ON ticket_table;
+
 CREATE POLICY "Only ticket creator can delete" ON ticket_table
-    FOR DELETE USING (
-        auth.uid() = ticket_created_by
-    );
-
-
+FOR DELETE USING (
+  auth.uid() = ticket_created_by
+);
 
 -- POLICY: Users can view tickets they are shared with
 DROP POLICY IF EXISTS "Users can view shared tickets" ON ticket_shared_with_table;
@@ -233,3 +247,27 @@ DROP TRIGGER IF EXISTS after_user_signup ON auth.users;
 CREATE TRIGGER after_user_signup
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.create_user();
+
+create or replace function get_dashboard_tickets(_user_id uuid)
+returns table (
+  ticket_id uuid,
+  ticket_status text,
+  ticket_item_description text
+)
+language sql
+as $$
+  -- ✅ Admin can see all tickets
+  select 
+    t.ticket_id,
+    t.ticket_status,
+    t.ticket_item_description
+  from ticket_table t
+  where _user_id is null 
+
+  -- ✅ If user_id is provided, fetch created tickets or shared tickets
+  or t.ticket_created_by = _user_id
+  or exists (
+    select 1 from ticket_shared_with_table s
+    where s.ticket_id = t.ticket_id and s.shared_user_id = _user_id
+  )
+$$;

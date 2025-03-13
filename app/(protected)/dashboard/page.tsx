@@ -21,7 +21,6 @@ const DashboardPage = () => {
   const [tickets, setTickets] = useState<DashboardTicketType[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const userFullName = user?.user_full_name ?? "";
   const isAdmin = user?.user_role === "ADMIN";
 
   const countUserTicketsByStatus = (
@@ -46,22 +45,23 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const fetchTickets = async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      const filters = isAdmin ? {} : { shared_with: userFullName };
-      const data = await getDashboardTickets(filters);
+        const data = await getDashboardTickets(
+          isAdmin ? undefined : user?.user_id
+        );
 
-      if (Array.isArray(data)) {
-        setTickets(data as DashboardTicketType[]); // ✅ Fixed TypeScript Error
-      } else {
-        console.error("Error fetching tickets:", data?.message);
+        setTickets(data ?? []);
+      } catch (error) {
+        console.error(" Unexpected error:", error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchTickets();
-  }, [isAdmin, userFullName]);
+  }, [isAdmin, user?.user_id]);
 
   return (
     <Container size="lg" py="xl">

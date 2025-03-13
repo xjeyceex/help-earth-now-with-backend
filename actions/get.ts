@@ -40,32 +40,18 @@ export const getCurrentUser = async () => {
   };
 };
 
-export const getDashboardTickets = async (filters: {
-  shared_with?: string;
-}) => {
+export const getDashboardTickets = async (user_id?: string) => {
   const supabase = await createClient();
 
-  let query = supabase
-    .from("ticket_table")
-    .select("ticket_id, ticket_status, ticket_item_description");
-
-  if (filters.shared_with) {
-    query = query.contains(
-      "shared_users->user_table->user_id",
-      filters.shared_with
-    );
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await supabase.rpc("get_dashboard_tickets", {
+    _user_id: user_id || null,
+  });
 
   if (error) {
-    console.error("Error fetching tickets:", error);
-    return {
-      error: true,
-      message: "An unexpected error occurred while fetching tickets.",
-    };
+    console.error("Supabase Error:", error.message);
+    return [];
   }
-  console.log("data", data);
+
   return data as DashboardTicketType[];
 };
 
