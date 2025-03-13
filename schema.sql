@@ -148,13 +148,12 @@ CREATE POLICY "Users can share tickets with others" ON ticket_shared_with_table
 DROP POLICY IF EXISTS "Users can remove shared users" ON ticket_shared_with_table;
 CREATE POLICY "Users can remove shared users" ON ticket_shared_with_table
     FOR DELETE USING (
-        auth.uid() = user_id 
+        auth.uid() = shared_user_id 
         OR auth.uid() IN (
             SELECT ticket_created_by FROM ticket_table 
             WHERE ticket_id = ticket_shared_with_table.ticket_id
         )
     );
-
 
 -- CANVASS FORM TABLE (Stores Supplier Quotes & Submissions)
 DROP TABLE IF EXISTS canvass_form_table CASCADE;
