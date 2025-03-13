@@ -126,7 +126,7 @@ FOR DELETE USING (
 DROP POLICY IF EXISTS "Users can view shared tickets" ON ticket_shared_with_table;
 CREATE POLICY "Users can view shared tickets" ON ticket_shared_with_table
     FOR SELECT USING (
-        auth.uid() = user_id 
+        auth.uid() = shared_user_id 
         OR auth.uid() IN (SELECT ticket_created_by FROM ticket_table WHERE ticket_id = ticket_shared_with_table.ticket_id)
     );
 
