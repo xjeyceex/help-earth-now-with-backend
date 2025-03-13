@@ -89,7 +89,7 @@ export const getAllMyTickets = async (filters: {
     console.error(" Supabase Error:", error.message);
     return { error: true, message: error.message };
   }
-  console.log("data", data);
+
   return data || [];
 };
 
