@@ -17,6 +17,7 @@ export type TicketDetailsType = {
   ticket_created_by: string;
   ticket_quantity: number;
   ticket_specifications: string;
+  ticket_created_by_name: string;
   reviewers: {
     reviewer_id: string;
     reviewer_name: string;

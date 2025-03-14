@@ -355,12 +355,14 @@ AS $$
 $$;
 
 --function for getting specific ticket
+drop function if exists get_ticket_details(uuid);
 create or replace function get_ticket_details(ticket_uuid uuid)
 returns table (
   ticket_id uuid,
   ticket_item_description text,
   ticket_status text,
   ticket_created_by uuid,
+  ticket_created_by_name text, -- ✅ Added this
   ticket_quantity integer,
   ticket_specifications text,
   approval_status text,
@@ -376,10 +378,14 @@ as $$
     t.ticket_item_description,
     t.ticket_status,
     t.ticket_created_by,
+
+    -- ✅ Get creator name
+    u.user_full_name as ticket_created_by_name,
+
     t.ticket_quantity,
     t.ticket_specifications,
 
-    -- Get the overall approval status
+    -- ✅ Get the overall approval status
     coalesce(
       (
         select a.approval_review_status
@@ -392,45 +398,49 @@ as $$
     t.ticket_date_created,
     t.ticket_last_updated,
 
-    -- Separate Subquery for shared_users
+    -- ✅ Separate Subquery for shared_users
     (
       select coalesce(
         json_agg(
           json_build_object(
-            'user_id', u.user_id,
-            'user_full_name', u.user_full_name,
-            'user_email', u.user_email
+            'user_id', u2.user_id,
+            'user_full_name', u2.user_full_name,
+            'user_email', u2.user_email
           )
         ), '[]'
       )
       from ticket_shared_with_table ts
-      left join user_table u on u.user_id = ts.shared_user_id
+      left join user_table u2 on u2.user_id = ts.shared_user_id
       where ts.ticket_id = t.ticket_id
     )::json as shared_users,
 
-    -- Separate Subquery for reviewers
+    -- ✅ Separate Subquery for reviewers
     (
       select coalesce(
         json_agg(
           json_build_object(
             'reviewer_id', a.approval_reviewed_by,
-            'reviewer_name', u2.user_full_name,
+            'reviewer_name', u3.user_full_name,
             'approval_status', a.approval_review_status
           )
         ), '[]'
       )
       from approval_table a
-      left join user_table u2 on u2.user_id = a.approval_reviewed_by
+      left join user_table u3 on u3.user_id = a.approval_reviewed_by
       where a.approval_ticket_id = t.ticket_id
     )::json as reviewers
 
   from 
     ticket_table t
 
+  -- ✅ Left Join to get the creator's name
+  left join user_table u on u.user_id = t.ticket_created_by
+
   where t.ticket_id = ticket_uuid
 $$;
 
 -- share ticket function
+drop function if exists share_ticket(uuid, uuid, uuid);
 create or replace function share_ticket(
   _ticket_id uuid,
   _shared_user_id uuid,
