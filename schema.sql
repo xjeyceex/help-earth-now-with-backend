@@ -243,6 +243,12 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger the function every time a user is created
+DROP TRIGGER IF EXISTS after_user_signup ON auth.users;
+CREATE TRIGGER after_user_signup
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.create_user();
+
+-- Trigger the function every time a user is created
 create or replace function get_dashboard_tickets(_user_id uuid)
 returns table (
   ticket_id uuid,

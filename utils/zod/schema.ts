@@ -10,3 +10,15 @@ export const TicketFormSchema = z.object({
     .array(z.string())
     .min(1, "At least one reviewer is required"),
 });
+
+export const CanvassFormSchema = z.object({
+  supplierName: z.string().min(1, "Supplier name is required"),
+  quotationPrice: z.number().min(0.01, "Price must be greater than 0"),
+  quotationTerms: z.string().min(1, "Terms are required"),
+  canvassSheet: z
+    .array(z.instanceof(File))
+    .nonempty("Canvass sheet is required"),
+  quotationAttachment: z
+    .array(z.instanceof(File))
+    .nonempty("Quotation attachment is required"),
+});
