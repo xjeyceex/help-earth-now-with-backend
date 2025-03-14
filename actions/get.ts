@@ -216,7 +216,7 @@ export const getCanvassDetails = async ({
         canvass_attachment_url,
         canvass_attachment_created_at
       )
-    `
+    `,
     )
     .eq("canvass_form_ticket_id", ticketId);
 

@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -140,7 +140,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string
+  newPassword: string,
 ) => {
   const supabase = await createClient();
 
@@ -180,7 +180,7 @@ export const changePassword = async (
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string
+  userId: string,
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -235,7 +235,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/"
+    "avatars/",
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -373,7 +373,7 @@ export const createCanvass = async ({
 
     if (canvassFormError) {
       throw new Error(
-        `Failed to insert canvass form: ${canvassFormError.message}`
+        `Failed to insert canvass form: ${canvassFormError.message}`,
       );
     }
 
@@ -402,7 +402,7 @@ export const createCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`
+        `Failed to insert attachments: ${attachmentsError.message}`,
       );
     }
 

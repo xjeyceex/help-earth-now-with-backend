@@ -32,7 +32,7 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
       ],
       maxSize = 5 * 1024 * 1024,
     },
-    ref
+    ref,
   ) => {
     const [files, setFiles] = useState<FileWithPath[]>([]);
 
@@ -184,7 +184,7 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 DropzoneFileInput.displayName = "DropzoneFileInput";

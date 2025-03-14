@@ -80,7 +80,7 @@ const TicketList = () => {
 
     // Check if user is included in `shared_users`
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser.user_id === user?.user_id
+      (sharedUser) => sharedUser.user_id === user?.user_id,
     );
 
     // For Canvasser, only show tickets shared with them
