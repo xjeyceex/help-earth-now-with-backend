@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "@/actions/get";
 import { User, useUserStore } from "@/stores/userStore";
-import { Center, Loader } from "@mantine/core";
+import { Loader } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -33,9 +33,21 @@ const AuthCallback = () => {
 
   if (loading) {
     return (
-      <Center style={{ height: "100vh" }}>
-        <Loader size="lg" color="blue" />
-      </Center>
+      <div
+        style={{
+          height: "100dvh",
+          width: "100vw",
+          overflow: "hidden",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          position: "absolute",
+          top: 0,
+          left: 0,
+        }}
+      >
+        <Loader size="lg" variant="dots" />
+      </div>
     );
   }
 
