@@ -1,8 +1,20 @@
 "use client";
 
 import { userLogin } from "@/actions/post";
+import { useUserStore } from "@/stores/userStore";
+import {
+  Alert,
+  Button,
+  Container,
+  Paper,
+  PasswordInput,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const LoginPage = () => {
   const [errors, setErrors] = useState<{
@@ -10,6 +22,14 @@ const LoginPage = () => {
     password?: string;
     form?: string;
   }>({});
+  const router = useRouter();
+  const { user } = useUserStore();
+
+  useEffect(() => {
+    if (user) {
+      router.replace("/dashboard");
+    }
+  }, [user, router]);
 
   const handleSubmit = async (formData: FormData) => {
     const result = await userLogin(formData);
@@ -22,23 +42,42 @@ const LoginPage = () => {
   };
 
   return (
-    <form action={handleSubmit}>
-      {errors.form && <p style={{ color: "red" }}>{errors.form}</p>}
+    <Container size={420} my={40}>
+      <Title ta="center">Welcome back!</Title>
+      <Text c="dimmed" size="sm" ta="center" mt={5}>
+        Don&apos;t have an account? <Link href="/register">Sign up</Link>
+      </Text>
 
-      <label htmlFor="email">Email:</label>
-      <input id="email" name="email" type="email" required />
-      {errors.email && <p style={{ color: "red" }}>{errors.email}</p>}
+      <Paper withBorder shadow="md" p={30} mt={30} radius="md">
+        <form action={handleSubmit}>
+          {errors.form && <Alert color="red">{errors.form}</Alert>}
 
-      <label htmlFor="password">Password:</label>
-      <input id="password" name="password" type="password" required />
-      {errors.password && <p style={{ color: "red" }}>{errors.password}</p>}
+          <TextInput
+            label="Email"
+            placeholder="you@example.com"
+            id="email"
+            name="email"
+            type="email"
+            required
+            error={errors.email}
+          />
 
-      <button type="submit">Log in</button>
+          <PasswordInput
+            label="Password"
+            placeholder="Your password"
+            id="password"
+            name="password"
+            required
+            mt="md"
+            error={errors.password}
+          />
 
-      <div>
-        Dont have an account? <Link href="/register">Sign up</Link>
-      </div>
-    </form>
+          <Button fullWidth mt="xl" type="submit">
+            Log in
+          </Button>
+        </form>
+      </Paper>
+    </Container>
   );
 };
 
