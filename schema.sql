@@ -328,6 +328,7 @@ as $$
 $$;
 
 --function for all user tickets
+DROP FUNCTION IF EXISTS get_all_my_tickets(UUID, TEXT, UUID);
 CREATE OR REPLACE FUNCTION get_all_my_tickets(
   user_id UUID, 
   ticket_status TEXT DEFAULT NULL, 
