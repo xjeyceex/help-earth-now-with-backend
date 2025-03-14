@@ -19,7 +19,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -139,7 +139,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -179,12 +179,12 @@ export const changePassword = async (
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
 
-  const { data, error } = await supabase
+  const { data: ticket, error: ticketError } = await supabase
     .from("ticket_table")
     .insert({
       ticket_item_name: validatedData.ticketItemName,
@@ -197,14 +197,35 @@ export const createTicket = async (
     .select()
     .single();
 
-  if (error) {
+  if (ticketError) {
     return {
       success: false,
       message: "Failed to create ticket",
     };
   }
 
-  return { success: true, data };
+  // Insert reviewers after creating the ticket
+  const reviewers = validatedData.ticketReviewer.map((reviewerId) =>
+    supabase.from("approval_table").insert({
+      approval_ticket_id: ticket.ticket_id,
+      approval_reviewed_by: reviewerId,
+      approval_review_status: "PENDING",
+      approval_review_comments: null,
+      approval_review_date: new Date(),
+    })
+  );
+
+  const result = await Promise.all(reviewers);
+
+  const hasError = result.some(({ error }) => error);
+  if (hasError) {
+    return {
+      success: false,
+      message: "Failed to assign reviewers",
+    };
+  }
+
+  return { success: true, data: ticket };
 };
 
 export const updateProfilePicture = async (file: File) => {
@@ -234,7 +255,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 

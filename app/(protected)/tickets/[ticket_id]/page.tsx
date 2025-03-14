@@ -11,7 +11,7 @@ import {
   Container,
   Loader,
   Modal,
-  Select,
+  MultiSelect,
   Stack,
   Text,
   Title,
@@ -26,17 +26,28 @@ const TicketDetailsPage = () => {
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sharedUser, setSharedUser] = useState<string | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
+    []
   );
 
   const handleShareTicket = async () => {
-    if (!sharedUser || !ticket_id) return;
-    await shareTicket(ticket_id, sharedUser);
+    if (!selectedUsers.length || !ticket_id) return;
+
+    // Share the ticket with each selected user
+    await Promise.all(
+      selectedUsers.map((userId) => shareTicket(ticket_id, userId))
+    );
+
+    // Filter out the selected users from the dropdown
+    setAllUsers((prev) =>
+      prev.filter((user) => !selectedUsers.includes(user.value))
+    );
+
     setIsSharing(false);
     fetchTicketDetails();
+    setSelectedUsers([]);
   };
 
   // Fetch ticket details
@@ -58,8 +69,15 @@ const TicketDetailsPage = () => {
       return;
     }
 
-    // Directly set users since they're already formatted
-    setAllUsers(users);
+    // Filter out users who are already reviewers
+    const filteredUsers = users.filter(
+      (user) =>
+        !ticket?.reviewers.some(
+          (reviewer) => reviewer.reviewer_id === user.value
+        )
+    );
+
+    setAllUsers(filteredUsers);
   };
 
   useEffect(() => {
@@ -89,10 +107,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isAssigned = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+    (u) => u.user_id === user?.user_id
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
   // ✅ Check if the user is the creator of the ticket
   const isCreator = ticket.ticket_created_by === user?.user_id;
@@ -121,14 +139,14 @@ const TicketDetailsPage = () => {
                 ticket.ticket_status === "PENDING"
                   ? "yellow"
                   : ticket.ticket_status === "APPROVED"
-                    ? "green"
-                    : ticket.ticket_status === "IN PROGRESS"
-                      ? "blue"
-                      : ticket.ticket_status === "COMPLETED"
-                        ? "teal"
-                        : ticket.ticket_status === "REJECTED"
-                          ? "red"
-                          : "gray"
+                  ? "green"
+                  : ticket.ticket_status === "IN PROGRESS"
+                  ? "blue"
+                  : ticket.ticket_status === "COMPLETED"
+                  ? "teal"
+                  : ticket.ticket_status === "REJECTED"
+                  ? "red"
+                  : "gray"
               }
             >
               {ticket.ticket_status}
@@ -164,10 +182,10 @@ const TicketDetailsPage = () => {
                         r.approval_status === "PENDING"
                           ? "yellow"
                           : r.approval_status === "APPROVED"
-                            ? "green"
-                            : r.approval_status === "REJECTED"
-                              ? "red"
-                              : "gray"
+                          ? "green"
+                          : r.approval_status === "REJECTED"
+                          ? "red"
+                          : "gray"
                       }
                     >
                       {r.approval_status}
@@ -204,12 +222,13 @@ const TicketDetailsPage = () => {
                 onClose={() => setIsSharing(false)}
                 title="Share Ticket"
               >
-                <Select
-                  placeholder="Select user to share with"
+                <MultiSelect
                   data={allUsers}
-                  value={sharedUser}
-                  onChange={setSharedUser}
+                  value={selectedUsers}
+                  onChange={setSelectedUsers}
+                  placeholder="Select users to share with"
                   searchable
+                  clearable
                 />
                 <Button onClick={handleShareTicket} mt="md">
                   Share

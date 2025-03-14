@@ -66,7 +66,6 @@ export const getTicketDetails = async (ticket_id: string) => {
     console.error(" Supabase Error:", error.message);
     return null;
   }
-
   return data;
 };
 
@@ -164,14 +163,12 @@ export const getAllUsers = async (ticket_id: string) => {
     };
   }
 
-  // Add "Already a Reviewer" and disable if already shared
-  const formattedUsers = data.map((user) => ({
-    value: user.user_id,
-    label: sharedUserIds.includes(user.user_id)
-      ? `${user.user_full_name} (Already a Reviewer)`
-      : user.user_full_name,
-    disabled: sharedUserIds.includes(user.user_id),
-  }));
+  const formattedUsers = data
+    .filter((user) => !sharedUserIds.includes(user.user_id))
+    .map((user) => ({
+      value: user.user_id,
+      label: user.user_full_name,
+    }));
 
   return formattedUsers as DropdownType[];
 };

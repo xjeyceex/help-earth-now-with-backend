@@ -7,7 +7,6 @@ export type ReviewerType = {
 export type DropdownType = {
   value: string;
   label: string;
-  disabled: boolean;
 };
 
 export type TicketDetailsType = {
