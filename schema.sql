@@ -5,6 +5,7 @@ ALTER TABLE IF EXISTS canvass_form_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS approval_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ticket_status_history_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.ticket_shared_with_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.canvass_attachment_table ENABLE ROW LEVEL SECURITY;
 
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
@@ -176,6 +177,49 @@ CREATE POLICY "Canvassers can submit canvass forms" ON canvass_form_table
 DROP POLICY IF EXISTS "Reviewers can view canvass forms" ON canvass_form_table;
 CREATE POLICY "Reviewers can view canvass forms" ON canvass_form_table
     FOR SELECT USING (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'REVIEWER'));
+
+  
+-- CANVASS ATTACHMENT TABLE (Stores Canvass Attachments)
+DROP TABLE IF EXISTS canvass_attachment_table CASCADE;
+CREATE TABLE public.canvass_attachment_table (
+    canvass_attachment_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    canvass_attachment_canvass_form_id UUID NULL DEFAULT gen_random_uuid(),
+    canvass_attachment_type TEXT NULL,
+    canvass_attachment_url TEXT NULL,
+    canvass_attachment_created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    CONSTRAINT canvass_attachment_table_pkey PRIMARY KEY (canvass_attachment_id),
+    CONSTRAINT canvass_attachment_table_canvass_attachment_canvass_form_id_fkey
+        FOREIGN KEY (canvass_attachment_canvass_form_id)
+        REFERENCES canvass_form_table (canvass_form_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) TABLESPACE pg_default;
+
+-- RLS for Canvass Attachment Table
+CREATE POLICY "allow_authenticated_users_to_insert"
+ON public.canvass_attachment_table
+FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "allow_authenticated_users_to_delete"
+ON public.canvass_attachment_table
+FOR DELETE
+TO authenticated
+USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "allow_authenticated_users_to_update"
+ON public.canvass_attachment_table
+FOR UPDATE
+TO authenticated
+WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "allow_authenticated_users_to_select"
+ON public.canvass_attachment_table
+FOR SELECT
+TO authenticated
+USING (auth.uid() IS NOT NULL);
+
 
 -- APPROVAL TABLE (Tracks Review & Approvals)
 DROP TABLE IF EXISTS approval_table CASCADE;
@@ -449,3 +493,21 @@ as $$
   where ticket_id = _ticket_id
   and ticket_created_by != _shared_user_id;
 $$;
+
+create policy "Allow authenticated users to insert" 
+on storage.objects 
+for insert 
+to authenticated 
+with check (auth.uid() is not null);
+
+create policy "Allow authenticated users to delete" 
+on storage.objects 
+for delete 
+to authenticated 
+using (auth.uid() is not null);
+
+create policy "Allow authenticated users to select" 
+on storage.objects 
+for select 
+to authenticated 
+using (auth.uid() is not null);

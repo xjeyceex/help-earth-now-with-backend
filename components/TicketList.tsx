@@ -11,6 +11,7 @@ import {
   Table,
   Title,
 } from "@mantine/core";
+import { IconPlus } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -79,7 +80,7 @@ const TicketList = () => {
 
     // Check if user is included in `shared_users`
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser.user_id === user?.user_id,
+      (sharedUser) => sharedUser.user_id === user?.user_id
     );
 
     // For Canvasser, only show tickets shared with them
@@ -113,7 +114,16 @@ const TicketList = () => {
     <Container size="md" py="xl">
       <Card shadow="sm" padding="lg" mt="lg" radius="md" withBorder>
         <Flex justify="space-between" align="center">
-          <Title size="h3">Ticket List</Title>
+          <Flex gap="lg" align="center">
+            <Title size="h3">Ticket List</Title>
+            <Button
+              rightSection={<IconPlus size={20} />}
+              onClick={() => router.push("/tickets/create-ticket")}
+            >
+              Create New Ticket
+            </Button>
+          </Flex>
+
           <Flex gap="sm">
             <Select
               value={filter}

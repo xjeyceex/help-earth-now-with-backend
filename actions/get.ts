@@ -1,5 +1,6 @@
 "use server";
 
+import { CanvassDetail } from "@/app/(protected)/tickets/[ticket_id]/page";
 import { User } from "@/stores/userStore";
 import { createClient } from "@/utils/supabase/server";
 import { DashboardTicketType, DropdownType, ReviewerType } from "@/utils/types";
@@ -190,4 +191,39 @@ export const getReviewers = async () => {
   }
 
   return data as ReviewerType[];
+};
+
+export const getCanvassDetails = async ({
+  ticketId,
+}: {
+  ticketId: string;
+}): Promise<CanvassDetail[]> => {
+  const supabase = await createClient();
+
+  const { data: canvassDetails, error } = await supabase
+    .from("canvass_form_table")
+    .select(
+      `
+      *,
+      submitted_by:user_table!canvass_form_table_canvass_form_submitted_by_fkey (
+        user_id,
+        user_full_name,
+        user_email,
+        user_avatar
+      ),
+      attachments:canvass_attachment_table (
+        canvass_attachment_id,
+        canvass_attachment_type,
+        canvass_attachment_url,
+        canvass_attachment_created_at
+      )
+    `
+    )
+    .eq("canvass_form_ticket_id", ticketId);
+
+  if (error) {
+    throw new Error(`Error fetching canvass details: ${error.message}`);
+  }
+
+  return canvassDetails || [];
 };

@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
 
 import { createClient } from "@/utils/supabase/server";
 import { TicketFormSchema } from "@/utils/zod/schema";
-import { z } from "zod";
 
 type LoginError = {
   email?: string;
@@ -19,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -139,7 +140,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -179,7 +180,7 @@ export const changePassword = async (
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -204,7 +205,7 @@ export const createTicket = async (
     };
   }
 
-  return { success: true, data };
+  return { success: true, ticket_id: data.ticket_id };
 };
 
 export const updateProfilePicture = async (file: File) => {
@@ -234,7 +235,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -290,5 +291,135 @@ export const shareTicket = async (ticket_id: string, user_id: string) => {
   if (error) {
     console.error("Error sharing ticket:", error.message);
     throw new Error("Failed to share ticket");
+  }
+};
+
+export const createCanvass = async ({
+  supplierName,
+  quotationPrice,
+  quotationTerms,
+  canvassSheet,
+  quotation,
+  ticketId,
+}: {
+  supplierName: string;
+  quotationPrice: number;
+  quotationTerms: string;
+  canvassSheet: File;
+  quotation: File;
+  ticketId: string;
+}) => {
+  try {
+    const BUCKET_NAME = "canvass-attachments";
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user?.id) {
+      return {
+        error: true,
+        message: "User not authenticated.",
+      };
+    }
+
+    const userId = user.id;
+
+    // Helper function to upload a file and get its URL
+    const uploadFile = async (file: File, fileType: string) => {
+      const extension = file.name.split(".").pop();
+      const fileName = `${fileType}_${uuidv4()}.${extension}`;
+      const filePath = `${ticketId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw new Error(`Failed to upload ${fileType}: ${uploadError.message}`);
+      }
+
+      const { data: urlData } = await supabase.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(filePath);
+
+      return {
+        path: filePath,
+        publicUrl: urlData?.publicUrl,
+      };
+    };
+
+    // Upload files
+    const [canvassSheetResult, quotationResult] = await Promise.all([
+      uploadFile(canvassSheet, "canvass_sheet"),
+      uploadFile(quotation, "quotation"),
+    ]);
+
+    // Store canvass form data
+    const { error: canvassFormError, data: canvassFormData } = await supabase
+      .from("canvass_form_table")
+      .insert({
+        canvass_form_ticket_id: ticketId,
+        canvass_form_supplier_name: supplierName,
+        canvass_form_quotation_price: quotationPrice,
+        canvass_form_quotation_terms: quotationTerms,
+        canvass_form_attachment_url: quotationResult.publicUrl,
+        canvass_form_submitted_by: userId,
+      })
+      .select()
+      .single();
+
+    if (canvassFormError) {
+      throw new Error(
+        `Failed to insert canvass form: ${canvassFormError.message}`
+      );
+    }
+
+    const canvassFormId = canvassFormData?.canvass_form_id;
+
+    console.log(canvassFormId);
+
+    // Prepare attachments data
+    const attachments = [
+      {
+        canvass_attachment_canvass_form_id: canvassFormId,
+        canvass_attachment_type: "CANVASS_SHEET",
+        canvass_attachment_url: canvassSheetResult.publicUrl,
+      },
+      {
+        canvass_attachment_canvass_form_id: canvassFormId,
+        canvass_attachment_type: "QUOTATION",
+        canvass_attachment_url: quotationResult.publicUrl,
+      },
+    ];
+
+    // Insert all attachments at once
+    const { error: attachmentsError } = await supabase
+      .from("canvass_attachment_table")
+      .insert(attachments);
+
+    if (attachmentsError) {
+      throw new Error(
+        `Failed to insert attachments: ${attachmentsError.message}`
+      );
+    }
+
+    // Revalidate paths to reflect changes
+    revalidatePath(`/canvass/${canvassFormId}`);
+    revalidatePath(`/canvass`);
+
+    return {
+      success: true,
+      message: "Canvass created successfully",
+      canvassFormId,
+    };
+  } catch (error) {
+    console.error("Error creating canvass:", error);
+    return {
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred",
+    };
   }
 };

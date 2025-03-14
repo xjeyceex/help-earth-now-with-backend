@@ -15,10 +15,42 @@ export const CanvassFormSchema = z.object({
   supplierName: z.string().min(1, "Supplier name is required"),
   quotationPrice: z.number().min(0.01, "Price must be greater than 0"),
   quotationTerms: z.string().min(1, "Terms are required"),
-  canvassSheet: z
-    .array(z.instanceof(File))
-    .nonempty("Canvass sheet is required"),
-  quotationAttachment: z
-    .array(z.instanceof(File))
-    .nonempty("Quotation attachment is required"),
+  canvassSheet: z.instanceof(File).refine(
+    (file) => {
+      const MAX_FILE_SIZE = 5 * 1024 * 1024;
+      const ALLOWED_FILE_TYPES = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "application/pdf",
+      ];
+      return (
+        ALLOWED_FILE_TYPES.includes(file.type) && file.size <= MAX_FILE_SIZE
+      );
+    },
+    {
+      message:
+        "Invalid file type or size. Please upload an image file (JPEG, PNG, GIF, or WEBP) less than 5MB.",
+    }
+  ),
+  quotation: z.instanceof(File).refine(
+    (file) => {
+      const MAX_FILE_SIZE = 5 * 1024 * 1024;
+      const ALLOWED_FILE_TYPES = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "application/pdf",
+      ];
+      return (
+        ALLOWED_FILE_TYPES.includes(file.type) && file.size <= MAX_FILE_SIZE
+      );
+    },
+    {
+      message:
+        "Invalid file type or size. Please upload an image file (JPEG, PNG, GIF, or WEBP) less than 5MB.",
+    }
+  ),
 });
