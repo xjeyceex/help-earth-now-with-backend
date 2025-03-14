@@ -19,7 +19,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -139,7 +139,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string
+  newPassword: string,
 ) => {
   const supabase = await createClient();
 
@@ -179,7 +179,7 @@ export const changePassword = async (
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string
+  userId: string,
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -212,7 +212,7 @@ export const createTicket = async (
       approval_review_status: "PENDING",
       approval_review_comments: null,
       approval_review_date: new Date(),
-    })
+    }),
   );
 
   const result = await Promise.all(reviewers);
@@ -255,7 +255,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/"
+    "avatars/",
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
