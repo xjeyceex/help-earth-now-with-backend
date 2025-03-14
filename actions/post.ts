@@ -267,3 +267,28 @@ export const updateProfilePicture = async (file: File) => {
 
   return { success: true, url: publicUrl };
 };
+
+export const shareTicket = async (ticket_id: string, user_id: string) => {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error("Error fetching user:", userError.message);
+    throw new Error("Failed to fetch current user.");
+  }
+
+  const { error } = await supabase.rpc("share_ticket", {
+    _ticket_id: ticket_id,
+    _shared_user_id: user_id,
+    _assigned_by: user?.id,
+  });
+
+  if (error) {
+    console.error("Error sharing ticket:", error.message);
+    throw new Error("Failed to share ticket");
+  }
+};

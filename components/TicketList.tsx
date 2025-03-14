@@ -40,24 +40,17 @@ const TicketList = () => {
   const [tickets, setTickets] = useState<MyTicketType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
-  // ✅ Fetch Tickets
+
   const fetchTickets = async () => {
-    if (!user?.user_id || !user?.user_role) return;
+    if (!user?.user_id) return;
 
     setLoading(true);
 
     const fetchedTickets = await getAllMyTickets({
       user_id: user.user_id,
-      user_role: user.user_role,
     });
 
-    if (!Array.isArray(fetchedTickets)) {
-      console.error("Supabase Error:", fetchedTickets.message);
-      setTickets([]);
-    } else {
-      setTickets(fetchedTickets);
-    }
-
+    setTickets(fetchedTickets);
     setLoading(false);
   };
 
