@@ -7,7 +7,6 @@ export type ReviewerType = {
 export type DropdownType = {
   value: string;
   label: string;
-  disabled: boolean;
 };
 
 export type TicketDetailsType = {
@@ -17,6 +16,7 @@ export type TicketDetailsType = {
   ticket_created_by: string;
   ticket_quantity: number;
   ticket_specifications: string;
+  ticket_created_by_name: string;
   reviewers: {
     reviewer_id: string;
     reviewer_name: string;
@@ -51,5 +51,5 @@ export type MyTicketType = {
     reviewer_name: string;
     approval_status: string;
   }[];
-  shared_users?: { user_id: string; user_full_name: string }[]; // ✅ Add this
+  shared_users?: { user_id: string; user_full_name: string }[];
 };

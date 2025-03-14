@@ -67,7 +67,6 @@ export const getTicketDetails = async (ticket_id: string) => {
     console.error(" Supabase Error:", error.message);
     return null;
   }
-
   return data;
 };
 
@@ -94,7 +93,7 @@ export const getAllMyTickets = async ({
 export const getAllUsers = async (ticket_id: string) => {
   const supabase = await createClient();
 
-  // ✅ Get current user
+  // Get current user
   const {
     data: { user },
     error: userError,
@@ -110,12 +109,21 @@ export const getAllUsers = async (ticket_id: string) => {
 
   const currentUserId = user.id;
 
-  // ✅ Get ticket creator
-  const { data: ticket, error: ticketError } = await supabase
-    .from("ticket_table")
-    .select("ticket_created_by")
-    .eq("ticket_id", ticket_id)
-    .maybeSingle();
+  // Get ticket creator and shared users in parallel
+  const [ticketResponse, sharedUsersResponse] = await Promise.all([
+    supabase
+      .from("ticket_table")
+      .select("ticket_created_by")
+      .eq("ticket_id", ticket_id)
+      .maybeSingle(),
+    supabase
+      .from("ticket_shared_with_table")
+      .select("shared_user_id")
+      .eq("ticket_id", ticket_id),
+  ]);
+
+  const { data: ticket, error: ticketError } = ticketResponse;
+  const { data: sharedUsers, error: sharedUsersError } = sharedUsersResponse;
 
   if (ticketError || !ticket?.ticket_created_by) {
     console.error("Error fetching ticket:", ticketError?.message);
@@ -125,14 +133,6 @@ export const getAllUsers = async (ticket_id: string) => {
     };
   }
 
-  const ticketCreatorId = ticket.ticket_created_by;
-
-  // ✅ Get already shared users
-  const { data: sharedUsers, error: sharedUsersError } = await supabase
-    .from("ticket_shared_with_table")
-    .select("shared_user_id")
-    .eq("ticket_id", ticket_id);
-
   if (sharedUsersError) {
     console.error("Error fetching shared users:", sharedUsersError.message);
     return {
@@ -141,19 +141,20 @@ export const getAllUsers = async (ticket_id: string) => {
     };
   }
 
+  const ticketCreatorId = ticket.ticket_created_by;
   const sharedUserIds = sharedUsers.map((user) => user.shared_user_id);
 
-  // ✅ Exclude current user and ticket creator
+  // Exclude current user and ticket creator
   const idsToExclude =
     currentUserId === ticketCreatorId
       ? [currentUserId]
       : [currentUserId, ticketCreatorId];
 
-  // ✅ Fetch all users except current user and creator
+  // Fetch all users except current user and creator
   const { data, error } = await supabase
     .from("user_table")
     .select("user_id, user_full_name, user_email")
-    .not("user_id", "in", `(${idsToExclude.join(",")})`); // Fix for SQL formatting
+    .not("user_id", "in", `(${idsToExclude.join(",")})`);
 
   if (error) {
     console.error("Error fetching users:", error.message);
@@ -163,14 +164,12 @@ export const getAllUsers = async (ticket_id: string) => {
     };
   }
 
-  // ✅ Add "Already a Reviewer" and disable if already shared
-  const formattedUsers = data.map((user) => ({
-    value: user.user_id,
-    label: sharedUserIds.includes(user.user_id)
-      ? `${user.user_full_name} (Already a Reviewer)` // Fixed template literal
-      : user.user_full_name,
-    disabled: sharedUserIds.includes(user.user_id), // ✅ Disable option
-  }));
+  const formattedUsers = data
+    .filter((user) => !sharedUserIds.includes(user.user_id))
+    .map((user) => ({
+      value: user.user_id,
+      label: user.user_full_name,
+    }));
 
   return formattedUsers as DropdownType[];
 };

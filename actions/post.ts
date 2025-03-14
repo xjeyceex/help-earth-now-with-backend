@@ -123,7 +123,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
     return { error: true, message: error.message };
   }
 
-  // ✅ Refetch the user to get updated metadata
+  // Refetch the user to get updated metadata
   const { data: refreshedUser, error: fetchError } =
     await supabase.auth.getUser();
 
@@ -132,7 +132,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
     return { error: true, message: fetchError.message };
   }
 
-  // ✅ Revalidate the page so the UI updates
+  // Revalidate the page so the UI updates
   revalidatePath("/", "layout");
 
   return { success: true, user: refreshedUser.user };
@@ -185,7 +185,7 @@ export const createTicket = async (
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
 
-  const { data, error } = await supabase
+  const { data: ticket, error: ticketError } = await supabase
     .from("ticket_table")
     .insert({
       ticket_item_name: validatedData.ticketItemName,
@@ -198,14 +198,14 @@ export const createTicket = async (
     .select()
     .single();
 
-  if (error) {
+  if (ticketError) {
     return {
       success: false,
       message: "Failed to create ticket",
     };
   }
 
-  return { success: true, ticket_id: data.ticket_id };
+  return { success: true, ticket_id: ticket.ticket_id };
 };
 
 export const updateProfilePicture = async (file: File) => {

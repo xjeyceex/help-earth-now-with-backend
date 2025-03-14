@@ -12,7 +12,7 @@ export const deleteUser = async () => {
   const { error: deleteError } = await supabase.rpc("delete_user");
 
   if (deleteError) {
-    console.log("Failed to delete account", deleteError);
+    throw new Error("Failed to delete user account. Please try again.");
   }
 
   await supabase.auth.signOut();

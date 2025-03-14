@@ -18,7 +18,7 @@ import {
   Flex,
   Loader,
   Modal,
-  Select,
+  MultiSelect,
   Stack,
   Text,
   Title,
@@ -62,20 +62,31 @@ const TicketDetailsPage = () => {
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [sharedUser, setSharedUser] = useState<string | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
     []
   );
 
   const handleShareTicket = async () => {
-    if (!sharedUser || !ticket_id) return;
-    await shareTicket(ticket_id, sharedUser);
+    if (!selectedUsers.length || !ticket_id) return;
+
+    // Share the ticket with each selected user
+    await Promise.all(
+      selectedUsers.map((userId) => shareTicket(ticket_id, userId))
+    );
+
+    // Filter out the selected users from the dropdown
+    setAllUsers((prev) =>
+      prev.filter((user) => !selectedUsers.includes(user.value))
+    );
+
     setIsSharing(false);
     fetchTicketDetails();
+    setSelectedUsers([]);
   };
 
-  // ✅ Fetch ticket details
+  // Fetch ticket details
   const fetchTicketDetails = async () => {
     if (!ticket_id) return;
     const tickets = await getTicketDetails(ticket_id);
@@ -84,31 +95,37 @@ const TicketDetailsPage = () => {
     }
     setLoading(false);
   };
-  // ✅ Fetch all users for the select dropdown
+  // Fetch all users for the select dropdown
   const fetchUsers = async () => {
     const users = await getAllUsers(ticket_id);
 
-    // ✅ Type Guard to check if it's an error
+    // Type Guard to check if it's an error
     if ("error" in users) {
       console.error(users.message);
       return;
     }
 
-    // ✅ Directly set users since they're already formatted
-    setAllUsers(users);
+    // Filter out users who are already reviewers
+    const filteredUsers = users.filter(
+      (user) =>
+        !ticket?.reviewers.some(
+          (reviewer) => reviewer.reviewer_id === user.value
+        )
+    );
+
+    setAllUsers(filteredUsers);
   };
 
   const fetchCanvassDetails = async () => {
     if (!ticket_id) return;
-    const res = await getCanvassDetails({ ticketId: ticket_id });
-
-    setCanvassDetails(res);
+    setCanvassDetails(await getCanvassDetails({ ticketId: ticket_id }));
   };
 
   useEffect(() => {
     fetchTicketDetails();
     fetchUsers(); // ✅ No need to call fetchUsers API anymore
     fetchCanvassDetails();
+    fetchUsers(); // No need to call fetchUsers API anymore
   }, [ticket_id]);
 
   if (loading) {
@@ -138,8 +155,10 @@ const TicketDetailsPage = () => {
   const isReviewer = ticket.reviewers?.some(
     (r) => r.reviewer_id === user?.user_id
   );
+  // ✅ Check if the user is the creator of the ticket
+  const isCreator = ticket.ticket_created_by === user?.user_id;
 
-  if (!isAdmin && !isAssigned && !isReviewer) {
+  if (!isAdmin && !isAssigned && !isReviewer && !isCreator) {
     return (
       <Container size="sm" py="xl">
         <Title>Unauthorized Access</Title>
@@ -186,16 +205,19 @@ const TicketDetailsPage = () => {
           </div>
 
           <Text size="lg">
-            <strong>Ticket ID:</strong> {ticket?.ticket_id}
+            <strong>Ticket ID:</strong> {ticket.ticket_id}
           </Text>
           <Text size="lg">
-            <strong>Item Description:</strong> {ticket?.ticket_item_description}
+            <strong>Item Description:</strong> {ticket.ticket_item_description}
           </Text>
           <Text size="lg">
-            <strong>Quantity:</strong> {ticket?.ticket_quantity}
+            <strong>Quantity:</strong> {ticket.ticket_quantity}
           </Text>
           <Text size="lg">
-            <strong>Specifications:</strong> {ticket?.ticket_specifications}
+            <strong>Specifications:</strong> {ticket.ticket_specifications}
+          </Text>
+          <Text size="lg">
+            <strong>Created By:</strong> {ticket.ticket_created_by_name}
           </Text>
 
           {/* ✅ Display Reviewers */}
@@ -251,12 +273,13 @@ const TicketDetailsPage = () => {
                 onClose={() => setIsSharing(false)}
                 title="Share Ticket"
               >
-                <Select
-                  placeholder="Select user to share with"
+                <MultiSelect
                   data={allUsers}
-                  value={sharedUser}
-                  onChange={setSharedUser}
+                  value={selectedUsers}
+                  onChange={setSelectedUsers}
+                  placeholder="Select users to share with"
                   searchable
+                  clearable
                 />
                 <Button onClick={handleShareTicket} mt="md">
                   Share

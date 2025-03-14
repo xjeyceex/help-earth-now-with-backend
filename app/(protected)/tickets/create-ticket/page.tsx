@@ -167,6 +167,10 @@ const CreateTicketPage = () => {
     fetchReviewers();
   }, []);
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <Container size={800} my={40}>
       <Card padding="lg">
