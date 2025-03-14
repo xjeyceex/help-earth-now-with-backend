@@ -56,12 +56,12 @@ const TicketList = () => {
     setLoading(false);
   };
 
-  // ✅ Fetch when user is available
+  // Fetch when user is available
   useEffect(() => {
     fetchTickets();
   }, [user?.user_id]);
 
-  // ✅ Filter Options based on User Role
+  // Filter Options based on User Role
   const filterOptions =
     user?.user_role === "CANVASSER"
       ? [
@@ -75,17 +75,20 @@ const TicketList = () => {
           { value: "APPROVED", label: "Approved" },
         ];
 
-  // ✅ Filter Tickets based on User Role and Status
+  // Filter Tickets based on User Role and Status
   const filteredTickets = tickets.filter((ticket) => {
     const isCanvasser = user?.user_role === "CANVASSER";
 
     // Check if user is included in `shared_users`
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser.user_id === user?.user_id,
+      (sharedUser) => sharedUser.user_id === user?.user_id
     );
 
-    // For Canvasser, only show tickets shared with them
-    if (isCanvasser && !isSharedWithUser) {
+    // Check if the user is the creator of the ticket
+    const isTicketOwner = ticket.ticket_created_by === user?.user_id;
+
+    // For Canvasser, show tickets shared with them or tickets they created
+    if (isCanvasser && !(isSharedWithUser || isTicketOwner)) {
       return false;
     }
 

@@ -29,7 +29,7 @@ const TicketDetailsPage = () => {
   const [sharedUser, setSharedUser] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
+    []
   );
 
   const handleShareTicket = async () => {
@@ -39,7 +39,7 @@ const TicketDetailsPage = () => {
     fetchTicketDetails();
   };
 
-  // ✅ Fetch ticket details
+  // Fetch ticket details
   const fetchTicketDetails = async () => {
     if (!ticket_id) return;
     const tickets = await getTicketDetails(ticket_id);
@@ -48,23 +48,23 @@ const TicketDetailsPage = () => {
     }
     setLoading(false);
   };
-  // ✅ Fetch all users for the select dropdown
+  // Fetch all users for the select dropdown
   const fetchUsers = async () => {
     const users = await getAllUsers(ticket_id);
 
-    // ✅ Type Guard to check if it's an error
+    // Type Guard to check if it's an error
     if ("error" in users) {
       console.error(users.message);
       return;
     }
 
-    // ✅ Directly set users since they're already formatted
+    // Directly set users since they're already formatted
     setAllUsers(users);
   };
 
   useEffect(() => {
     fetchTicketDetails();
-    fetchUsers(); // ✅ No need to call fetchUsers API anymore
+    fetchUsers(); // No need to call fetchUsers API anymore
   }, [ticket_id]);
 
   if (loading) {
@@ -89,10 +89,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isAssigned = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+    (u) => u.user_id === user?.user_id
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
 
   if (!isAdmin && !isAssigned && !isReviewer) {
@@ -119,14 +119,14 @@ const TicketDetailsPage = () => {
                 ticket.ticket_status === "PENDING"
                   ? "yellow"
                   : ticket.ticket_status === "APPROVED"
-                    ? "green"
-                    : ticket.ticket_status === "IN PROGRESS"
-                      ? "blue"
-                      : ticket.ticket_status === "COMPLETED"
-                        ? "teal"
-                        : ticket.ticket_status === "REJECTED"
-                          ? "red"
-                          : "gray"
+                  ? "green"
+                  : ticket.ticket_status === "IN PROGRESS"
+                  ? "blue"
+                  : ticket.ticket_status === "COMPLETED"
+                  ? "teal"
+                  : ticket.ticket_status === "REJECTED"
+                  ? "red"
+                  : "gray"
               }
             >
               {ticket.ticket_status}
@@ -159,10 +159,10 @@ const TicketDetailsPage = () => {
                         r.approval_status === "PENDING"
                           ? "yellow"
                           : r.approval_status === "APPROVED"
-                            ? "green"
-                            : r.approval_status === "REJECTED"
-                              ? "red"
-                              : "gray"
+                          ? "green"
+                          : r.approval_status === "REJECTED"
+                          ? "red"
+                          : "gray"
                       }
                     >
                       {r.approval_status}

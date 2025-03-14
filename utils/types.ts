@@ -51,5 +51,5 @@ export type MyTicketType = {
     reviewer_name: string;
     approval_status: string;
   }[];
-  shared_users?: { user_id: string; user_full_name: string }[]; // ✅ Add this
+  shared_users?: { user_id: string; user_full_name: string }[];
 };

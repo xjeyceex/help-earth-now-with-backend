@@ -31,6 +31,10 @@ CREATE POLICY "Users can view their own role data" ON user_table
     FOR SELECT USING (auth.uid() = user_id);
 
 --RLS for Avatars
+DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public read access to avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Allow users to update their own avatar" ON user_table;
 CREATE POLICY "Users can upload their own avatar"
 ON storage.objects
 FOR INSERT
@@ -67,7 +71,7 @@ CREATE TABLE public.ticket_table (
 );
 
 -- ✅ DROP TABLE IF EXISTS
-DROP TABLE IF EXISTS ticket_shared_with_table;
+DROP TABLE IF EXISTS ticket_shared_with_table cascade;
 
 -- ✅ CREATE SHARED TICKET TABLE
 CREATE TABLE public.ticket_shared_with_table (
@@ -241,7 +245,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER on_auth_user_created
+CREATE OR REPLACE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.create_user();
 

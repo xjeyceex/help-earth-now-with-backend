@@ -70,7 +70,7 @@ const ProfilePage = () => {
     } else {
       alert("Profile picture updated successfully!");
 
-      // ✅ Ensure `user_avatar` is always a string
+      // Ensure `user_avatar` is always a string
       setUser({ ...user, user_avatar: result.url ?? "" });
 
       setIsUploadingAvatar(false);
@@ -107,7 +107,7 @@ const ProfilePage = () => {
     }
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       setError(
-        "Password must contain at least one uppercase letter and one number.",
+        "Password must contain at least one uppercase letter and one number."
       );
       return;
     }
