@@ -29,7 +29,7 @@ const TicketDetailsPage = () => {
   const [sharedUser, setSharedUser] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    []
+    [],
   );
 
   const handleShareTicket = async () => {
@@ -89,10 +89,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isAssigned = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id
+    (u) => u.user_id === user?.user_id,
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id
+    (r) => r.reviewer_id === user?.user_id,
   );
   // ✅ Check if the user is the creator of the ticket
   const isCreator = ticket.ticket_created_by === user?.user_id;
@@ -121,14 +121,14 @@ const TicketDetailsPage = () => {
                 ticket.ticket_status === "PENDING"
                   ? "yellow"
                   : ticket.ticket_status === "APPROVED"
-                  ? "green"
-                  : ticket.ticket_status === "IN PROGRESS"
-                  ? "blue"
-                  : ticket.ticket_status === "COMPLETED"
-                  ? "teal"
-                  : ticket.ticket_status === "REJECTED"
-                  ? "red"
-                  : "gray"
+                    ? "green"
+                    : ticket.ticket_status === "IN PROGRESS"
+                      ? "blue"
+                      : ticket.ticket_status === "COMPLETED"
+                        ? "teal"
+                        : ticket.ticket_status === "REJECTED"
+                          ? "red"
+                          : "gray"
               }
             >
               {ticket.ticket_status}
@@ -164,10 +164,10 @@ const TicketDetailsPage = () => {
                         r.approval_status === "PENDING"
                           ? "yellow"
                           : r.approval_status === "APPROVED"
-                          ? "green"
-                          : r.approval_status === "REJECTED"
-                          ? "red"
-                          : "gray"
+                            ? "green"
+                            : r.approval_status === "REJECTED"
+                              ? "red"
+                              : "gray"
                       }
                     >
                       {r.approval_status}
