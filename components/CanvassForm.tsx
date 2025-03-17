@@ -37,8 +37,8 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
     defaultValues: {
       RfDateReceived: new Date(),
       leadTimeDay: 1,
-      quotationPrice: 0,
-      quotationTerms: "",
+      totalAmount: 0,
+      paymentTerms: "",
     },
   });
 
@@ -51,8 +51,8 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
           RfDateReceived: values.RfDateReceived,
           recommendedSupplier: values.recommendedSupplier,
           leadTimeDay: values.leadTimeDay,
-          quotationPrice: values.quotationPrice,
-          quotationTerms: values.quotationTerms,
+          totalAmount: values.totalAmount,
+          paymentTerms: values.paymentTerms,
           canvassSheet: values.canvassSheet,
           quotation: values.quotation,
           ticketId: ticketId,
@@ -142,12 +142,12 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
             </Box>
             <Box>
               <TextInput
-                {...form.register("quotationPrice", {
+                {...form.register("totalAmount", {
                   valueAsNumber: true,
                 })}
-                error={form.formState.errors.quotationPrice?.message}
+                error={form.formState.errors.totalAmount?.message}
                 label="Quotation Price"
-                name="quotationPrice"
+                name="totalAmount"
                 placeholder="Enter quotation price"
                 type="number"
                 required
@@ -158,10 +158,10 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
             </Box>
             <Box>
               <TextInput
-                {...form.register("quotationTerms")}
-                error={form.formState.errors.quotationTerms?.message}
+                {...form.register("paymentTerms")}
+                error={form.formState.errors.paymentTerms?.message}
                 label="Quotation Terms"
-                name="quotationTerms"
+                name="paymentTerms"
                 placeholder="Enter quotation terms"
                 disabled={isPending}
                 required

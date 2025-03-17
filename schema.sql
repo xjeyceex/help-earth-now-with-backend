@@ -169,8 +169,8 @@ CREATE TABLE public.canvass_form_table (
     canvass_form_rf_date_received TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
     canvass_form_recommended_supplier TEXT NOT NULL,
     canvass_form_lead_time_day INT NOT NULL CHECK (canvass_form_lead_time_day > 0),
-    canvass_form_quotation_price DECIMAL(10,2) NOT NULL CHECK (canvass_form_quotation_price > 0), 
-    canvass_form_quotation_terms TEXT,
+    canvass_form_total_amount DECIMAL(10,2) NOT NULL CHECK (canvass_form_total_amount > 0), 
+    canvass_form_payment_terms TEXT,
     canvass_form_attachment_url TEXT, 
     canvass_form_submitted_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE SET NULL,
     canvass_form_date_submitted TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL

@@ -339,12 +339,12 @@ const TicketDetailsPage = () => {
                   </Text>
                   <Text>
                     <strong>Quotation Price:</strong> ₱
-                    {canvass.canvass_form_quotation_price.toFixed(2)}
+                    {canvass.canvass_form_total_amount.toFixed(2)}
                   </Text>
-                  {canvass.canvass_form_quotation_terms && (
+                  {canvass.canvass_form_payment_terms && (
                     <Text>
                       <strong>Terms:</strong>{" "}
-                      {canvass.canvass_form_quotation_terms}
+                      {canvass.canvass_form_payment_terms}
                     </Text>
                   )}
                   <Text>

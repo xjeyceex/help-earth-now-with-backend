@@ -322,8 +322,8 @@ export const createCanvass = async ({
   RfDateReceived,
   recommendedSupplier,
   leadTimeDay,
-  quotationPrice,
-  quotationTerms,
+  totalAmount,
+  paymentTerms,
   canvassSheet,
   quotation,
   ticketId,
@@ -331,8 +331,8 @@ export const createCanvass = async ({
   RfDateReceived: Date;
   recommendedSupplier: string;
   leadTimeDay: number;
-  quotationPrice: number;
-  quotationTerms: string;
+  totalAmount: number;
+  paymentTerms: string;
   canvassSheet: File;
   quotation: File;
   ticketId: string;
@@ -393,8 +393,8 @@ export const createCanvass = async ({
         canvass_form_rf_date_received: RfDateReceived,
         canvass_form_recommended_supplier: recommendedSupplier,
         canvass_form_lead_time_day: leadTimeDay,
-        canvass_form_quotation_price: quotationPrice,
-        canvass_form_quotation_terms: quotationTerms,
+        canvass_form_total_amount: totalAmount,
+        canvass_form_payment_terms: paymentTerms,
         canvass_form_attachment_url: quotationResult.publicUrl,
         canvass_form_submitted_by: userId,
       })
