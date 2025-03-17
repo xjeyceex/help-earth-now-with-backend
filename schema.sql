@@ -59,16 +59,16 @@ USING (auth.uid() = user_id);
 -- TICKET TABLE (Tracks Canvassing Requests)
 DROP TABLE IF EXISTS ticket_table CASCADE;
 CREATE TABLE public.ticket_table (
-    ticket_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    ticket_item_name TEXT NOT NULL,
-    ticket_item_description TEXT NOT NULL,
-    ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
-    ticket_specifications TEXT,
-    ticket_notes TEXT,
-    ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
-    ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-    ticket_date_created TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    ticket_last_updated TIMESTAMPTZ DEFAULT NOW() NOT NULL
+  ticket_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ticket_item_name TEXT NOT NULL,
+  ticket_item_description TEXT NOT NULL,
+  ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
+  ticket_specifications TEXT,
+  ticket_notes TEXT,
+  ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
+  ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
+  ticket_date_created TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()), -- ✅ Fixed
+  ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) -- ✅ Fixed
 );
 
 -- ✅ DROP TABLE IF EXISTS
@@ -78,7 +78,7 @@ DROP TABLE IF EXISTS ticket_shared_with_table cascade;
 CREATE TABLE public.ticket_shared_with_table (
     ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
     shared_user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-    assigned_at TIMESTAMPTZ DEFAULT NOW(),  -- Tracks assignment time
+    assigned_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()),  -- Tracks assignment time
     assigned_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     PRIMARY KEY (ticket_id, shared_user_id) -- Ensures a user is not added twice for the same ticket
 );
@@ -170,7 +170,7 @@ CREATE TABLE public.canvass_form_table (
     canvass_form_quotation_terms TEXT,
     canvass_form_attachment_url TEXT, 
     canvass_form_submitted_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE SET NULL,
-    canvass_form_date_submitted TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    canvass_form_date_submitted TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
 -- RLS for Canvass Form Table
@@ -233,7 +233,7 @@ CREATE TABLE public.approval_table (
     approval_reviewed_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     approval_review_status approval_status_enum NOT NULL, 
     approval_review_comments TEXT,
-    approval_review_date TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    approval_review_date TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
 -- RLS for Approval Table
@@ -249,7 +249,7 @@ CREATE TABLE public.ticket_status_history_table (
     ticket_status_history_previous_status ticket_status_enum NOT NULL, 
     ticket_status_history_new_status ticket_status_enum NOT NULL, 
     ticket_status_history_changed_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-    ticket_status_history_change_date TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    ticket_status_history_change_date TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
 -- RLS for Ticket Status History Table
