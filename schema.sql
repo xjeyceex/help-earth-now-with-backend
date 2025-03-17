@@ -72,10 +72,10 @@ CREATE TABLE public.ticket_table (
   ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) 
 );
 
--- ✅ DROP TABLE IF EXISTS
+-- DROP TABLE IF EXISTS
 DROP TABLE IF EXISTS ticket_shared_with_table cascade;
 
--- ✅ CREATE SHARED TICKET TABLE
+-- CREATE SHARED TICKET TABLE
 CREATE TABLE public.ticket_shared_with_table (
     ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
     shared_user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
@@ -84,7 +84,7 @@ CREATE TABLE public.ticket_shared_with_table (
     PRIMARY KEY (ticket_id, shared_user_id)
 );
 
--- ✅ POLICY: Users can view tickets they created or are shared with
+-- POLICY: Users can view tickets they created or are shared with
 DROP POLICY IF EXISTS "Users can view their own and shared tickets" ON ticket_table;
 
 CREATE POLICY "Users can view their own and shared tickets" ON ticket_table
@@ -96,7 +96,7 @@ FOR SELECT USING (
   )
 );
 
--- ✅ POLICY: Canvassers can create tickets
+-- POLICY: Canvassers can create tickets
 DROP POLICY IF EXISTS "Canvassers can create tickets" ON ticket_table;
 
 CREATE POLICY "Canvassers can create tickets" ON ticket_table
@@ -353,13 +353,13 @@ AS $$
     t.ticket_item_description,
     t.ticket_created_by,
 
-    -- ✅ Combine all shared users into an array
+    -- Combine all shared users into an array
     COALESCE(
       JSON_AGG(DISTINCT ts.shared_user_id) FILTER (WHERE ts.shared_user_id IS NOT NULL),
       '[]'::JSON
     ) AS shared_users,
 
-    -- ✅ Get all reviewers
+    -- Get all reviewers
     COALESCE(
       JSON_AGG(
         JSON_BUILD_OBJECT(
@@ -373,11 +373,9 @@ AS $$
   FROM
     ticket_table t
 
-  -- ✅ Left join for shared users
   LEFT JOIN
     ticket_shared_with_table ts ON ts.ticket_id = t.ticket_id
 
-  -- ✅ Left join for reviewers
   LEFT JOIN
     (
       SELECT DISTINCT ON (a.approval_reviewed_by, a.approval_ticket_id)
@@ -419,6 +417,7 @@ returns table (
   ticket_date_created timestamp,
   ticket_last_updated timestamp,
   ticket_notes text,
+  ticket_rf_date_received timestamp, 
   shared_users json,
   reviewers json
 )
@@ -448,9 +447,8 @@ as $$
 
     t.ticket_date_created,
     t.ticket_last_updated,
-
-    -- Including ticket_notes from ticket_table
     t.ticket_notes,
+    t.ticket_rf_date_received,
 
     (
       select coalesce(

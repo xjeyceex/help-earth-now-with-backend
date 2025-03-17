@@ -190,7 +190,7 @@ const TicketDetailsPage = () => {
         <Stack>
           <Text size="md">
             <strong>RF Date Received:</strong>{" "}
-            {new Date(ticket.ticket_rf_date).toLocaleString("en-US", {
+            {new Date(ticket.ticket_rf_date_received).toLocaleString("en-US", {
               day: "2-digit",
               month: "short",
               year: "numeric",
@@ -327,7 +327,13 @@ const TicketDetailsPage = () => {
                 <Stack key={canvass.canvass_form_id}>
                   <Text>
                     <strong>RF Date Received:</strong>{" "}
-                    {canvass.canvass_form_rf_date_received}
+                    {new Date(
+                      canvass.canvass_form_rf_date_received
+                    ).toLocaleDateString("en-US", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </Text>
                   <Text>
                     <strong>Recommended Supplier:</strong>{" "}
