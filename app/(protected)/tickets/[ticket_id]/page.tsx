@@ -288,6 +288,7 @@ const TicketDetailsPage = () => {
                 opened={isSharing}
                 onClose={() => setIsSharing(false)}
                 title="Share Ticket"
+                centered
               >
                 <MultiSelect
                   data={allUsers}
