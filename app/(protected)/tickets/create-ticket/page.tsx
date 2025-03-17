@@ -20,7 +20,13 @@ import {
   Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconCheck, IconTrash, IconUsers, IconX } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconCheck,
+  IconTrash,
+  IconUsers,
+  IconX,
+} from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -48,7 +54,7 @@ const CreateTicketPage = () => {
   const [noteValue, setNoteValue] = useState<string>("");
   const [reviewerOptions, setReviewerOptions] = useState<ReviewerType[]>([]);
   const [selectedReviewers, setSelectedReviewers] = useState<ReviewerType[]>(
-    [],
+    []
   );
 
   const form = useForm<z.infer<typeof TicketFormSchema>>({
@@ -67,8 +73,8 @@ const CreateTicketPage = () => {
     const filteredReviewers = reviewerOptions.filter(
       (option) =>
         !selectedReviewers.some(
-          (reviewer) => reviewer.user_id === option.user_id,
-        ),
+          (reviewer) => reviewer.user_id === option.user_id
+        )
     );
 
     return filteredReviewers.map((reviewer) => ({
@@ -81,7 +87,7 @@ const CreateTicketPage = () => {
     if (!value) return;
 
     const selectedOption = reviewerOptions.find(
-      (option) => option.user_id === value,
+      (option) => option.user_id === value
     );
     if (
       selectedOption &&
@@ -105,12 +111,12 @@ const CreateTicketPage = () => {
 
   const removeReviewer = (id: string) => {
     const updatedReviewers = selectedReviewers.filter(
-      (reviewer) => reviewer.user_id !== id,
+      (reviewer) => reviewer.user_id !== id
     );
     setSelectedReviewers(updatedReviewers);
     form.setValue(
       "ticketReviewer",
-      updatedReviewers.map((r) => r.user_id),
+      updatedReviewers.map((r) => r.user_id)
     );
   };
 
@@ -174,6 +180,15 @@ const CreateTicketPage = () => {
   return (
     <Container size={800} my={40}>
       <Card padding="lg">
+        <Box mb="xl">
+          <Button
+            variant="light"
+            onClick={() => router.push("/tickets")}
+            leftSection={<IconArrowLeft size={16} />}
+          >
+            Go back
+          </Button>
+        </Box>
         <Stack gap="md">
           <Box>
             <Title fw={600} order={3} mb={4}>
