@@ -95,3 +95,5 @@ export const RichTextEditor = forwardRef<
     </MantineRichTextEditor>
   );
 });
+
+RichTextEditor.displayName = "RichTextEditor";
