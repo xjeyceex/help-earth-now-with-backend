@@ -22,6 +22,7 @@ export type TicketDetailsType = {
   ticket_item_description: string;
   ticket_status: string;
   ticket_created_by: string;
+  ticket_created_by_avatar: string;
   ticket_quantity: number;
   ticket_specifications: string;
   ticket_rf_date: string;
