@@ -8,7 +8,12 @@ export const publicRoutes = ["/"] as const;
  * @type {readonly string[]}
  * @description Authentication-related routes.
  */
-export const authRoutes = ["/login", "/register"] as const;
+export const authRoutes = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+] as const;
 
 /**
  * @type {readonly string[]}
