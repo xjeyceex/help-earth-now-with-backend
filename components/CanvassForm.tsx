@@ -132,7 +132,7 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
                 error={form.formState.errors.leadTimeDay?.message}
                 label="Lead Time (days)"
                 name="leadTimeDay"
-                placeholder="Enter quotation price"
+                placeholder="Enter total amount"
                 type="number"
                 required
                 disabled={isPending}
@@ -146,9 +146,9 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
                   valueAsNumber: true,
                 })}
                 error={form.formState.errors.totalAmount?.message}
-                label="Quotation Price"
+                label="Total Amount"
                 name="totalAmount"
-                placeholder="Enter quotation price"
+                placeholder="Enter Total Amount"
                 type="number"
                 required
                 disabled={isPending}
@@ -160,9 +160,9 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
               <TextInput
                 {...form.register("paymentTerms")}
                 error={form.formState.errors.paymentTerms?.message}
-                label="Quotation Terms"
+                label="Payment Terms"
                 name="paymentTerms"
-                placeholder="Enter quotation terms"
+                placeholder="Enter Payment Terms"
                 disabled={isPending}
                 required
                 radius="md"

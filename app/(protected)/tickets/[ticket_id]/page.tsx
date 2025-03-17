@@ -338,7 +338,7 @@ const TicketDetailsPage = () => {
                     {canvass.canvass_form_lead_time_day}
                   </Text>
                   <Text>
-                    <strong>Quotation Price:</strong> ₱
+                    <strong>Total Amount:</strong> ₱
                     {canvass.canvass_form_total_amount.toFixed(2)}
                   </Text>
                   {canvass.canvass_form_payment_terms && (
