@@ -1,3 +1,11 @@
+export type UserType = {
+  user_id: string;
+  user_role: string;
+  user_full_name: string;
+  user_email: string;
+  user_avatar: string;
+};
+
 export type ReviewerType = {
   user_id: string;
   user_full_name: string;

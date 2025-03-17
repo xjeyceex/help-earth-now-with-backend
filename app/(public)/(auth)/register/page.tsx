@@ -10,6 +10,8 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { IconCheck } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -29,7 +31,12 @@ const RegisterPage = () => {
       return;
     }
 
-    alert("Registration successful! Please confirm your email.");
+    notifications.show({
+      title: "Success",
+      message: "Email confirmation sent. Please check your email.",
+      color: "green",
+      icon: <IconCheck size={16} />,
+    });
     router.push("/login");
   };
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { userLogin } from "@/actions/post";
-import { useUserStore } from "@/stores/userStore";
 import {
   Alert,
   Button,
@@ -13,32 +12,27 @@ import {
   Title,
 } from "@mantine/core";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 
 const LoginPage = () => {
+  const [isPending, startTransition] = useTransition();
+
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
     form?: string;
   }>({});
-  const router = useRouter();
-  const { user } = useUserStore();
 
-  useEffect(() => {
-    if (user) {
-      router.replace("/dashboard");
-    }
-  }, [user, router]);
+  const handleSubmit = (formData: FormData) => {
+    startTransition(async () => {
+      const result = await userLogin(formData);
 
-  const handleSubmit = async (formData: FormData) => {
-    const result = await userLogin(formData);
-
-    if (result?.error) {
-      setErrors(result.error);
-    } else {
-      setErrors({});
-    }
+      if (result?.error) {
+        setErrors(result.error);
+      } else {
+        setErrors({});
+      }
+    });
   };
 
   return (
@@ -60,6 +54,7 @@ const LoginPage = () => {
             type="email"
             required
             error={errors.email}
+            disabled={isPending}
           />
 
           <PasswordInput
@@ -70,9 +65,16 @@ const LoginPage = () => {
             required
             mt="md"
             error={errors.password}
+            disabled={isPending}
           />
 
-          <Button fullWidth mt="xl" type="submit">
+          <Button
+            fullWidth
+            mt="xl"
+            type="submit"
+            disabled={isPending}
+            loading={isPending}
+          >
             Log in
           </Button>
         </form>

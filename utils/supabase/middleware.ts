@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { authRoutes, dashboardRoute, protectedRoutes } from "@/utils/routes";
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -16,17 +18,17 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value),
+            request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+            supabaseResponse.cookies.set(name, value, options)
           );
         },
       },
-    },
+    }
   );
 
   // Do not run code between createServerClient and
@@ -35,23 +37,12 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: DO NOT REMOVE auth.getUser()
 
-  const authRoutes = ["/login", "/register"];
-
-  const protectedRoutes = [
-    "/manager",
-    "/purchaser",
-    "/supervisor",
-    "/dashboard",
-    "/create-ticket",
-    "/auth/callback",
-  ];
-
   const isAuthRoutes = authRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
+    request.nextUrl.pathname.startsWith(route)
   );
 
   const isProtectedRoutes = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
+    request.nextUrl.pathname.startsWith(route)
   );
 
   const {
@@ -60,7 +51,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthRoutes) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/callback";
+    url.pathname = dashboardRoute;
     return NextResponse.redirect(url);
   }
 

@@ -17,7 +17,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const DashboardPage = () => {
-  const { user } = useUserStore(); // Get logged-in user
+  const { user } = useUserStore();
   const [tickets, setTickets] = useState<DashboardTicketType[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,13 +25,13 @@ const DashboardPage = () => {
 
   const countUserTicketsByStatus = (
     tickets: DashboardTicketType[],
-    statusType: "OPEN" | "COMPLETED",
+    statusType: "OPEN" | "COMPLETED"
   ) => {
     if (statusType === "OPEN") {
       return tickets.filter(
         (ticket) =>
           ticket.ticket_status === "FOR CANVASS" ||
-          ticket.ticket_status === "IN PROGRESS",
+          ticket.ticket_status === "IN PROGRESS"
       ).length;
     }
 
@@ -49,7 +49,7 @@ const DashboardPage = () => {
         setLoading(true);
 
         const data = await getDashboardTickets(
-          isAdmin ? undefined : user?.user_id,
+          isAdmin ? undefined : user?.user_id
         );
 
         setTickets(data ?? []);
@@ -74,7 +74,7 @@ const DashboardPage = () => {
         <Grid.Col span={{ base: 12, sm: 6 }}>
           <Card shadow="sm" padding="lg" radius="md" withBorder>
             <Text size="lg" fw={500}>
-              Open Tickets
+              Open Ticket
             </Text>
             <Badge color="blue" size="xl" mt="md">
               {countUserTicketsByStatus(tickets, "OPEN")}
@@ -117,10 +117,10 @@ const DashboardPage = () => {
                   ticket.ticket_status === "FOR CANVASS"
                     ? "yellow"
                     : ticket.ticket_status === "IN PROGRESS"
-                      ? "blue"
-                      : ticket.ticket_status === "COMPLETED"
-                        ? "green"
-                        : "gray"
+                    ? "blue"
+                    : ticket.ticket_status === "COMPLETED"
+                    ? "green"
+                    : "gray"
                 }
                 mt="sm"
               >

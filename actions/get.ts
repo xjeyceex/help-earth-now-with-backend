@@ -1,9 +1,13 @@
 "use server";
 
 import { CanvassDetail } from "@/app/(protected)/tickets/[ticket_id]/page";
-import { User } from "@/stores/userStore";
 import { createClient } from "@/utils/supabase/server";
-import { DashboardTicketType, DropdownType, ReviewerType } from "@/utils/types";
+import {
+  DashboardTicketType,
+  DropdownType,
+  ReviewerType,
+  UserType,
+} from "@/utils/types";
 
 export const getCurrentUser = async () => {
   const supabase = await createClient();
@@ -37,7 +41,7 @@ export const getCurrentUser = async () => {
 
   return {
     success: true,
-    data: userData as User,
+    data: userData as UserType,
   };
 };
 

@@ -68,7 +68,9 @@ export const userLogout = async () => {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+
+  // Redirect to the login page
+  redirect("/login");
 };
 
 export const userRegister = async (formData: FormData) => {
@@ -202,6 +204,27 @@ export const createTicket = async (
     return {
       success: false,
       message: "Failed to create ticket",
+    };
+  }
+
+  // Insert reviewers after creating the ticket
+  const reviewers = validatedData.ticketReviewer.map((reviewerId) =>
+    supabase.from("approval_table").insert({
+      approval_ticket_id: ticket.ticket_id,
+      approval_reviewed_by: reviewerId,
+      approval_review_status: "PENDING",
+      approval_review_comments: null,
+      approval_review_date: new Date(),
+    })
+  );
+
+  const result = await Promise.all(reviewers);
+
+  const hasError = result.some(({ error }) => error);
+  if (hasError) {
+    return {
+      success: false,
+      message: "Failed to assign reviewers",
     };
   }
 
