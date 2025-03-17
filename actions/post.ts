@@ -187,6 +187,7 @@ export const createTicket = async (
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
 
+  // ✅ Insert ticket first
   const { data: ticket, error: ticketError } = await supabase
     .from("ticket_table")
     .insert({
@@ -207,21 +208,19 @@ export const createTicket = async (
     };
   }
 
-  // Insert reviewers after creating the ticket
-  const reviewers = validatedData.ticketReviewer.map((reviewerId) =>
-    supabase.from("approval_table").insert({
-      approval_ticket_id: ticket.ticket_id,
-      approval_reviewed_by: reviewerId,
-      approval_review_status: "PENDING",
-      approval_review_comments: null,
-      approval_review_date: new Date(),
-    })
-  );
+  const { error: reviewersError } = await supabase
+    .from("approval_table")
+    .insert(
+      validatedData.ticketReviewer.map((reviewerId) => ({
+        approval_ticket_id: ticket.ticket_id,
+        approval_reviewed_by: reviewerId,
+        approval_review_status: "PENDING",
+        approval_review_comments: null,
+        approval_review_date: new Date(),
+      }))
+    );
 
-  const result = await Promise.all(reviewers);
-
-  const hasError = result.some(({ error }) => error);
-  if (hasError) {
+  if (reviewersError) {
     return {
       success: false,
       message: "Failed to assign reviewers",
