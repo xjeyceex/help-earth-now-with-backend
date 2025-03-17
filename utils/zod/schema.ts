@@ -15,7 +15,11 @@ export const TicketFormSchema = z.object({
 });
 
 export const CanvassFormSchema = z.object({
-  supplierName: z.string().min(1, "Supplier name is required"),
+  RfDateReceived: z.date().refine((date) => date !== null, {
+    message: "RF Date Received is required.",
+  }),
+  recommendedSupplier: z.string().min(1, "Recommended Supplier is required"),
+  leadTimeDay: z.coerce.number().min(1, "Lead Time Day must be at least 1"),
   quotationPrice: z.number().min(0.01, "Price must be greater than 0"),
   quotationTerms: z.string().min(1, "Terms are required"),
   canvassSheet: z.instanceof(File).refine(

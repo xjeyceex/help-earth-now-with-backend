@@ -197,12 +197,13 @@ export const createTicket = async (
       ticket_specifications: validatedData.ticketSpecification,
       ticket_notes: validatedData.ticketNotes,
       ticket_created_by: userId,
-      ticket_rf_date: validatedData.ticketRfDateReceived,
+      ticket_rf_date_received: validatedData.ticketRfDateReceived,
     })
     .select()
     .single();
 
   if (ticketError) {
+    console.log(ticketError);
     return {
       success: false,
       message: "Failed to create ticket",
@@ -318,14 +319,18 @@ export const shareTicket = async (ticket_id: string, user_id: string) => {
 };
 
 export const createCanvass = async ({
-  supplierName,
+  RfDateReceived,
+  recommendedSupplier,
+  leadTimeDay,
   quotationPrice,
   quotationTerms,
   canvassSheet,
   quotation,
   ticketId,
 }: {
-  supplierName: string;
+  RfDateReceived: Date;
+  recommendedSupplier: string;
+  leadTimeDay: number;
   quotationPrice: number;
   quotationTerms: string;
   canvassSheet: File;
@@ -385,7 +390,9 @@ export const createCanvass = async ({
       .from("canvass_form_table")
       .insert({
         canvass_form_ticket_id: ticketId,
-        canvass_form_supplier_name: supplierName,
+        canvass_form_rf_date_received: RfDateReceived,
+        canvass_form_recommended_supplier: recommendedSupplier,
+        canvass_form_lead_time_day: leadTimeDay,
         canvass_form_quotation_price: quotationPrice,
         canvass_form_quotation_terms: quotationTerms,
         canvass_form_attachment_url: quotationResult.publicUrl,

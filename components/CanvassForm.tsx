@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Container,
+  Flex,
   Stack,
   Text,
   TextInput,
@@ -16,6 +17,7 @@ import { z } from "zod";
 
 import { createCanvass } from "@/actions/post";
 import { CanvassFormSchema } from "@/utils/zod/schema";
+import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 import DropzoneFileInput from "./ui/DropzoneFileInput";
@@ -33,7 +35,8 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(CanvassFormSchema),
     defaultValues: {
-      supplierName: "",
+      RfDateReceived: new Date(),
+      leadTimeDay: 1,
       quotationPrice: 0,
       quotationTerms: "",
     },
@@ -45,7 +48,9 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
     if (validatedFields.success) {
       startTransition(async () => {
         const res = await createCanvass({
-          supplierName: values.supplierName,
+          RfDateReceived: values.RfDateReceived,
+          recommendedSupplier: values.recommendedSupplier,
+          leadTimeDay: values.leadTimeDay,
           quotationPrice: values.quotationPrice,
           quotationTerms: values.quotationTerms,
           canvassSheet: values.canvassSheet,
@@ -82,11 +87,10 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
   };
 
   return (
-    <Container w="100%" mt={40} p="0">
-      {/* Canvass Form */}
-      <Stack p="0">
+    <Container w="100%" p={0}>
+      <Stack>
         <Box>
-          <Title fw={600} order={3} mb={4}>
+          <Title fw={600} order={3} mb={4} ta={"center"} size="h2">
             Canvass Form
           </Title>
         </Box>
@@ -94,15 +98,46 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Stack gap="lg">
             <Box>
-              <TextInput
-                {...form.register("supplierName")}
-                error={form.formState.errors.supplierName?.message}
-                label="Supplier Name"
-                name="supplierName"
-                placeholder="Enter supplier name"
+              <DateInput
+                {...form.register("RfDateReceived")}
+                value={form.watch("RfDateReceived")}
+                onChange={(date) =>
+                  form.setValue("RfDateReceived", date || new Date())
+                }
+                error={form.formState.errors.RfDateReceived?.message as string}
+                label="RF Date Received"
+                placeholder="Select RF date"
                 disabled={isPending}
                 required
                 radius="md"
+              />
+            </Box>
+            <Box>
+              <TextInput
+                {...form.register("recommendedSupplier")}
+                error={form.formState.errors.recommendedSupplier?.message}
+                label="Recommended Supplier"
+                name="recommendedSupplier"
+                placeholder="Enter recommended supplier"
+                disabled={isPending}
+                required
+                radius="md"
+              />
+            </Box>
+            <Box>
+              <TextInput
+                {...form.register("leadTimeDay", {
+                  valueAsNumber: true,
+                })}
+                error={form.formState.errors.leadTimeDay?.message}
+                label="Lead Time Day"
+                name="leadTimeDay"
+                placeholder="Enter quotation price"
+                type="number"
+                required
+                disabled={isPending}
+                radius="md"
+                step="any"
               />
             </Box>
             <Box>
@@ -183,9 +218,11 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
                 )}
               />
             </Box>
-            <Button type="submit" loading={isPending} fullWidth>
-              Create canvass
-            </Button>
+            <Flex justify="end">
+              <Button type="submit" loading={isPending} w="fit-content" my="md">
+                Create canvass
+              </Button>
+            </Flex>
           </Stack>
         </form>
       </Stack>

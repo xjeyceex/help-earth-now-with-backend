@@ -49,10 +49,12 @@ const CreateTicketPage = () => {
 
   const { user } = useUserStore();
 
-  const editorRef = useRef<RichTextEditorRef>(null);
+  const noteEditorRef = useRef<RichTextEditorRef>(null);
+  const specificationsEditorRef = useRef<RichTextEditorRef>(null);
 
   const [isPending, startTransition] = useTransition();
   const [noteValue, setNoteValue] = useState<string>("");
+  const [specificationsValue, setSpecificationsValue] = useState<string>("");
   const [reviewerOptions, setReviewerOptions] = useState<ReviewerType[]>([]);
   const [selectedReviewers, setSelectedReviewers] = useState<ReviewerType[]>(
     []
@@ -147,7 +149,7 @@ const CreateTicketPage = () => {
           setNoteValue("");
 
           // Reset rich text editor
-          editorRef.current?.reset();
+          noteEditorRef.current?.reset();
 
           // Redirect to ticket details page
           router.push(`/tickets/${res.ticket_id}`);
@@ -207,24 +209,24 @@ const CreateTicketPage = () => {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <Stack gap="lg">
               <Box>
-                <Box>
-                  <DateInput
-                    {...form.register("ticketRfDateReceived")}
-                    value={form.watch("ticketRfDateReceived")}
-                    onChange={(date) =>
-                      form.setValue("ticketRfDateReceived", date || new Date())
-                    }
-                    error={
-                      form.formState.errors.ticketRfDateReceived
-                        ?.message as string
-                    }
-                    label="RF Date Received"
-                    placeholder="Select RF date"
-                    disabled={isPending}
-                    required
-                    radius="md"
-                  />
-                </Box>
+                <DateInput
+                  {...form.register("ticketRfDateReceived")}
+                  value={form.watch("ticketRfDateReceived")}
+                  onChange={(date) =>
+                    form.setValue("ticketRfDateReceived", date || new Date())
+                  }
+                  error={
+                    form.formState.errors.ticketRfDateReceived
+                      ?.message as string
+                  }
+                  label="RF Date Received"
+                  placeholder="Select RF date"
+                  disabled={isPending}
+                  required
+                  radius="md"
+                />
+              </Box>
+              <Box>
                 <TextInput
                   {...form.register("ticketItemName")}
                   error={
@@ -272,16 +274,16 @@ const CreateTicketPage = () => {
                 />
               </Box>
               <Box>
-                <TextInput
-                  {...form.register("ticketSpecification")}
-                  error={
-                    form.formState.errors.ticketSpecification?.message as string
-                  }
-                  label="Specifications"
-                  name="ticketSpecification"
-                  placeholder="Enter specifications"
-                  disabled={isPending}
-                  radius="md"
+                <Text size="sm" fw={500} mb={5}>
+                  Specifications
+                </Text>
+                <RichTextEditor
+                  ref={specificationsEditorRef}
+                  value={specificationsValue}
+                  onChange={(value) => {
+                    setSpecificationsValue(value);
+                    form.setValue("ticketNotes", value);
+                  }}
                 />
               </Box>
 
@@ -290,7 +292,7 @@ const CreateTicketPage = () => {
                   Notes
                 </Text>
                 <RichTextEditor
-                  ref={editorRef}
+                  ref={noteEditorRef}
                   value={noteValue}
                   onChange={(value) => {
                     setNoteValue(value);

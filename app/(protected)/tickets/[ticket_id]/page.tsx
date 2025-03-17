@@ -47,7 +47,9 @@ export type CanvassSubmitter = {
 export type CanvassDetail = {
   canvass_form_id: string;
   canvass_form_ticket_id: string;
-  canvass_form_supplier_name: string;
+  canvass_form_rf_date_received: string;
+  canvass_form_recommended_supplier: string;
+  canvass_form_lead_time_day: number;
   canvass_form_quotation_price: number;
   canvass_form_quotation_terms: string | null;
   canvass_form_attachment_url: string | null;
@@ -176,15 +178,17 @@ const TicketDetailsPage = () => {
     <Container size="sm" py="xl">
       <Flex justify="flex-start" align="center" gap="lg">
         <Link href="/tickets">
-          <Button leftSection={<IconArrowLeft size={16} />}>Back</Button>
+          <Button variant="light" leftSection={<IconArrowLeft size={16} />}>
+            Go back
+          </Button>
         </Link>
       </Flex>
-      <Card shadow="sm" padding="lg" mt="lg" radius="md" withBorder>
-        <Title ta="center" mb="lg" size="md">
-          Ticket Details: {ticket.ticket_id}
+      <Card shadow="sm" mt="lg" radius="md" withBorder px={30}>
+        <Title ta="center" my={20} fz="h2">
+          Ticket Details
         </Title>
 
-        <Stack>
+        <Stack w="100%">
           <Group>
             <Avatar radius="xl" size="md" />
             <Text size="sm" c="dimmed">
@@ -317,7 +321,7 @@ const TicketDetailsPage = () => {
 
         <Divider my="xl" />
 
-        <Stack>
+        <Stack p={0}>
           {canvassDetails?.length > 0 ? (
             <Stack>
               <Title ta="center">Canvass Details</Title>
@@ -325,8 +329,16 @@ const TicketDetailsPage = () => {
               {canvassDetails?.map((canvass: CanvassDetail) => (
                 <Stack key={canvass.canvass_form_id}>
                   <Text>
-                    <strong>Supplier:</strong>{" "}
-                    {canvass.canvass_form_supplier_name}
+                    <strong>RF Date Received:</strong>{" "}
+                    {canvass.canvass_form_rf_date_received}
+                  </Text>
+                  <Text>
+                    <strong>Recommended Supplier:</strong>{" "}
+                    {canvass.canvass_form_recommended_supplier}
+                  </Text>
+                  <Text>
+                    <strong>Lead Time Day:</strong>{" "}
+                    {canvass.canvass_form_lead_time_day}
                   </Text>
                   <Text>
                     <strong>Quotation Price:</strong> ₱

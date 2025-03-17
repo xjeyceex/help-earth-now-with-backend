@@ -38,7 +38,7 @@ const Navbar = () => {
       align="center"
       py="md"
       px="lg"
-      bg={mounted && colorScheme === "dark" ? "dark.7" : "gray.1"}
+      bg={mounted && colorScheme === "dark" ? "dark.7" : "white"}
       style={{
         position: "sticky",
         top: 0,

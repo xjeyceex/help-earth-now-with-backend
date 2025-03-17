@@ -166,7 +166,9 @@ DROP TABLE IF EXISTS canvass_form_table CASCADE;
 CREATE TABLE public.canvass_form_table (
     canvass_form_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     canvass_form_ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
-    canvass_form_supplier_name TEXT NOT NULL,
+    canvass_form_rf_date_received TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
+    canvass_form_recommended_supplier TEXT NOT NULL,
+    canvass_form_lead_time_day INT NOT NULL CHECK (canvass_form_lead_time_day > 0),
     canvass_form_quotation_price DECIMAL(10,2) NOT NULL CHECK (canvass_form_quotation_price > 0), 
     canvass_form_quotation_terms TEXT,
     canvass_form_attachment_url TEXT, 
