@@ -24,10 +24,10 @@ import DropzoneFileInput from "./ui/DropzoneFileInput";
 
 type FormValues = z.infer<typeof CanvassFormSchema>;
 
-interface CanvassFormProps {
+type CanvassFormProps = {
   ticketId: string;
   updateCanvassDetails: () => void;
-}
+};
 
 const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
   const [isPending, startTransition] = useTransition();
@@ -130,7 +130,7 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
                   valueAsNumber: true,
                 })}
                 error={form.formState.errors.leadTimeDay?.message}
-                label="Lead Time Day"
+                label="Lead Time (days)"
                 name="leadTimeDay"
                 placeholder="Enter quotation price"
                 type="number"

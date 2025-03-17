@@ -282,7 +282,7 @@ const CreateTicketPage = () => {
                   value={specificationsValue}
                   onChange={(value) => {
                     setSpecificationsValue(value);
-                    form.setValue("ticketNotes", value);
+                    form.setValue("ticketSpecification", value);
                   }}
                 />
               </Box>

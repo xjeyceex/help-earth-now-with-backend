@@ -26,6 +26,7 @@ export type TicketDetailsType = {
   ticket_quantity: number;
   ticket_specifications: string;
   ticket_rf_date: string;
+  ticket_notes: string;
   ticket_created_by_name: string;
   reviewers: {
     reviewer_id: string;
@@ -62,4 +63,33 @@ export type MyTicketType = {
     approval_status: string;
   }[];
   shared_users?: string[];
+};
+
+export type CanvassAttachment = {
+  canvass_attachment_id: string;
+  canvass_attachment_type: string | null;
+  canvass_attachment_url: string | null;
+  canvass_attachment_created_at: string;
+};
+
+export type CanvassSubmitter = {
+  user_id: string;
+  user_full_name: string | null;
+  user_email: string | null;
+  user_avatar: string | null;
+};
+
+export type CanvassDetail = {
+  canvass_form_id: string;
+  canvass_form_ticket_id: string;
+  canvass_form_rf_date_received: string;
+  canvass_form_recommended_supplier: string;
+  canvass_form_lead_time_day: number;
+  canvass_form_quotation_price: number;
+  canvass_form_quotation_terms: string | null;
+  canvass_form_attachment_url: string | null;
+  canvass_form_submitted_by: string;
+  canvass_form_date_submitted: string;
+  submitted_by: CanvassSubmitter;
+  attachments: CanvassAttachment[];
 };

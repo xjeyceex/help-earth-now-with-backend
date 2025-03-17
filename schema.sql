@@ -418,6 +418,7 @@ returns table (
   approval_status text,
   ticket_date_created timestamp,
   ticket_last_updated timestamp,
+  ticket_notes text,
   shared_users json,
   reviewers json
 )
@@ -448,7 +449,9 @@ as $$
     t.ticket_date_created,
     t.ticket_last_updated,
 
-   
+    -- Including ticket_notes from ticket_table
+    t.ticket_notes,
+
     (
       select coalesce(
         json_agg(
@@ -465,7 +468,6 @@ as $$
       where ts.ticket_id = t.ticket_id
     )::json as shared_users,
 
-    
     (
       select coalesce(
         json_agg(
