@@ -42,7 +42,7 @@ const Navbar = () => {
       style={{
         position: "sticky",
         top: 0,
-        zIndex: 1000,
+        zIndex: 50,
         width: "100%",
         boxShadow: "0px 2px 10px rgba(0,0,0,0.1)",
       }}
