@@ -67,8 +67,9 @@ CREATE TABLE public.ticket_table (
   ticket_notes TEXT,
   ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
   ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-  ticket_date_created TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()), -- ✅ Fixed
-  ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) -- ✅ Fixed
+  ticket_rf_date_received TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
+  ticket_date_created TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()),
+  ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) 
 );
 
 -- ✅ DROP TABLE IF EXISTS
@@ -78,9 +79,9 @@ DROP TABLE IF EXISTS ticket_shared_with_table cascade;
 CREATE TABLE public.ticket_shared_with_table (
     ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
     shared_user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-    assigned_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()),  -- Tracks assignment time
+    assigned_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()), 
     assigned_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-    PRIMARY KEY (ticket_id, shared_user_id) -- Ensures a user is not added twice for the same ticket
+    PRIMARY KEY (ticket_id, shared_user_id)
 );
 
 -- ✅ POLICY: Users can view tickets they created or are shared with

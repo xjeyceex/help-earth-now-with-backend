@@ -6,6 +6,9 @@ export const TicketFormSchema = z.object({
   ticketQuantity: z.coerce.number().min(1, "Quantity must be at least 1"),
   ticketSpecification: z.string().optional(),
   ticketNotes: z.string().optional(),
+  ticketRfDateReceived: z.date().refine((date) => date !== null, {
+    message: "RF Date Received is required.",
+  }),
   ticketReviewer: z
     .array(z.string())
     .min(1, "At least one reviewer is required"),
@@ -32,7 +35,7 @@ export const CanvassFormSchema = z.object({
     {
       message:
         "Invalid file type or size. Please upload an image file (JPEG, PNG, GIF, or WEBP) less than 5MB.",
-    },
+    }
   ),
   quotation: z.instanceof(File).refine(
     (file) => {
@@ -51,6 +54,6 @@ export const CanvassFormSchema = z.object({
     {
       message:
         "Invalid file type or size. Please upload an image file (JPEG, PNG, GIF, or WEBP) less than 5MB.",
-    },
+    }
   ),
 });
