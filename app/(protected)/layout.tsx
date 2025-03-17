@@ -2,16 +2,15 @@
 
 import { getCurrentUser } from "@/actions/get";
 import LoadingState from "@/components/LoadingState";
-import Navbar from "@/components/Navbar";
 import { useUserStore } from "@/stores/userStore";
 import { UserType } from "@/utils/types";
 import { notifications } from "@mantine/notifications";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { useEffect } from "react";
 
-interface ProtectedLayoutProps {
+type ProtectedLayoutProps = {
   children: React.ReactNode;
-}
+};
 
 const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
   const { user, setUser } = useUserStore();
@@ -40,11 +39,6 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
 
   if (!user) return <LoadingState />;
 
-  return (
-    <main>
-      <Navbar />
-      {children}
-    </main>
-  );
+  return <main>{children}</main>;
 };
 export default ProtectedLayout;

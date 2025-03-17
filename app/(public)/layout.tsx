@@ -1,15 +1,8 @@
-import Navbar from "@/components/Navbar";
-
-interface PublicLayoutProps {
+type PublicLayoutProps = {
   children: React.ReactNode;
-}
+};
 
 const PublicLayout = ({ children }: PublicLayoutProps) => {
-  return (
-    <main>
-      <Navbar />
-      {children}
-    </main>
-  );
+  return <main>{children}</main>;
 };
 export default PublicLayout;

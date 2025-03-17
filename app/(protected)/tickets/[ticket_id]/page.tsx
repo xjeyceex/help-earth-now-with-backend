@@ -190,7 +190,11 @@ const TicketDetailsPage = () => {
 
         <Stack w="100%">
           <Group>
-            <Avatar radius="xl" size="md" />
+            <Avatar
+              src={ticket.ticket_created_by_avatar}
+              radius="xl"
+              size="md"
+            />
             <Text size="sm" c="dimmed">
               <strong>{ticket.ticket_created_by_name}</strong> raised this on{" "}
               {new Date(ticket.ticket_date_created).toLocaleString("en-US", {

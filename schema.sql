@@ -411,7 +411,8 @@ returns table (
   ticket_item_description text,
   ticket_status text,
   ticket_created_by uuid,
-  ticket_created_by_name text, -- ✅ Added this
+  ticket_created_by_name text, 
+  ticket_created_by_avatar text, 
   ticket_quantity integer,
   ticket_specifications text,
   approval_status text,
@@ -422,19 +423,19 @@ returns table (
 )
 language sql
 as $$
+
   select 
     t.ticket_id,
     t.ticket_item_description,
     t.ticket_status,
     t.ticket_created_by,
 
-    -- ✅ Get creator name
     u.user_full_name as ticket_created_by_name,
+    u.user_avatar as ticket_created_by_avatar,  
 
     t.ticket_quantity,
     t.ticket_specifications,
 
-    -- ✅ Get the overall approval status
     coalesce(
       (
         select a.approval_review_status
@@ -447,14 +448,15 @@ as $$
     t.ticket_date_created,
     t.ticket_last_updated,
 
-    -- ✅ Separate Subquery for shared_users
+   
     (
       select coalesce(
         json_agg(
           json_build_object(
             'user_id', u2.user_id,
             'user_full_name', u2.user_full_name,
-            'user_email', u2.user_email
+            'user_email', u2.user_email,
+            'user_avatar', u2.user_avatar 
           )
         ), '[]'
       )
@@ -463,13 +465,14 @@ as $$
       where ts.ticket_id = t.ticket_id
     )::json as shared_users,
 
-    -- ✅ Separate Subquery for reviewers
+    
     (
       select coalesce(
         json_agg(
           json_build_object(
             'reviewer_id', a.approval_reviewed_by,
             'reviewer_name', u3.user_full_name,
+            'reviewer_avatar', u3.user_avatar, 
             'approval_status', a.approval_review_status
           )
         ), '[]'
@@ -482,10 +485,10 @@ as $$
   from 
     ticket_table t
 
-  -- ✅ Left Join to get the creator's name
   left join user_table u on u.user_id = t.ticket_created_by
 
   where t.ticket_id = ticket_uuid
+
 $$;
 
 -- share ticket function

@@ -5,6 +5,7 @@ import {
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 
+import Navbar from "@/components/Navbar";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/dropzone/styles.css";
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <MantineProvider>
           <Notifications />
+          <Navbar />
           {children}
         </MantineProvider>
       </body>
