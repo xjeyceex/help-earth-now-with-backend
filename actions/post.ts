@@ -197,6 +197,7 @@ export const createTicket = async (
       ticket_specifications: validatedData.ticketSpecification,
       ticket_notes: validatedData.ticketNotes,
       ticket_created_by: userId,
+      ticket_rf_date: validatedData.ticketRfDateReceived,
     })
     .select()
     .single();

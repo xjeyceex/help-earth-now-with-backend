@@ -19,6 +19,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import {
   IconArrowLeft,
@@ -65,6 +66,7 @@ const CreateTicketPage = () => {
       ticketQuantity: 1,
       ticketSpecification: "",
       ticketNotes: "",
+      ticketRfDateReceived: new Date(),
       ticketReviewer: [],
     },
   });
@@ -205,6 +207,24 @@ const CreateTicketPage = () => {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <Stack gap="lg">
               <Box>
+                <Box>
+                  <DateInput
+                    {...form.register("ticketRfDateReceived")}
+                    value={form.watch("ticketRfDateReceived")}
+                    onChange={(date) =>
+                      form.setValue("ticketRfDateReceived", date || new Date())
+                    }
+                    error={
+                      form.formState.errors.ticketRfDateReceived
+                        ?.message as string
+                    }
+                    label="RF Date Received"
+                    placeholder="Select RF date"
+                    disabled={isPending}
+                    required
+                    radius="md"
+                  />
+                </Box>
                 <TextInput
                   {...form.register("ticketItemName")}
                   error={

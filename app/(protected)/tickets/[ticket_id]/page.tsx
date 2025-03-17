@@ -180,8 +180,8 @@ const TicketDetailsPage = () => {
         </Link>
       </Flex>
       <Card shadow="sm" padding="lg" mt="lg" radius="md" withBorder>
-        <Title ta="center" mb="lg">
-          Ticket Details
+        <Title ta="center" mb="lg" size="md">
+          Ticket Details: {ticket.ticket_id}
         </Title>
 
         <Stack>
@@ -204,6 +204,14 @@ const TicketDetailsPage = () => {
         <br />
 
         <Stack>
+          <Text size="md">
+            <strong>RF Date Received:</strong>{" "}
+            {new Date(ticket.ticket_rf_date).toLocaleString("en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </Text>
           <div>
             <strong>Ticket Status:</strong>{" "}
             <Badge
@@ -224,19 +232,17 @@ const TicketDetailsPage = () => {
               {ticket?.ticket_status}
             </Badge>
           </div>
-          <Text size="lg">
-            <strong>Ticket ID:</strong> {ticket.ticket_id}
-          </Text>
-          <Text size="lg">
+
+          <Text size="md">
             <strong>Item Description:</strong> {ticket.ticket_item_description}
           </Text>
-          <Text size="lg">
+          <Text size="md">
             <strong>Quantity:</strong> {ticket.ticket_quantity}
           </Text>
-          <Text size="lg">
+          <Text size="md">
             <strong>Specifications:</strong> {ticket.ticket_specifications}
           </Text>
-          <Text size="lg">
+          <Text size="md">
             <strong>Ticket Status:</strong> {ticket.ticket_status}
           </Text>
 
