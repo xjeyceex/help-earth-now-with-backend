@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { forwardRef, useEffect, useState } from "react";
 
-interface DropzoneFileInputProps {
+type DropzoneFileInputProps = {
   onChange?: (files: File[] | File | undefined) => void;
   value?: File[] | File;
   maxFiles?: number;
