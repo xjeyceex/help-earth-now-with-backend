@@ -453,3 +453,39 @@ export const createCanvass = async ({
     };
   }
 };
+
+export const addComment = async (
+  ticket_id: string,
+  content: string,
+  user_id: string
+) => {
+  const supabase = await createClient();
+
+  // Ensure that the ticket_id, content, and user_id are provided
+  if (!ticket_id || !content || !user_id) {
+    throw new Error("Missing required fields: ticket_id, content, or user_id.");
+  }
+
+  // Start a transaction for inserting the comment
+  const { data: commentData, error: commentError } = await supabase
+    .from("comment_table")
+    .insert([
+      {
+        comment_ticket_id: ticket_id,
+        comment_content: content,
+        comment_type: "COMMENT",
+        comment_date_created: new Date(),
+        comment_is_edited: false,
+        comment_user_id: user_id, // Add the user_id to the comment
+      },
+    ])
+    .select("comment_id");
+
+  if (commentError) {
+    console.error("Error adding comment:", commentError.message);
+    throw new Error("Failed to add comment.");
+  }
+
+  // Return the comment ID
+  return commentData[0].comment_id;
+};

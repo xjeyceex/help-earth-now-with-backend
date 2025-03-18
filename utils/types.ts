@@ -93,3 +93,17 @@ export type CanvassDetail = {
   submitted_by: CanvassSubmitter;
   attachments: CanvassAttachment[];
 };
+
+export type CommentType = {
+  comment_id: string;
+  comment_ticket_id: string;
+  comment_content: string;
+  comment_date_created: string;
+  comment_is_edited: boolean;
+  comment_type: string;
+  comment_last_updated: string;
+  comment_user_id: string;
+  comment_user_avatar: string;
+  comment_user_full_name: string;
+  replies: CommentType[];
+};
