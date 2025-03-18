@@ -24,10 +24,10 @@ import DropzoneFileInput from "./ui/DropzoneFileInput";
 
 type FormValues = z.infer<typeof CanvassFormSchema>;
 
-interface CanvassFormProps {
+type CanvassFormProps = {
   ticketId: string;
   updateCanvassDetails: () => void;
-}
+};
 
 const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
   const [isPending, startTransition] = useTransition();
@@ -37,8 +37,8 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
     defaultValues: {
       RfDateReceived: new Date(),
       leadTimeDay: 1,
-      quotationPrice: 0,
-      quotationTerms: "",
+      totalAmount: 0,
+      paymentTerms: "",
     },
   });
 
@@ -51,8 +51,8 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
           RfDateReceived: values.RfDateReceived,
           recommendedSupplier: values.recommendedSupplier,
           leadTimeDay: values.leadTimeDay,
-          quotationPrice: values.quotationPrice,
-          quotationTerms: values.quotationTerms,
+          totalAmount: values.totalAmount,
+          paymentTerms: values.paymentTerms,
           canvassSheet: values.canvassSheet,
           quotation: values.quotation,
           ticketId: ticketId,
@@ -130,9 +130,9 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
                   valueAsNumber: true,
                 })}
                 error={form.formState.errors.leadTimeDay?.message}
-                label="Lead Time Day"
+                label="Lead Time (days)"
                 name="leadTimeDay"
-                placeholder="Enter quotation price"
+                placeholder="Enter total amount"
                 type="number"
                 required
                 disabled={isPending}
@@ -142,13 +142,13 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
             </Box>
             <Box>
               <TextInput
-                {...form.register("quotationPrice", {
+                {...form.register("totalAmount", {
                   valueAsNumber: true,
                 })}
-                error={form.formState.errors.quotationPrice?.message}
-                label="Quotation Price"
-                name="quotationPrice"
-                placeholder="Enter quotation price"
+                error={form.formState.errors.totalAmount?.message}
+                label="Total Amount"
+                name="totalAmount"
+                placeholder="Enter Total Amount"
                 type="number"
                 required
                 disabled={isPending}
@@ -158,11 +158,11 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
             </Box>
             <Box>
               <TextInput
-                {...form.register("quotationTerms")}
-                error={form.formState.errors.quotationTerms?.message}
-                label="Quotation Terms"
-                name="quotationTerms"
-                placeholder="Enter quotation terms"
+                {...form.register("paymentTerms")}
+                error={form.formState.errors.paymentTerms?.message}
+                label="Payment Terms"
+                name="paymentTerms"
+                placeholder="Enter Payment Terms"
                 disabled={isPending}
                 required
                 radius="md"

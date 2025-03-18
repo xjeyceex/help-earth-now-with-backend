@@ -20,8 +20,8 @@ export const CanvassFormSchema = z.object({
   }),
   recommendedSupplier: z.string().min(1, "Recommended Supplier is required"),
   leadTimeDay: z.coerce.number().min(1, "Lead Time Day must be at least 1"),
-  quotationPrice: z.number().min(0.01, "Price must be greater than 0"),
-  quotationTerms: z.string().min(1, "Terms are required"),
+  totalAmount: z.number().min(0.01, "Price must be greater than 0"),
+  paymentTerms: z.string().min(1, "Terms are required"),
   canvassSheet: z.instanceof(File).refine(
     (file) => {
       const MAX_FILE_SIZE = 5 * 1024 * 1024;

@@ -8,7 +8,11 @@ import {
 import { shareTicket } from "@/actions/post";
 import CanvassForm from "@/components/CanvassForm";
 import { useUserStore } from "@/stores/userStore";
-import { TicketDetailsType } from "@/utils/types";
+import {
+  CanvassAttachment,
+  CanvassDetail,
+  TicketDetailsType,
+} from "@/utils/types";
 import {
   Avatar,
   Badge,
@@ -26,45 +30,19 @@ import {
   Title,
 } from "@mantine/core";
 import { IconArrowLeft } from "@tabler/icons-react";
+import DOMPurify from "dompurify";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-
-export type CanvassAttachment = {
-  canvass_attachment_id: string;
-  canvass_attachment_type: string | null;
-  canvass_attachment_url: string | null;
-  canvass_attachment_created_at: string;
-};
-
-export type CanvassSubmitter = {
-  user_id: string;
-  user_full_name: string | null;
-  user_email: string | null;
-  user_avatar: string | null;
-};
-
-export type CanvassDetail = {
-  canvass_form_id: string;
-  canvass_form_ticket_id: string;
-  canvass_form_rf_date_received: string;
-  canvass_form_recommended_supplier: string;
-  canvass_form_lead_time_day: number;
-  canvass_form_quotation_price: number;
-  canvass_form_quotation_terms: string | null;
-  canvass_form_attachment_url: string | null;
-  canvass_form_submitted_by: string;
-  canvass_form_date_submitted: string;
-  submitted_by: CanvassSubmitter;
-  attachments: CanvassAttachment[];
-};
 
 const TicketDetailsPage = () => {
   const { ticket_id } = useParams() as { ticket_id: string };
   const { user } = useUserStore();
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
-  const [canvassDetails, setCanvassDetails] = useState<any>(null);
+  const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
@@ -214,7 +192,7 @@ const TicketDetailsPage = () => {
         <Stack>
           <Text size="md">
             <strong>RF Date Received:</strong>{" "}
-            {new Date(ticket.ticket_rf_date).toLocaleString("en-US", {
+            {new Date(ticket.ticket_rf_date_received).toLocaleString("en-US", {
               day: "2-digit",
               month: "short",
               year: "numeric",
@@ -248,8 +226,14 @@ const TicketDetailsPage = () => {
             <strong>Quantity:</strong> {ticket.ticket_quantity}
           </Text>
           <Text size="md">
-            <strong>Specifications:</strong> {ticket.ticket_specifications}
+            <strong>Specifications:</strong>
+            <span
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(ticket.ticket_specifications),
+              }}
+            />
           </Text>
+
           <Text size="md">
             <strong>Ticket Status:</strong> {ticket.ticket_status}
           </Text>
@@ -306,6 +290,7 @@ const TicketDetailsPage = () => {
                 opened={isSharing}
                 onClose={() => setIsSharing(false)}
                 title="Share Ticket"
+                centered
               >
                 <MultiSelect
                   data={allUsers}
@@ -323,10 +308,21 @@ const TicketDetailsPage = () => {
           )}
         </Stack>
 
+        <br />
+
+        <Text size="md">
+          <strong>Notes:</strong>
+          <span
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(ticket.ticket_notes),
+            }}
+          />
+        </Text>
+
         <Divider my="xl" />
 
         <Stack p={0}>
-          {canvassDetails?.length > 0 ? (
+          {(canvassDetails?.length ?? 0) > 0 ? (
             <Stack>
               <Title fz="h2" ta="center" mb="md">
                 Canvass Details
@@ -336,24 +332,30 @@ const TicketDetailsPage = () => {
                 <Stack key={canvass.canvass_form_id}>
                   <Text>
                     <strong>RF Date Received:</strong>{" "}
-                    {canvass.canvass_form_rf_date_received}
+                    {new Date(
+                      canvass.canvass_form_rf_date_received
+                    ).toLocaleDateString("en-US", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </Text>
                   <Text>
                     <strong>Recommended Supplier:</strong>{" "}
                     {canvass.canvass_form_recommended_supplier}
                   </Text>
                   <Text>
-                    <strong>Lead Time Day:</strong>{" "}
+                    <strong>Lead Time (days):</strong>{" "}
                     {canvass.canvass_form_lead_time_day}
                   </Text>
                   <Text>
-                    <strong>Quotation Price:</strong> ₱
-                    {canvass.canvass_form_quotation_price.toFixed(2)}
+                    <strong>Total Amount:</strong> ₱
+                    {canvass.canvass_form_total_amount.toFixed(2)}
                   </Text>
-                  {canvass.canvass_form_quotation_terms && (
+                  {canvass.canvass_form_payment_terms && (
                     <Text>
                       <strong>Terms:</strong>{" "}
-                      {canvass.canvass_form_quotation_terms}
+                      {canvass.canvass_form_payment_terms}
                     </Text>
                   )}
                   <Text>

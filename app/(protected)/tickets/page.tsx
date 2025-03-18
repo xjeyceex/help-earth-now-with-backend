@@ -7,10 +7,12 @@ import {
   Button,
   Card,
   Container,
+  Divider,
   Flex,
   Loader,
   Select,
   Table,
+  Text,
   Title,
 } from "@mantine/core";
 import { IconPlus } from "@tabler/icons-react";
@@ -131,18 +133,13 @@ const TicketList = () => {
   return (
     <Container size="md" py="xl">
       <Card shadow="sm" padding="lg" mt="lg" radius="md" withBorder>
-        <Flex justify="space-between" align="center">
-          <Flex justify="center" align="center" gap="md">
-            <Title size="h3">Ticket List</Title>
-            <Button
-              rightSection={<IconPlus size={20} />}
-              onClick={() => router.push("/tickets/create-ticket")}
-              variant="light"
-            >
-              Create New Ticket
-            </Button>
-          </Flex>
-          <Flex gap="sm">
+        <Flex justify="center" align="center" mb="lg">
+          <Title size="h3">Ticket List</Title>
+        </Flex>
+
+        {/* Center the filters and button */}
+        <Flex justify="center" align="center" mb="lg">
+          <Flex gap="sm" justify="center" align="center">
             <Select
               value={filter}
               onChange={(value) => setFilter(value || "ALL")}
@@ -151,37 +148,68 @@ const TicketList = () => {
             />
             <Button onClick={() => setFilter("ALL")}>Reset</Button>
             {user.user_role === "CANVASSER" && (
-              <Button onClick={() => router.push("/tickets/create-ticket")}>
-                Create Ticket
+              <Button
+                rightSection={<IconPlus size={20} />}
+                onClick={() => router.push("/tickets/create-ticket")}
+                variant="light"
+              >
+                Create New Ticket
               </Button>
             )}
           </Flex>
         </Flex>
-
         {/* ✅ Show Tickets */}
         {filteredTickets.length > 0 ? (
           <Table mt="md" striped highlightOnHover>
             <thead>
               <tr>
-                <th style={{ textAlign: "left", padding: "12px" }}>
-                  Ticket ID
+                <th
+                  style={{
+                    textAlign: "center",
+                    padding: "12px",
+                    width: "150px",
+                  }}
+                >
+                  <Text size="sm" style={{ fontWeight: 500 }}>
+                    Ticket ID
+                  </Text>
                 </th>
-                <th style={{ textAlign: "left", padding: "12px" }}>
-                  Description
+                <th style={{ textAlign: "center", padding: "12px" }}>
+                  <Text size="sm" style={{ fontWeight: 500 }}>
+                    Description
+                  </Text>
                 </th>
-                <th style={{ textAlign: "left", padding: "12px" }}>Status</th>
+                <th style={{ textAlign: "center", padding: "12px" }}>
+                  <Text size="sm" style={{ fontWeight: 500 }}>
+                    Status
+                  </Text>
+                </th>
               </tr>
             </thead>
+
             <tbody>
+              <tr>
+                <td colSpan={3}>
+                  <Divider my="xs" />
+                </td>
+              </tr>
               {filteredTickets.map((ticket) => (
                 <tr key={ticket.ticket_id}>
-                  <td>
+                  <td
+                    style={{
+                      textAlign: "center",
+                      padding: "12px",
+                      width: "150px",
+                    }}
+                  >
                     <Link href={`/tickets/${ticket.ticket_id}`}>
                       <Button variant="subtle">{ticket.ticket_id}</Button>
                     </Link>
                   </td>
-                  <td>{ticket.ticket_item_description}</td>
-                  <td>
+                  <td style={{ textAlign: "center", padding: "12px" }}>
+                    <Text size="sm">{ticket.ticket_item_description}</Text>
+                  </td>
+                  <td style={{ textAlign: "center", padding: "12px" }}>
                     <Badge color={getStatusColor(ticket.ticket_status)}>
                       {ticket.ticket_status}
                     </Badge>

@@ -1,8 +1,8 @@
 "use server";
 
-import { CanvassDetail } from "@/app/(protected)/tickets/[ticket_id]/page";
 import { createClient } from "@/utils/supabase/server";
 import {
+  CanvassDetail,
   DashboardTicketType,
   DropdownType,
   ReviewerType,
@@ -220,7 +220,7 @@ export const getCanvassDetails = async ({
         canvass_attachment_url,
         canvass_attachment_created_at
       )
-    `,
+    `
     )
     .eq("canvass_form_ticket_id", ticketId);
 

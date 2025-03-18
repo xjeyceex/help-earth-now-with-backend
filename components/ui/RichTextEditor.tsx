@@ -8,14 +8,14 @@ import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { forwardRef, useImperativeHandle } from "react";
 
-interface RichTextEditorProps {
+type RichTextEditorProps = {
   value: string;
   onChange: (value: string) => void;
-}
+};
 
-export interface RichTextEditorRef {
+export type RichTextEditorRef = {
   reset: () => void;
-}
+};
 
 export const RichTextEditor = forwardRef<
   RichTextEditorRef,
@@ -95,3 +95,5 @@ export const RichTextEditor = forwardRef<
     </MantineRichTextEditor>
   );
 });
+
+RichTextEditor.displayName = "RichTextEditor";
