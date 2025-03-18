@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import HomePage from "../app/(unauthenticated)/page";
+import HomePage from "../app/(public)/page";
 
 describe("Page", () => {
   it("renders a heading", () => {
