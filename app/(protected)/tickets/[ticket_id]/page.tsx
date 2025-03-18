@@ -40,7 +40,9 @@ const TicketDetailsPage = () => {
   const { user } = useUserStore();
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
-  const [canvassDetails, setCanvassDetails] = useState<any>(null);
+  const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
@@ -320,7 +322,7 @@ const TicketDetailsPage = () => {
         <Divider my="xl" />
 
         <Stack p={0}>
-          {canvassDetails?.length > 0 ? (
+          {(canvassDetails?.length ?? 0) > 0 ? (
             <Stack>
               <Title ta="center">Canvass Details</Title>
 
