@@ -56,6 +56,31 @@ ON user_table
 FOR UPDATE
 USING (auth.uid() = user_id);
 
+-- create comment_table and comment_reply_table
+DROP TABLE IF EXISTS comment_reply_table CASCADE;
+DROP TABLE IF EXISTS comment_table CASCADE;
+
+CREATE TABLE comment_table (
+  comment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  comment_ticket_id UUID NOT NULL,
+  comment_content TEXT NOT NULL,
+  comment_date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  comment_is_edited BOOLEAN DEFAULT FALSE,
+  comment_is_disabled BOOLEAN DEFAULT FALSE,
+  comment_type TEXT NOT NULL,
+  comment_last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  comment_user_id UUID NOT NULL,  -- Add the user_id to track the user who posted the comment
+  FOREIGN KEY (comment_user_id) REFERENCES user_table(user_id)  -- Assuming you have a user_table
+);
+
+CREATE TABLE comment_reply_table (
+  reply_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  reply_parent_comment_id UUID NOT NULL,
+  reply_child_comment_id UUID NOT NULL,
+  FOREIGN KEY (reply_parent_comment_id) REFERENCES comment_table(comment_id),
+  FOREIGN KEY (reply_child_comment_id) REFERENCES comment_table(comment_id)
+);
+
 -- TICKET TABLE (Tracks Canvassing Requests)
 DROP TABLE IF EXISTS ticket_table CASCADE;
 CREATE TABLE public.ticket_table (
@@ -490,6 +515,45 @@ as $$
   where t.ticket_id = ticket_uuid
 
 $$;
+
+-- Create function that returns comments with user avatars and full names
+create or replace function get_comments_with_avatars(ticket_id uuid)
+returns table(
+  comment_id uuid,
+  comment_ticket_id uuid,
+  comment_content text,
+  comment_date_created timestamp,
+  comment_is_edited boolean,
+  comment_is_disabled boolean,
+  comment_type text,
+  comment_last_updated timestamp,
+  comment_user_id uuid,
+  comment_user_avatar text,
+  comment_user_full_name text -- Add full name column
+) as $$
+begin
+  return query
+    select
+      c.comment_id,
+      c.comment_ticket_id,
+      c.comment_content,
+      c.comment_date_created,
+      c.comment_is_edited,
+      c.comment_is_disabled,
+      c.comment_type,
+      c.comment_last_updated,
+      c.comment_user_id,
+      u.user_avatar as comment_user_avatar,
+      u.user_full_name as comment_user_full_name -- Select full name
+    from
+      comment_table c
+    left join
+      user_table u on c.comment_user_id = u.user_id
+    where
+      c.comment_ticket_id = ticket_id
+      and c.comment_type = 'COMMENT';
+end;
+$$ language plpgsql;
 
 -- share ticket function
 drop function if exists share_ticket(uuid, uuid, uuid);

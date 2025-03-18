@@ -194,22 +194,26 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                 </Box>
 
                 <Group gap="xs">
-                  <Button
-                    variant="outline"
-                    color="red"
-                    size="xs"
-                    onClick={() => handleDeleteComment(comment.comment_id)}
-                  >
-                    Delete
-                  </Button>
-                  <Button
-                    variant="outline"
-                    color="blue"
-                    size="xs"
-                    onClick={() => openEditModal(comment)}
-                  >
-                    Edit
-                  </Button>
+                  {user?.user_id === comment.comment_user_id && (
+                    <>
+                      <Button
+                        variant="outline"
+                        color="red"
+                        size="xs"
+                        onClick={() => handleDeleteComment(comment.comment_id)}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        variant="outline"
+                        color="blue"
+                        size="xs"
+                        onClick={() => openEditModal(comment)}
+                      >
+                        Edit
+                      </Button>
+                    </>
+                  )}
                 </Group>
               </Group>
               <Divider />
