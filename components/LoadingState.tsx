@@ -2,8 +2,6 @@
 
 import {
   Box,
-  Center,
-  Container,
   Group,
   Loader,
   Paper,
@@ -20,16 +18,14 @@ const LoadingState = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setProgress((oldProgress) => {
-        // Make progress faster with larger increments
         const increment =
           100 - oldProgress > 40
             ? Math.random() * 15 + 5
             : Math.random() * 8 + 2;
 
-        const newProgress = Math.min(oldProgress + increment, 99.5);
-        return newProgress;
+        return Math.min(oldProgress + increment, 99.5);
       });
-    }, 100); // Reduced interval for faster updates
+    }, 100);
 
     return () => {
       clearInterval(timer);
@@ -38,6 +34,7 @@ const LoadingState = () => {
 
   return (
     <>
+      {/* Progress Bar */}
       <Box
         style={{
           position: "fixed",
@@ -51,23 +48,38 @@ const LoadingState = () => {
         }}
       />
 
-      <Container>
-        <Center h="100vh">
-          <Paper>
-            <Stack align="center" gap="md">
-              <Title order={4} c="dimmed">
-                Please wait
-              </Title>
-              <Loader size="lg" type="dots" color="blue" />
-              <Group>
-                <Text size="sm" c="dimmed">
-                  Loading your content...
-                </Text>
-              </Group>
-            </Stack>
-          </Paper>
-        </Center>
-      </Container>
+      {/* Absolute Centered Loading */}
+      <div
+        style={{
+          height: "100dvh",
+          width: "100vw",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          position: "absolute",
+          top: 0,
+          left: 0,
+        }}
+      >
+        <Paper
+          p="lg"
+          radius="md"
+          withBorder={false}
+          style={{ background: "transparent" }}
+        >
+          <Stack align="center" gap="md">
+            <Title order={4} c="dimmed">
+              Please wait
+            </Title>
+            <Loader size="lg" type="dots" color="blue" />
+            <Group>
+              <Text size="sm" c="dimmed">
+                Loading your content...
+              </Text>
+            </Group>
+          </Stack>
+        </Paper>
+      </div>
     </>
   );
 };
