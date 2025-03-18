@@ -5,6 +5,7 @@ import {
   CanvassDetail,
   DashboardTicketType,
   DropdownType,
+  NotificationType,
   ReviewerType,
   UserType,
 } from "@/utils/types";
@@ -229,4 +230,41 @@ export const getCanvassDetails = async ({
   }
 
   return canvassDetails || [];
+};
+
+export const getCurrentUserNotification = async () => {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return {
+      error: true,
+      success: false,
+      message: error?.message || "No user found.",
+    };
+  }
+
+  const currentUserId = user.id;
+
+  const { data, error: notificationError } = await supabase
+    .from("notification_table")
+    .select("*")
+    .eq("notification_user_id", currentUserId);
+
+  if (notificationError) {
+    return {
+      error: true,
+      message: "An unexpected error occurred while fetching user data.",
+      success: false,
+    };
+  }
+
+  return {
+    success: true,
+    data: data as NotificationType[],
+  };
 };

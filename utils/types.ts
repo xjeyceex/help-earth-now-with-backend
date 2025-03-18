@@ -93,3 +93,12 @@ export type CanvassDetail = {
   submitted_by: CanvassSubmitter;
   attachments: CanvassAttachment[];
 };
+
+export type NotificationType = {
+  notification_id: string;
+  notification_user_id: string;
+  notification_message: string;
+  notification_read: boolean;
+  notification_url: string;
+  notification_created_at: string;
+};

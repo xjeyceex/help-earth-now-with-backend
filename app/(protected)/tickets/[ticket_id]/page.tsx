@@ -273,7 +273,10 @@ const TicketDetailsPage = () => {
             {ticket.shared_users.length > 0 ? (
               <ul>
                 {ticket.shared_users.map((u) => (
-                  <li key={u.user_id}>{u.user_full_name}</li>
+                  <li key={u.user_id}>
+                    {u.user_full_name}
+                    {user?.user_id === u.user_id && " (You)"}
+                  </li>
                 ))}
               </ul>
             ) : (

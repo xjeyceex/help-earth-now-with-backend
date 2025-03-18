@@ -229,6 +229,27 @@ export const createTicket = async (
     };
   }
 
+  // Create notifications for all reviewers
+  const { error: notificationError } = await supabase
+    .from("notification_table")
+    .insert(
+      validatedData.ticketReviewer.map((reviewerId) => ({
+        notification_user_id: reviewerId,
+        notification_message:
+          "You've been assigned as a reviewer for this ticket",
+        notification_read: false,
+        notification_url: `/tickets/${ticket.ticket_id}`,
+      }))
+    );
+
+  if (notificationError) {
+    console.error("Error adding notifications:", notificationError.message);
+    return {
+      success: false,
+      message: "Failed to add notifications",
+    };
+  }
+
   return { success: true, ticket_id: ticket.ticket_id };
 };
 
@@ -316,6 +337,22 @@ export const shareTicket = async (ticket_id: string, user_id: string) => {
     console.error("Error sharing ticket:", error.message);
     throw new Error("Failed to share ticket");
   }
+
+  const { error: notificationError } = await supabase
+    .from("notification_table")
+    .insert({
+      notification_user_id: user_id,
+      notification_message: `${user?.user_metadata.display_name} has shared ticket with you`,
+      notification_read: false,
+      notification_url: `/tickets/${ticket_id}`,
+    });
+
+  if (notificationError) {
+    console.error("Error adding notification:", notificationError.message);
+    throw new Error("Failed to add notification");
+  }
+
+  return { success: true };
 };
 
 export const createCanvass = async ({

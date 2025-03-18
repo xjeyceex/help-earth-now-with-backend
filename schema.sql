@@ -4,8 +4,9 @@ ALTER TABLE IF EXISTS ticket_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS canvass_form_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS approval_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ticket_status_history_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.ticket_shared_with_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.canvass_attachment_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ticket_shared_with_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS canvass_attachment_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS notification_table ENABLE ROW LEVEL SECURITY;
 
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
@@ -267,12 +268,27 @@ FOR SELECT USING (
     )
 );
 
+DROP TABLE IF EXISTS notification_table CASCADE;
+CREATE TABLE notification_table (
+  notification_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  notification_user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
+  notification_message TEXT NOT NULL,
+  notification_read BOOLEAN DEFAULT FALSE,
+  notification_url TEXT NULL,
+  notification_created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- Enable Supabase Realtime on this table
+ALTER PUBLICATION supabase_realtime ADD TABLE notification_table;
+
+
 -- GRANT Permissions (Ensure Permissions Are Set)
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_form_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON approval_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_status_history_table TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON notification_table TO authenticated;
 
 -- Update the create_user function to rely on default values
 CREATE OR REPLACE FUNCTION public.create_user() 

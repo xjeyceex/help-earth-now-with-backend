@@ -14,6 +14,7 @@ import {
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
+import NotificationMenu from "./NotificationMenu";
 
 const Navbar = () => {
   const { user, clearUser } = useUserStore();
@@ -72,32 +73,38 @@ const Navbar = () => {
         )}
 
         {user ? (
-          <Menu shadow="md" width={200} withinPortal>
-            <Menu.Target>
-              <Avatar
-                src={user.user_avatar}
-                radius="xl"
-                size="md"
-                style={{ cursor: "pointer", transition: "transform 0.2s ease" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.transform = "scale(1.1)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.transform = "scale(1)")
-                }
-              />
-            </Menu.Target>
+          <>
+            <NotificationMenu />
+            <Menu shadow="md" width={200} withinPortal>
+              <Menu.Target>
+                <Avatar
+                  src={user.user_avatar}
+                  radius="xl"
+                  size="md"
+                  style={{
+                    cursor: "pointer",
+                    transition: "transform 0.2s ease",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.transform = "scale(1.1)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
+                />
+              </Menu.Target>
 
-            <Menu.Dropdown style={{ zIndex: 1100 }}>
-              <Menu.Label>Account</Menu.Label>
-              <Menu.Item component={Link} href="/profile">
-                View Profile
-              </Menu.Item>
-              <Menu.Item color="red" onClick={handleLogout}>
-                Logout
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+              <Menu.Dropdown style={{ zIndex: 1100 }}>
+                <Menu.Label>Account</Menu.Label>
+                <Menu.Item component={Link} href="/profile">
+                  View Profile
+                </Menu.Item>
+                <Menu.Item color="red" onClick={handleLogout}>
+                  Logout
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </>
         ) : (
           <Flex gap="sm">
             <Button component={Link} href="/login" variant="outline">
