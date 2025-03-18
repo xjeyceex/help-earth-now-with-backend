@@ -220,7 +220,7 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
             </Box>
             <Flex justify="end">
               <Button type="submit" loading={isPending} w="fit-content" my="md">
-                Create canvass
+                Submit
               </Button>
             </Flex>
           </Stack>
