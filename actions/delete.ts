@@ -20,3 +20,17 @@ export const deleteUser = async () => {
   revalidatePath("/");
   redirect("/");
 };
+
+export const deleteComment = async (comment_id: string): Promise<void> => {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("comment_table")
+    .delete()
+    .eq("comment_id", comment_id);
+
+  if (error) {
+    console.error("Error deleting comment:", error.message);
+    throw new Error("Failed to delete comment.");
+  }
+};

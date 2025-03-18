@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import {
   CanvassDetail,
+  CommentType,
   DashboardTicketType,
   DropdownType,
   NotificationType,
@@ -221,7 +222,7 @@ export const getCanvassDetails = async ({
         canvass_attachment_url,
         canvass_attachment_created_at
       )
-    `,
+    `
     )
     .eq("canvass_form_ticket_id", ticketId);
 
@@ -267,4 +268,37 @@ export const getCurrentUserNotification = async () => {
     success: true,
     data: data as NotificationType[],
   };
+};
+
+export const getComments = async (
+  ticket_id: string
+): Promise<CommentType[]> => {
+  const supabase = await createClient();
+
+  const { data: comments, error: commentsError } = await supabase.rpc(
+    "get_comments_with_avatars",
+    { ticket_id }
+  );
+
+  if (commentsError) {
+    console.error("Error fetching comments:", commentsError.message);
+    throw new Error(`Failed to fetch comments: ${commentsError.message}`);
+  }
+
+  // Transform the data to match the CommentType
+  const formattedComments = comments.map((comment: CommentType) => ({
+    comment_id: comment.comment_id,
+    comment_ticket_id: comment.comment_ticket_id,
+    comment_content: comment.comment_content,
+    comment_date_created: comment.comment_date_created,
+    comment_is_edited: comment.comment_is_edited,
+    comment_type: comment.comment_type,
+    comment_last_updated: comment.comment_last_updated,
+    comment_user_id: comment.comment_user_id,
+    comment_user_full_name: comment.comment_user_full_name,
+    comment_user_avatar: comment.comment_user_avatar,
+    replies: [], // Assuming you would populate the replies later
+  }));
+
+  return formattedComments;
 };
