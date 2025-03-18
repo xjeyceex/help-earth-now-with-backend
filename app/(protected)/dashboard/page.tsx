@@ -25,13 +25,13 @@ const DashboardPage = () => {
 
   const countUserTicketsByStatus = (
     tickets: DashboardTicketType[],
-    statusType: "OPEN" | "COMPLETED"
+    statusType: "OPEN" | "COMPLETED",
   ) => {
     if (statusType === "OPEN") {
       return tickets.filter(
         (ticket) =>
           ticket.ticket_status === "FOR CANVASS" ||
-          ticket.ticket_status === "IN PROGRESS"
+          ticket.ticket_status === "IN PROGRESS",
       ).length;
     }
 
@@ -49,7 +49,7 @@ const DashboardPage = () => {
         setLoading(true);
 
         const data = await getDashboardTickets(
-          isAdmin ? undefined : user?.user_id
+          isAdmin ? undefined : user?.user_id,
         );
 
         setTickets(data ?? []);
@@ -117,10 +117,10 @@ const DashboardPage = () => {
                   ticket.ticket_status === "FOR CANVASS"
                     ? "yellow"
                     : ticket.ticket_status === "IN PROGRESS"
-                    ? "blue"
-                    : ticket.ticket_status === "COMPLETED"
-                    ? "green"
-                    : "gray"
+                      ? "blue"
+                      : ticket.ticket_status === "COMPLETED"
+                        ? "green"
+                        : "gray"
                 }
                 mt="sm"
               >

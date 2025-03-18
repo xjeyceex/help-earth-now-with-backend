@@ -33,7 +33,7 @@ const NotificationMenu = () => {
   const { notifications, setNotifications } = useNotificationStore();
 
   const unreadCount = notifications.filter(
-    (notif) => !notif.notification_read
+    (notif) => !notif.notification_read,
   ).length;
 
   const getRelativeTime = (timestamp: string) => {
@@ -76,7 +76,7 @@ const NotificationMenu = () => {
       }
 
       const unreadNotifications = res.data?.filter(
-        (notification) => !notification.notification_read
+        (notification) => !notification.notification_read,
       );
       setNotifications(unreadNotifications as NotificationType[]);
     };
@@ -125,8 +125,8 @@ const NotificationMenu = () => {
                   prev.map((notification) =>
                     notification.notification_id === payload.new.notification_id
                       ? { ...notification, ...payload.new }
-                      : notification
-                  )
+                      : notification,
+                  ),
                 );
                 break;
 
@@ -136,12 +136,12 @@ const NotificationMenu = () => {
                   prev.filter(
                     (notification) =>
                       notification.notification_id !==
-                      payload.old.notification_id
-                  )
+                      payload.old.notification_id,
+                  ),
                 );
                 break;
             }
-          }
+          },
         )
         .subscribe();
 

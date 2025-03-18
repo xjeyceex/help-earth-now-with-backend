@@ -39,7 +39,7 @@ export const CanvassFormSchema = z.object({
     {
       message:
         "Invalid file type or size. Please upload an image file (JPEG, PNG, GIF, or WEBP) less than 5MB.",
-    }
+    },
   ),
   quotation: z.instanceof(File).refine(
     (file) => {
@@ -58,6 +58,6 @@ export const CanvassFormSchema = z.object({
     {
       message:
         "Invalid file type or size. Please upload an image file (JPEG, PNG, GIF, or WEBP) less than 5MB.",
-    }
+    },
   ),
 });

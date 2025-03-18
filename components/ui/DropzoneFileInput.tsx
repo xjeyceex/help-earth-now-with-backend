@@ -15,7 +15,7 @@ type DropzoneFileInputProps = {
   maxFiles?: number;
   accept?: string[];
   maxSize?: number;
-}
+};
 
 const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
   (
