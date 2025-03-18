@@ -328,7 +328,9 @@ const TicketDetailsPage = () => {
         <Stack p={0}>
           {canvassDetails?.length > 0 ? (
             <Stack>
-              <Title ta="center">Canvass Details</Title>
+              <Title fz="h2" ta="center" mb="md">
+                Canvass Details
+              </Title>
 
               {canvassDetails?.map((canvass: CanvassDetail) => (
                 <Stack key={canvass.canvass_form_id}>
@@ -368,7 +370,7 @@ const TicketDetailsPage = () => {
                   {/* Attachments Section */}
                   {canvass.attachments.length > 0 && (
                     <div>
-                      <Text fw={500}>Attachments:</Text>
+                      <strong>Attachments:</strong>{" "}
                       <ul>
                         {canvass.attachments.map(
                           (attachment: CanvassAttachment) => (
