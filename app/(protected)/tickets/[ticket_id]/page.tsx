@@ -18,8 +18,8 @@ import {
   Badge,
   Button,
   Card,
+  Collapse,
   Container,
-  Divider,
   Flex,
   Group,
   Loader,
@@ -29,7 +29,12 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { IconArrowLeft } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconChevronDown,
+  IconChevronUp,
+  IconFile,
+} from "@tabler/icons-react";
 import DOMPurify from "dompurify";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -43,6 +48,8 @@ const TicketDetailsPage = () => {
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
     null
   );
+  const [isFormVisible, setIsFormVisible] = useState(true);
+  const [isCanvasVisible, setIsCanvasVisible] = useState(true);
   const [loading, setLoading] = useState(true);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
@@ -153,7 +160,7 @@ const TicketDetailsPage = () => {
   }
 
   return (
-    <Container size="sm" py="xl">
+    <Container size="md" py="xl">
       <Flex justify="flex-start" align="center" gap="lg">
         <Link href="/tickets">
           <Button variant="light" leftSection={<IconArrowLeft size={16} />}>
@@ -161,252 +168,337 @@ const TicketDetailsPage = () => {
           </Button>
         </Link>
       </Flex>
-      <Card shadow="sm" mt="lg" radius="md" withBorder px={30}>
+      <Card shadow="sm" mt="lg" radius="sm" withBorder px={30}>
         <Title ta="center" my={20} fz="h2">
           Ticket Details
         </Title>
 
-        <Stack w="100%">
-          <Group>
-            <Avatar
-              src={ticket.ticket_created_by_avatar}
-              radius="xl"
-              size="md"
-            />
-            <Text size="sm" c="dimmed">
-              <strong>{ticket.ticket_created_by_name}</strong> raised this on{" "}
-              {new Date(ticket.ticket_date_created).toLocaleString("en-US", {
-                day: "2-digit",
-                month: "short",
-                year: "2-digit",
-                hour: "numeric",
-                minute: "numeric",
-                hour12: true,
-              })}
-            </Text>
-          </Group>
-        </Stack>
+        <Card shadow="sm" radius="sm" withBorder px={30}>
+          <Stack w="100%">
+            <Group justify="space-between">
+              <Group>
+                <Avatar
+                  src={ticket.ticket_created_by_avatar}
+                  radius="xl"
+                  size="md"
+                />
+                <Text size="sm" c="dimmed">
+                  <strong>{ticket.ticket_created_by_name}</strong> raised this
+                  on{" "}
+                  {new Date(ticket.ticket_date_created).toLocaleString(
+                    "en-US",
+                    {
+                      day: "2-digit",
+                      month: "short",
+                      year: "2-digit",
+                      hour: "numeric",
+                      minute: "numeric",
+                      hour12: true,
+                    }
+                  )}
+                </Text>
+              </Group>
+              <Text
+                size="sm"
+                c="blue"
+                style={{
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  transition: "text-decoration 0.2s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.textDecoration = "underline")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.textDecoration = "none")
+                }
+                onClick={() => setIsFormVisible((prev) => !prev)}
+              >
+                {isFormVisible ? "Hide details" : "Show details"}
+              </Text>
+            </Group>
+          </Stack>
 
-        <br />
-
-        <Stack>
-          <Text size="md">
-            <strong>RF Date Received:</strong>{" "}
-            {new Date(ticket.ticket_rf_date_received).toLocaleString("en-US", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
-          </Text>
-          <div>
-            <strong>Ticket Status:</strong>{" "}
-            <Badge
-              color={
-                ticket?.ticket_status === "PENDING"
-                  ? "yellow"
-                  : ticket?.ticket_status === "APPROVED"
-                  ? "green"
-                  : ticket?.ticket_status === "IN PROGRESS"
-                  ? "blue"
-                  : ticket?.ticket_status === "COMPLETED"
-                  ? "teal"
-                  : ticket?.ticket_status === "REJECTED"
-                  ? "red"
-                  : "gray"
-              }
-            >
-              {ticket?.ticket_status}
-            </Badge>
-          </div>
-
-          <Text size="md">
-            <strong>Item Description:</strong> {ticket.ticket_item_description}
-          </Text>
-          <Text size="md">
-            <strong>Quantity:</strong> {ticket.ticket_quantity}
-          </Text>
-          <Text size="md">
-            <strong>Specifications:</strong>
-            <span
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(ticket.ticket_specifications),
-              }}
-            />
-          </Text>
-
-          <Text size="md">
-            <strong>Ticket Status:</strong> {ticket.ticket_status}
-          </Text>
-
-          {/* ✅ Display Reviewers */}
-          <div>
-            <strong>Reviewers:</strong>
-            {ticket.reviewers.length > 0 ? (
-              <ul>
-                {ticket.reviewers.map((r) => (
-                  <li key={r.reviewer_id}>
-                    {r.reviewer_name} -{" "}
+          <Collapse in={isFormVisible}>
+            {isFormVisible && (
+              <>
+                <br />
+                <Stack>
+                  <Text size="md">
+                    <strong>RF Date Received:</strong>{" "}
+                    {new Date(ticket.ticket_rf_date_received).toLocaleString(
+                      "en-US",
+                      {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      }
+                    )}
+                  </Text>
+                  <div>
+                    <strong>Ticket Status:</strong>{" "}
                     <Badge
                       color={
-                        r.approval_status === "PENDING"
+                        ticket?.ticket_status === "PENDING"
                           ? "yellow"
-                          : r.approval_status === "APPROVED"
+                          : ticket?.ticket_status === "APPROVED"
                           ? "green"
-                          : r.approval_status === "REJECTED"
+                          : ticket?.ticket_status === "IN PROGRESS"
+                          ? "blue"
+                          : ticket?.ticket_status === "COMPLETED"
+                          ? "teal"
+                          : ticket?.ticket_status === "REJECTED"
                           ? "red"
                           : "gray"
                       }
                     >
-                      {r.approval_status}
+                      {ticket?.ticket_status}
                     </Badge>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Text c="dimmed">No reviewers assigned.</Text>
-            )}
-          </div>
+                  </div>
 
-          {/* ✅ Shared Users */}
-          <div>
-            <strong>Shared With:</strong>
-            {ticket.shared_users.length > 0 ? (
-              <ul>
-                {ticket.shared_users.map((u) => (
-                  <li key={u.user_id}>{u.user_full_name}</li>
-                ))}
-              </ul>
-            ) : (
-              <Text c="dimmed">Not shared with anyone yet.</Text>
-            )}
-          </div>
-
-          {(isAdmin || ticket?.ticket_created_by === user?.user_id) && (
-            <>
-              <Button w="fit-content" onClick={() => setIsSharing(true)}>
-                Share Ticket
-              </Button>
-              <Modal
-                opened={isSharing}
-                onClose={() => setIsSharing(false)}
-                title="Share Ticket"
-                centered
-              >
-                <MultiSelect
-                  data={allUsers}
-                  value={selectedUsers}
-                  onChange={setSelectedUsers}
-                  placeholder="Select users to share with"
-                  searchable
-                  clearable
-                />
-                <Button onClick={handleShareTicket} mt="md">
-                  Share
-                </Button>
-              </Modal>
-            </>
-          )}
-        </Stack>
-
-        <br />
-
-        <Text size="md">
-          <strong>Notes:</strong>
-          <span
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(ticket.ticket_notes),
-            }}
-          />
-        </Text>
-
-        <Divider my="xl" />
-
-        <Stack p={0}>
-          {(canvassDetails?.length ?? 0) > 0 ? (
-            <Stack>
-              <Title ta="center">Canvass Details</Title>
-
-              {canvassDetails?.map((canvass: CanvassDetail) => (
-                <Stack key={canvass.canvass_form_id}>
-                  <Text>
-                    <strong>RF Date Received:</strong>{" "}
-                    {new Date(
-                      canvass.canvass_form_rf_date_received
-                    ).toLocaleDateString("en-US", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                  <Text size="md">
+                    <strong>Item Description:</strong>{" "}
+                    {ticket.ticket_item_description}
                   </Text>
-                  <Text>
-                    <strong>Recommended Supplier:</strong>{" "}
-                    {canvass.canvass_form_recommended_supplier}
+                  <Text size="md">
+                    <strong>Quantity:</strong> {ticket.ticket_quantity}
                   </Text>
-                  <Text>
-                    <strong>Lead Time (days):</strong>{" "}
-                    {canvass.canvass_form_lead_time_day}
-                  </Text>
-                  <Text>
-                    <strong>Total Amount:</strong> ₱
-                    {canvass.canvass_form_total_amount.toFixed(2)}
-                  </Text>
-                  {canvass.canvass_form_payment_terms && (
-                    <Text>
-                      <strong>Terms:</strong>{" "}
-                      {canvass.canvass_form_payment_terms}
-                    </Text>
-                  )}
-                  <Text>
-                    <strong>Submitted By:</strong>{" "}
-                    {canvass.submitted_by.user_full_name || "Unknown"}
-                  </Text>
-                  <Text>
-                    <strong>Date Submitted:</strong>{" "}
-                    {new Date(
-                      canvass.canvass_form_date_submitted
-                    ).toLocaleDateString()}
+                  <Text size="md">
+                    <strong>Specifications:</strong>
+                    <span
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(
+                          ticket.ticket_specifications
+                        ),
+                      }}
+                    />
                   </Text>
 
-                  {/* Attachments Section */}
-                  {canvass.attachments.length > 0 && (
-                    <div>
-                      <Text fw={500}>Attachments:</Text>
+                  <Text size="md">
+                    <strong>Ticket Status:</strong> {ticket.ticket_status}
+                  </Text>
+
+                  {/* ✅ Display Reviewers */}
+                  <div>
+                    <strong>Reviewers:</strong>
+                    {ticket.reviewers.length > 0 ? (
                       <ul>
-                        {canvass.attachments.map(
-                          (attachment: CanvassAttachment) => (
-                            <li key={attachment.canvass_attachment_id}>
-                              <Link
-                                href={attachment.canvass_attachment_url || "#"}
-                                target="_blank"
-                                style={{
-                                  color: "inherit",
-                                  textDecoration: "underline",
-                                }}
-                              >
-                                {attachment.canvass_attachment_type ||
-                                  "Document"}{" "}
-                                (
-                                {new Date(
-                                  attachment.canvass_attachment_created_at
-                                ).toLocaleDateString()}
-                                )
-                              </Link>
-                            </li>
-                          )
-                        )}
+                        {ticket.reviewers.map((r) => (
+                          <li key={r.reviewer_id}>
+                            {r.reviewer_name} -{" "}
+                            <Badge
+                              color={
+                                r.approval_status === "PENDING"
+                                  ? "yellow"
+                                  : r.approval_status === "APPROVED"
+                                  ? "green"
+                                  : r.approval_status === "REJECTED"
+                                  ? "red"
+                                  : "gray"
+                              }
+                            >
+                              {r.approval_status}
+                            </Badge>
+                          </li>
+                        ))}
                       </ul>
-                    </div>
+                    ) : (
+                      <Text c="dimmed">No reviewers assigned.</Text>
+                    )}
+                  </div>
+
+                  {/* ✅ Shared Users */}
+                  <div>
+                    <strong>Shared With:</strong>
+                    {ticket.shared_users.length > 0 ? (
+                      <ul>
+                        {ticket.shared_users.map((u) => (
+                          <li key={u.user_id}>{u.user_full_name}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <Text c="dimmed">Not shared with anyone yet.</Text>
+                    )}
+                  </div>
+
+                  {(isAdmin || ticket?.ticket_created_by === user?.user_id) && (
+                    <>
+                      <Button
+                        w="fit-content"
+                        onClick={() => setIsSharing(true)}
+                      >
+                        Share Ticket
+                      </Button>
+                      <Modal
+                        opened={isSharing}
+                        onClose={() => setIsSharing(false)}
+                        title="Share Ticket"
+                        centered
+                      >
+                        <MultiSelect
+                          data={allUsers}
+                          value={selectedUsers}
+                          onChange={setSelectedUsers}
+                          placeholder="Select users to share with"
+                          searchable
+                          clearable
+                        />
+                        <Button onClick={handleShareTicket} mt="md">
+                          Share
+                        </Button>
+                      </Modal>
+                    </>
                   )}
                 </Stack>
-              ))}
-            </Stack>
-          ) : (
-            <CanvassForm
-              ticketId={ticket?.ticket_id}
-              updateCanvassDetails={fetchCanvassDetails}
-            />
-          )}
-        </Stack>
+
+                <br />
+
+                <Text size="md">
+                  <strong>Notes:</strong>
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(ticket.ticket_notes),
+                    }}
+                  />
+                </Text>
+
+                <Card
+                  shadow="sm"
+                  radius="sm"
+                  withBorder
+                  px={30}
+                  style={{ cursor: !isCanvasVisible ? "pointer" : "default" }} // Change cursor based on collapse state
+                  onClick={
+                    !isCanvasVisible
+                      ? () => setIsCanvasVisible(true)
+                      : undefined
+                  }
+                >
+                  <Stack p={0}>
+                    <Stack
+                      w="100%"
+                      onClick={
+                        isCanvasVisible
+                          ? () => setIsCanvasVisible(false)
+                          : undefined
+                      } // Click only the header to collapse when open
+                      style={{ cursor: "pointer" }}
+                    >
+                      <Group justify="space-between">
+                        <Group>
+                          <Text size="sm">Canvass Form</Text>
+                        </Group>
+                        <Text size="sm">
+                          {isCanvasVisible ? (
+                            <IconChevronUp size={18} />
+                          ) : (
+                            <IconChevronDown size={18} />
+                          )}
+                        </Text>
+                      </Group>
+                    </Stack>
+
+                    <Collapse in={isCanvasVisible}>
+                      {(canvassDetails?.length ?? 0) > 0 ? (
+                        <>
+                          {canvassDetails?.map((canvass: CanvassDetail) => (
+                            <Stack key={canvass.canvass_form_id} p="md">
+                              <Text>
+                                <strong>RF Date Received:</strong>{" "}
+                                {new Date(
+                                  canvass.canvass_form_rf_date_received
+                                ).toLocaleDateString("en-US", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </Text>
+                              <Text>
+                                <strong>Recommended Supplier:</strong>{" "}
+                                {canvass.canvass_form_recommended_supplier}
+                              </Text>
+                              <Text>
+                                <strong>Lead Time (days):</strong>{" "}
+                                {canvass.canvass_form_lead_time_day}
+                              </Text>
+                              <Text>
+                                <strong>Total Amount:</strong> ₱
+                                {canvass.canvass_form_total_amount.toFixed(2)}
+                              </Text>
+                              {canvass.canvass_form_payment_terms && (
+                                <Text>
+                                  <strong>Terms:</strong>{" "}
+                                  {canvass.canvass_form_payment_terms}
+                                </Text>
+                              )}
+                              <Text>
+                                <strong>Submitted By:</strong>{" "}
+                                {canvass.submitted_by.user_full_name ||
+                                  "Unknown"}
+                              </Text>
+                              <Text>
+                                <strong>Date Submitted:</strong>{" "}
+                                {new Date(
+                                  canvass.canvass_form_date_submitted
+                                ).toLocaleDateString()}
+                              </Text>
+
+                              {/* Attachments Section */}
+                              {canvass.attachments.length > 0 && (
+                                <div>
+                                  <Text fw={500}>Attachments:</Text>
+                                  {canvass.attachments.map(
+                                    (attachment: CanvassAttachment) => (
+                                      <Link
+                                        key={attachment.canvass_attachment_id}
+                                        href={
+                                          attachment.canvass_attachment_url ||
+                                          "#"
+                                        }
+                                        target="_blank"
+                                        style={{
+                                          color: "#228be6",
+                                          textDecoration: "none",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: "8px",
+                                          padding: "4px 0",
+                                        }}
+                                      >
+                                        <IconFile size={16} />
+                                        {attachment.canvass_attachment_type ||
+                                          "Document"}{" "}
+                                        (
+                                        {new Date(
+                                          attachment.canvass_attachment_created_at
+                                        ).toLocaleDateString()}
+                                        )
+                                      </Link>
+                                    )
+                                  )}
+                                </div>
+                              )}
+                            </Stack>
+                          ))}
+                        </>
+                      ) : (
+                        <CanvassForm
+                          ticketId={ticket?.ticket_id}
+                          updateCanvassDetails={fetchCanvassDetails}
+                        />
+                      )}
+                    </Collapse>
+                  </Stack>
+                </Card>
+              </>
+            )}
+          </Collapse>
+        </Card>
+
+        <Text size="md" mt="md">
+          {" "}
+          Activity
+        </Text>
       </Card>
     </Container>
   );
