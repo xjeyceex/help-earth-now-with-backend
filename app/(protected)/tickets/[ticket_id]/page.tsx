@@ -7,6 +7,7 @@ import {
 } from "@/actions/get";
 import { shareTicket } from "@/actions/post";
 import CanvassForm from "@/components/CanvassForm";
+import LoadingState from "@/components/LoadingState";
 import { useUserStore } from "@/stores/userStore";
 import {
   CanvassAttachment,
@@ -18,6 +19,7 @@ import {
   Badge,
   Button,
   Card,
+  Center,
   Collapse,
   Container,
   Flex,
@@ -51,6 +53,7 @@ const TicketDetailsPage = () => {
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [canvasLoading, setCanvasLoading] = useState(true);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
@@ -107,7 +110,15 @@ const TicketDetailsPage = () => {
 
   const fetchCanvassDetails = async () => {
     if (!ticket_id) return;
-    setCanvassDetails(await getCanvassDetails({ ticketId: ticket_id }));
+
+    setCanvasLoading(true);
+
+    try {
+      const data = await getCanvassDetails({ ticketId: ticket_id });
+      setCanvassDetails(data);
+    } finally {
+      setCanvasLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -117,12 +128,8 @@ const TicketDetailsPage = () => {
     fetchUsers(); // No need to call fetchUsers API anymore
   }, [ticket_id]);
 
-  if (loading) {
-    return (
-      <Container size="sm" py="xl">
-        <Loader size="lg" />
-      </Container>
-    );
+  if (!user || loading) {
+    return <LoadingState />;
   }
 
   if (!ticket) {
@@ -374,121 +381,127 @@ const TicketDetailsPage = () => {
                       : undefined
                   }
                 >
-                  <Stack p={0}>
-                    <Stack
-                      w="100%"
-                      onClick={
-                        isCanvasVisible
-                          ? () => setIsCanvasVisible(false)
-                          : undefined
-                      } // Click only the header to collapse when open
-                      style={{ cursor: "pointer" }}
-                    >
-                      <Group justify="space-between">
-                        <Group>
-                          <Text size="sm">Canvass Form</Text>
+                  {canvasLoading ? (
+                    <Center p="md">
+                      <Loader size="sm" />
+                    </Center>
+                  ) : (
+                    <Stack p={0}>
+                      <Stack
+                        w="100%"
+                        onClick={
+                          isCanvasVisible
+                            ? () => setIsCanvasVisible(false)
+                            : undefined
+                        } // Click only the header to collapse when open
+                        style={{ cursor: "pointer" }}
+                      >
+                        <Group justify="space-between">
+                          <Group>
+                            <Text size="sm">Canvass Form</Text>
+                          </Group>
+                          <Text size="sm">
+                            {isCanvasVisible ? (
+                              <IconChevronUp size={18} />
+                            ) : (
+                              <IconChevronDown size={18} />
+                            )}
+                          </Text>
                         </Group>
-                        <Text size="sm">
-                          {isCanvasVisible ? (
-                            <IconChevronUp size={18} />
-                          ) : (
-                            <IconChevronDown size={18} />
-                          )}
-                        </Text>
-                      </Group>
-                    </Stack>
+                      </Stack>
 
-                    <Collapse in={isCanvasVisible}>
-                      {(canvassDetails?.length ?? 0) > 0 ? (
-                        <>
-                          {canvassDetails?.map((canvass: CanvassDetail) => (
-                            <Stack key={canvass.canvass_form_id} p="md">
-                              <Text>
-                                <strong>RF Date Received:</strong>{" "}
-                                {new Date(
-                                  canvass.canvass_form_rf_date_received
-                                ).toLocaleDateString("en-US", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
-                              </Text>
-                              <Text>
-                                <strong>Recommended Supplier:</strong>{" "}
-                                {canvass.canvass_form_recommended_supplier}
-                              </Text>
-                              <Text>
-                                <strong>Lead Time (days):</strong>{" "}
-                                {canvass.canvass_form_lead_time_day}
-                              </Text>
-                              <Text>
-                                <strong>Total Amount:</strong> ₱
-                                {canvass.canvass_form_total_amount.toFixed(2)}
-                              </Text>
-                              {canvass.canvass_form_payment_terms && (
+                      <Collapse in={isCanvasVisible}>
+                        {(canvassDetails?.length ?? 0) > 0 ? (
+                          <>
+                            {canvassDetails?.map((canvass: CanvassDetail) => (
+                              <Stack key={canvass.canvass_form_id} p="md">
                                 <Text>
-                                  <strong>Terms:</strong>{" "}
-                                  {canvass.canvass_form_payment_terms}
+                                  <strong>RF Date Received:</strong>{" "}
+                                  {new Date(
+                                    canvass.canvass_form_rf_date_received
+                                  ).toLocaleDateString("en-US", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
                                 </Text>
-                              )}
-                              <Text>
-                                <strong>Submitted By:</strong>{" "}
-                                {canvass.submitted_by.user_full_name ||
-                                  "Unknown"}
-                              </Text>
-                              <Text>
-                                <strong>Date Submitted:</strong>{" "}
-                                {new Date(
-                                  canvass.canvass_form_date_submitted
-                                ).toLocaleDateString()}
-                              </Text>
+                                <Text>
+                                  <strong>Recommended Supplier:</strong>{" "}
+                                  {canvass.canvass_form_recommended_supplier}
+                                </Text>
+                                <Text>
+                                  <strong>Lead Time (days):</strong>{" "}
+                                  {canvass.canvass_form_lead_time_day}
+                                </Text>
+                                <Text>
+                                  <strong>Total Amount:</strong> ₱
+                                  {canvass.canvass_form_total_amount.toFixed(2)}
+                                </Text>
+                                {canvass.canvass_form_payment_terms && (
+                                  <Text>
+                                    <strong>Terms:</strong>{" "}
+                                    {canvass.canvass_form_payment_terms}
+                                  </Text>
+                                )}
+                                <Text>
+                                  <strong>Submitted By:</strong>{" "}
+                                  {canvass.submitted_by.user_full_name ||
+                                    "Unknown"}
+                                </Text>
+                                <Text>
+                                  <strong>Date Submitted:</strong>{" "}
+                                  {new Date(
+                                    canvass.canvass_form_date_submitted
+                                  ).toLocaleDateString()}
+                                </Text>
 
-                              {/* Attachments Section */}
-                              {canvass.attachments.length > 0 && (
-                                <div>
-                                  <Text fw={500}>Attachments:</Text>
-                                  {canvass.attachments.map(
-                                    (attachment: CanvassAttachment) => (
-                                      <Link
-                                        key={attachment.canvass_attachment_id}
-                                        href={
-                                          attachment.canvass_attachment_url ||
-                                          "#"
-                                        }
-                                        target="_blank"
-                                        style={{
-                                          color: "#228be6",
-                                          textDecoration: "none",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: "8px",
-                                          padding: "4px 0",
-                                        }}
-                                      >
-                                        <IconFile size={16} />
-                                        {attachment.canvass_attachment_type ||
-                                          "Document"}{" "}
-                                        (
-                                        {new Date(
-                                          attachment.canvass_attachment_created_at
-                                        ).toLocaleDateString()}
-                                        )
-                                      </Link>
-                                    )
-                                  )}
-                                </div>
-                              )}
-                            </Stack>
-                          ))}
-                        </>
-                      ) : (
-                        <CanvassForm
-                          ticketId={ticket?.ticket_id}
-                          updateCanvassDetails={fetchCanvassDetails}
-                        />
-                      )}
-                    </Collapse>
-                  </Stack>
+                                {/* Attachments Section */}
+                                {canvass.attachments.length > 0 && (
+                                  <div>
+                                    <Text fw={500}>Attachments:</Text>
+                                    {canvass.attachments.map(
+                                      (attachment: CanvassAttachment) => (
+                                        <Link
+                                          key={attachment.canvass_attachment_id}
+                                          href={
+                                            attachment.canvass_attachment_url ||
+                                            "#"
+                                          }
+                                          target="_blank"
+                                          style={{
+                                            color: "#228be6",
+                                            textDecoration: "none",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                            padding: "4px 0",
+                                          }}
+                                        >
+                                          <IconFile size={16} />
+                                          {attachment.canvass_attachment_type ||
+                                            "Document"}{" "}
+                                          (
+                                          {new Date(
+                                            attachment.canvass_attachment_created_at
+                                          ).toLocaleDateString()}
+                                          )
+                                        </Link>
+                                      )
+                                    )}
+                                  </div>
+                                )}
+                              </Stack>
+                            ))}
+                          </>
+                        ) : (
+                          <CanvassForm
+                            ticketId={ticket?.ticket_id}
+                            updateCanvassDetails={fetchCanvassDetails}
+                          />
+                        )}
+                      </Collapse>
+                    </Stack>
+                  )}
                 </Card>
               </>
             )}

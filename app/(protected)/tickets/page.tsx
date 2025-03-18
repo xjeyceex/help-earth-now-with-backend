@@ -1,5 +1,6 @@
 "use client";
 import { getAllMyTickets } from "@/actions/get";
+import LoadingState from "@/components/LoadingState";
 import { useUserStore } from "@/stores/userStore";
 import { MyTicketType } from "@/utils/types";
 import {
@@ -9,7 +10,6 @@ import {
   Container,
   Divider,
   Flex,
-  Loader,
   Select,
   Table,
   Text,
@@ -107,27 +107,7 @@ const TicketList = () => {
   });
 
   if (!user || loading) {
-    return (
-      <div
-        style={{
-          height: "100dvh",
-          width: "100vw",
-          overflow: "hidden",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "absolute",
-          top: 0,
-          left: 0,
-        }}
-      >
-        {loading ? (
-          <Loader size="lg" variant="dots" />
-        ) : (
-          <Title ta="center">No User Found</Title>
-        )}
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (
