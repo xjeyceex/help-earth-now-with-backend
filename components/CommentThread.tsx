@@ -35,6 +35,15 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   );
   const [editContent, setEditContent] = useState<string>("");
 
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
+  const [deletingComment, setDeletingComment] = useState<CommentType | null>(
+    null
+  );
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+
   useEffect(() => {
     const fetchComments = async () => {
       try {
@@ -60,8 +69,9 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     }
     if (!newComment.trim()) return; // Prevent adding empty comments
 
+    setIsAddingComment(true); // Disable the form
+
     try {
-      setIsLoading(true);
       const commentId = await addComment(ticket_id, newComment, user.user_id);
       setComments([
         ...comments,
@@ -83,60 +93,77 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     } catch (error) {
       console.error("Unexpected error:", error);
     } finally {
-      setIsLoading(false);
+      setIsAddingComment(false); // Re-enable the form
     }
   };
 
-  const handleDeleteComment = async (comment_id: string) => {
-    try {
-      setIsLoading(true);
-      await deleteComment(comment_id);
-      setComments(
-        comments.filter((comment) => comment.comment_id !== comment_id)
-      );
-    } catch (error) {
-      console.error("Unexpected error:", error);
-    } finally {
-      setIsLoading(false);
+  const handleDeleteComment = async () => {
+    if (deletingComment) {
+      try {
+        await deleteComment(deletingComment.comment_id);
+        setComments((prevComments) =>
+          prevComments.filter(
+            (comment) => comment.comment_id !== deletingComment.comment_id
+          )
+        );
+      } catch (error) {
+        console.error("Unexpected error:", error);
+      }
+      setIsDeleteModalOpen(false); // Close the delete confirmation modal
+      setDeletingComment(null); // Reset the deleting comment
     }
   };
 
   const handleEditComment = async () => {
-    if (!editContent.trim()) return;
+    if (!editContent.trim() || !editingComment) return;
 
     try {
-      setIsLoading(true);
-      if (editingComment) {
-        await editComment(editingComment.comment_id, editContent);
-        setComments(
-          comments.map((comment) =>
-            comment.comment_id === editingComment.comment_id
-              ? {
-                  ...comment,
-                  comment_content: editContent,
-                  comment_is_edited: true,
-                }
-              : comment
-          )
-        );
-        setEditingComment(null); // Close modal after successful edit
-        setEditContent(""); // Clear edit content
-      }
+      setLoadingStates((prev) => ({
+        ...prev,
+        [editingComment.comment_id]: true,
+      }));
+      await editComment(editingComment.comment_id, editContent);
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.comment_id === editingComment.comment_id
+            ? {
+                ...comment,
+                comment_content: editContent,
+                comment_is_edited: true,
+              }
+            : comment
+        )
+      );
+      setEditingComment(null);
+      setEditContent("");
     } catch (error) {
       console.error("Unexpected error:", error);
     } finally {
-      setIsLoading(false);
+      setLoadingStates((prev) => ({
+        ...prev,
+        [editingComment.comment_id]: false,
+      }));
     }
+  };
+
+  const openDeleteModal = (comment: CommentType) => {
+    setDeletingComment(comment);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingComment(null);
   };
 
   const openEditModal = (comment: CommentType) => {
     setEditingComment(comment);
-    setEditContent(comment.comment_content); // Load the existing content for editing
+    setEditContent(comment.comment_content);
   };
 
   const closeEditModal = () => {
     setEditingComment(null);
-    setEditContent(""); // Clear the input
+    setEditContent("");
   };
 
   if (isLoading) {
@@ -160,63 +187,78 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
               shadow="xs"
               style={{ marginBottom: "15px" }}
             >
-              <Group justify="space-between" style={{ marginBottom: "10px" }}>
-                <Box>
-                  <Group gap="xs" pb="sm" align="center">
-                    <Avatar
-                      src={comment.comment_user_avatar}
-                      radius="xl"
-                      size="md"
-                    />
+              {loadingStates[comment.comment_id] ? (
+                <Container
+                  style={{ display: "flex", justifyContent: "center" }}
+                >
+                  <Loader size="sm" />
+                </Container>
+              ) : (
+                <>
+                  <Group
+                    justify="space-between"
+                    style={{ marginBottom: "10px" }}
+                  >
                     <Box>
-                      <Group gap={5}>
-                        <Text
-                          size="xs"
-                          style={{ marginRight: 10, fontWeight: 500 }}
-                        >
-                          {comment.comment_user_full_name}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          {new Date(
-                            comment.comment_date_created
-                          ).toLocaleString()}
-                        </Text>
+                      <Group gap="xs" pb="sm" align="center">
+                        <Avatar
+                          src={comment.comment_user_avatar}
+                          radius="xl"
+                          size="md"
+                        />
+                        <Box>
+                          <Group gap={5}>
+                            <Text
+                              size="xs"
+                              style={{ marginRight: 10, fontWeight: 500 }}
+                            >
+                              {comment.comment_user_full_name}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {new Date(
+                                comment.comment_date_created
+                              ).toLocaleString()}
+                            </Text>
+                          </Group>
+                          <Text style={{ marginTop: 10 }}>
+                            <strong>{comment.comment_content}</strong>
+                          </Text>
+                        </Box>
                       </Group>
-                      <Text style={{ marginTop: 10 }}>
-                        <strong>{comment.comment_content}</strong>
+
+                      <Text size="sm" c="dimmed">
+                        {comment.comment_is_edited && " (Edited)"}
                       </Text>
                     </Box>
+
+                    <Group gap="xs">
+                      {user?.user_id === comment.comment_user_id && (
+                        <>
+                          <Button
+                            variant="outline"
+                            color="red"
+                            size="xs"
+                            onClick={() => openDeleteModal(comment)} // Open the delete confirmation modal
+                            disabled={loadingStates[comment.comment_id]}
+                          >
+                            Delete
+                          </Button>
+                          <Button
+                            variant="outline"
+                            color="blue"
+                            size="xs"
+                            onClick={() => openEditModal(comment)}
+                            disabled={loadingStates[comment.comment_id]}
+                          >
+                            Edit
+                          </Button>
+                        </>
+                      )}
+                    </Group>
                   </Group>
-
-                  <Text size="sm" c="dimmed">
-                    {comment.comment_is_edited && " (Edited)"}
-                  </Text>
-                </Box>
-
-                <Group gap="xs">
-                  {user?.user_id === comment.comment_user_id && (
-                    <>
-                      <Button
-                        variant="outline"
-                        color="red"
-                        size="xs"
-                        onClick={() => handleDeleteComment(comment.comment_id)}
-                      >
-                        Delete
-                      </Button>
-                      <Button
-                        variant="outline"
-                        color="blue"
-                        size="xs"
-                        onClick={() => openEditModal(comment)}
-                      >
-                        Edit
-                      </Button>
-                    </>
-                  )}
-                </Group>
-              </Group>
-              <Divider />
+                  <Divider />
+                </>
+              )}
             </Paper>
           ))}
         </div>
@@ -230,15 +272,15 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
             placeholder="Add a comment..."
             rows={4}
             style={{ width: "100%", marginBottom: "10px" }}
-            disabled={isLoading}
+            disabled={isAddingComment || isLoading} // Disable while adding or loading
           />
           <Button
             type="submit"
             fullWidth
-            disabled={isLoading || !newComment.trim()}
+            disabled={isAddingComment || isLoading || !newComment.trim()}
             style={{ marginBottom: "10px" }}
           >
-            {isLoading ? "Adding..." : "Add Comment"}
+            {isAddingComment ? <Loader size="xs" /> : "Add Comment"}
           </Button>
         </form>
       </Paper>
@@ -260,10 +302,39 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
         <Button
           fullWidth
           onClick={handleEditComment}
-          disabled={isLoading || !editContent.trim()}
+          disabled={
+            isLoading ||
+            !editContent.trim() ||
+            loadingStates[editingComment?.comment_id || ""]
+          }
         >
-          {isLoading ? "Saving..." : "Save Changes"}
+          {loadingStates[editingComment?.comment_id || ""] ? (
+            <Loader size="xs" />
+          ) : (
+            "Save Changes"
+          )}
         </Button>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        opened={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        title="Are you sure?"
+        centered
+      >
+        <Text>
+          Do you really want to delete this comment? This action cannot be
+          undone.
+        </Text>
+        <Group align="center" justify="center" mt="md">
+          <Button variant="outline" color="gray" onClick={closeDeleteModal}>
+            Cancel
+          </Button>
+          <Button color="red" onClick={handleDeleteComment}>
+            Delete
+          </Button>
+        </Group>
       </Modal>
     </Container>
   );
