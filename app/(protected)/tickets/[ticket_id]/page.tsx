@@ -36,6 +36,7 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconFile,
+  IconFileText,
 } from "@tabler/icons-react";
 import DOMPurify from "dompurify";
 import Link from "next/link";
@@ -397,9 +398,11 @@ const TicketDetailsPage = () => {
                         style={{ cursor: "pointer" }}
                       >
                         <Group justify="space-between">
-                          <Group>
+                          <Group gap={6}>
+                            <IconFileText size={18} stroke={1.5} />
                             <Text size="sm">Canvass Form</Text>
                           </Group>
+
                           <Text size="sm">
                             {isCanvasVisible ? (
                               <IconChevronUp size={18} />
@@ -414,7 +417,7 @@ const TicketDetailsPage = () => {
                         {(canvassDetails?.length ?? 0) > 0 ? (
                           <>
                             {canvassDetails?.map((canvass: CanvassDetail) => (
-                              <Stack key={canvass.canvass_form_id} p="md">
+                              <Stack key={canvass.canvass_form_id} px="sm">
                                 <Text>
                                   <strong>RF Date Received:</strong>{" "}
                                   {new Date(
@@ -493,11 +496,15 @@ const TicketDetailsPage = () => {
                               </Stack>
                             ))}
                           </>
-                        ) : (
+                        ) : user?.user_id === ticket?.ticket_created_by ? ( // Only show form if user is creator
                           <CanvassForm
                             ticketId={ticket?.ticket_id}
                             updateCanvassDetails={fetchCanvassDetails}
                           />
+                        ) : (
+                          <Text p="md" c="dimmed">
+                            Canvass form is not available yet.
+                          </Text>
                         )}
                       </Collapse>
                     </Stack>
