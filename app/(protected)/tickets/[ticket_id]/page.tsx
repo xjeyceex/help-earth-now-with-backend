@@ -50,7 +50,7 @@ const TicketDetailsPage = () => {
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
-    null,
+    null
   );
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
@@ -59,7 +59,7 @@ const TicketDetailsPage = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
+    []
   );
 
   const handleShareTicket = async () => {
@@ -67,12 +67,12 @@ const TicketDetailsPage = () => {
 
     // Share the ticket with each selected user
     await Promise.all(
-      selectedUsers.map((userId) => shareTicket(ticket_id, userId)),
+      selectedUsers.map((userId) => shareTicket(ticket_id, userId))
     );
 
     // Filter out the selected users from the dropdown
     setAllUsers((prev) =>
-      prev.filter((user) => !selectedUsers.includes(user.value)),
+      prev.filter((user) => !selectedUsers.includes(user.value))
     );
 
     setIsSharing(false);
@@ -103,8 +103,8 @@ const TicketDetailsPage = () => {
     const filteredUsers = users.filter(
       (user) =>
         !ticket?.reviewers.some(
-          (reviewer) => reviewer.reviewer_id === user.value,
-        ),
+          (reviewer) => reviewer.reviewer_id === user.value
+        )
     );
 
     setAllUsers(filteredUsers);
@@ -127,7 +127,6 @@ const TicketDetailsPage = () => {
     fetchTicketDetails();
     fetchUsers(); // ✅ No need to call fetchUsers API anymore
     fetchCanvassDetails();
-    fetchUsers(); // No need to call fetchUsers API anymore
   }, [ticket_id]);
 
   if (!user || loading) {
@@ -148,10 +147,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isAssigned = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+    (u) => u.user_id === user?.user_id
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
   // ✅ Check if the user is the creator of the ticket
   const isCreator = ticket.ticket_created_by === user?.user_id;
@@ -203,7 +202,7 @@ const TicketDetailsPage = () => {
                       hour: "numeric",
                       minute: "numeric",
                       hour12: true,
-                    },
+                    }
                   )}
                 </Text>
               </Group>
@@ -241,7 +240,7 @@ const TicketDetailsPage = () => {
                         day: "2-digit",
                         month: "short",
                         year: "numeric",
-                      },
+                      }
                     )}
                   </Text>
                   <div>
@@ -251,14 +250,14 @@ const TicketDetailsPage = () => {
                         ticket?.ticket_status === "PENDING"
                           ? "yellow"
                           : ticket?.ticket_status === "APPROVED"
-                            ? "green"
-                            : ticket?.ticket_status === "IN PROGRESS"
-                              ? "blue"
-                              : ticket?.ticket_status === "COMPLETED"
-                                ? "teal"
-                                : ticket?.ticket_status === "REJECTED"
-                                  ? "red"
-                                  : "gray"
+                          ? "green"
+                          : ticket?.ticket_status === "IN PROGRESS"
+                          ? "blue"
+                          : ticket?.ticket_status === "COMPLETED"
+                          ? "teal"
+                          : ticket?.ticket_status === "REJECTED"
+                          ? "red"
+                          : "gray"
                       }
                     >
                       {ticket?.ticket_status}
@@ -277,7 +276,7 @@ const TicketDetailsPage = () => {
                     <span
                       dangerouslySetInnerHTML={{
                         __html: DOMPurify.sanitize(
-                          ticket.ticket_specifications,
+                          ticket.ticket_specifications
                         ),
                       }}
                     />
@@ -300,10 +299,10 @@ const TicketDetailsPage = () => {
                                 r.approval_status === "PENDING"
                                   ? "yellow"
                                   : r.approval_status === "APPROVED"
-                                    ? "green"
-                                    : r.approval_status === "REJECTED"
-                                      ? "red"
-                                      : "gray"
+                                  ? "green"
+                                  : r.approval_status === "REJECTED"
+                                  ? "red"
+                                  : "gray"
                               }
                             >
                               {r.approval_status}
@@ -422,7 +421,7 @@ const TicketDetailsPage = () => {
                                 <Text>
                                   <strong>RF Date Received:</strong>{" "}
                                   {new Date(
-                                    canvass.canvass_form_rf_date_received,
+                                    canvass.canvass_form_rf_date_received
                                   ).toLocaleDateString("en-US", {
                                     day: "2-digit",
                                     month: "short",
@@ -455,7 +454,7 @@ const TicketDetailsPage = () => {
                                 <Text>
                                   <strong>Date Submitted:</strong>{" "}
                                   {new Date(
-                                    canvass.canvass_form_date_submitted,
+                                    canvass.canvass_form_date_submitted
                                   ).toLocaleDateString()}
                                 </Text>
 
@@ -486,11 +485,11 @@ const TicketDetailsPage = () => {
                                             "Document"}{" "}
                                           (
                                           {new Date(
-                                            attachment.canvass_attachment_created_at,
+                                            attachment.canvass_attachment_created_at
                                           ).toLocaleDateString()}
                                           )
                                         </Link>
-                                      ),
+                                      )
                                     )}
                                   </div>
                                 )}
