@@ -102,7 +102,7 @@ const ProfilePage = () => {
     }
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       setError(
-        "Password must contain at least one uppercase letter and one number."
+        "Password must contain at least one uppercase letter and one number.",
       );
       return;
     }
