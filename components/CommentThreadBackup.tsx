@@ -23,7 +23,7 @@ type CommentThreadProps = {
   ticket_id: string; // The ticket ID for which comments are fetched
 };
 
-const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
+const CommentThreadBackup: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   const { user } = useUserStore();
 
   const [comments, setComments] = useState<CommentType[]>([]);
@@ -340,4 +340,4 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   );
 };
 
-export default CommentThread;
+export default CommentThreadBackup;

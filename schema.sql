@@ -4,6 +4,39 @@ CREATE TYPE ticket_status_enum AS ENUM (
     'IN REVIEW', 'FOR APPROVAL', 'DONE', 'CANCELED'
 );
 
+create policy "Allow authenticated users to insert" 
+on storage.objects 
+for insert 
+to authenticated 
+with check (auth.uid() is not null);
+
+create policy "Allow authenticated users to delete" 
+on storage.objects 
+for delete 
+to authenticated 
+using (auth.uid() is not null);
+
+create policy "Allow authenticated users to select" 
+on storage.objects 
+for select 
+to authenticated 
+using (auth.uid() is not null);
+
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects
+FOR INSERT
+WITH CHECK (auth.uid() = owner);
+
+CREATE POLICY "Users can delete their own avatar"
+ON storage.objects
+FOR DELETE
+USING (auth.uid() = owner);
+
+CREATE POLICY "Allow public read access to avatars"
+ON storage.objects
+FOR SELECT
+USING (TRUE);
+
 CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING');
 CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'PURCHASER', 'REVIEWER');
 
@@ -402,7 +435,7 @@ as $$
   where
     c.comment_ticket_id = ticket_id
     and c.comment_type = 'COMMENT';
-
+  order by c.comment_date_created desc;
 $$;
 
 --function for getting specific ticket

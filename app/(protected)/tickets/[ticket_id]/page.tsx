@@ -7,7 +7,7 @@ import {
 } from "@/actions/get";
 import { shareTicket } from "@/actions/post";
 import CanvassForm from "@/components/CanvassForm";
-import CommentThread from "@/components/CommentThread";
+import CommentThreadBackup from "@/components/CommentThreadBackup";
 import LoadingState from "@/components/LoadingState";
 import { useUserStore } from "@/stores/userStore";
 import {
@@ -510,7 +510,7 @@ const TicketDetailsPage = () => {
           {" "}
           Activity
         </Text>
-        <CommentThread ticket_id={ticket_id} />
+        <CommentThreadBackup ticket_id={ticket_id} />
       </Card>
     </Container>
   );
