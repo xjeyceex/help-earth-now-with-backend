@@ -8,7 +8,7 @@ import {
 import { shareTicket } from "@/actions/post";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
-import LoadingState from "@/components/LoadingState";
+import LoadingStateProtected from "@/components/LoadingStateProtected";
 import { useUserStore } from "@/stores/userStore";
 import {
   CanvassAttachment,
@@ -121,7 +121,7 @@ const TicketDetailsPage = () => {
   }, [ticket_id]);
 
   if (!user || loading) {
-    return <LoadingState />;
+    return <LoadingStateProtected />;
   }
 
   if (!ticket) {

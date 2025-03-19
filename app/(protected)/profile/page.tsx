@@ -5,7 +5,7 @@ import {
   updateDisplayName,
   updateProfilePicture,
 } from "@/actions/post";
-import LoadingState from "@/components/LoadingState";
+import LoadingStateProtected from "@/components/LoadingStateProtected";
 import { useUserStore } from "@/stores/userStore";
 import {
   Avatar,
@@ -22,18 +22,11 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import {
-  IconArrowLeft,
-  IconCamera,
-  IconLock,
-  IconUser,
-} from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
+import { IconCamera, IconLock, IconUser } from "@tabler/icons-react";
 import { useState } from "react";
 
 const ProfilePage = () => {
   const { user, setUser } = useUserStore();
-  const router = useRouter();
 
   // Modal state
   const [isEditingName, setIsEditingName] = useState(false);
@@ -50,7 +43,7 @@ const ProfilePage = () => {
   const [error, setError] = useState("");
 
   if (!user) {
-    return <LoadingState />;
+    return <LoadingStateProtected />;
   }
 
   const handleAvatarUpload = async () => {
@@ -102,7 +95,7 @@ const ProfilePage = () => {
     }
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       setError(
-        "Password must contain at least one uppercase letter and one number.",
+        "Password must contain at least one uppercase letter and one number."
       );
       return;
     }
@@ -182,15 +175,6 @@ const ProfilePage = () => {
               color="red"
             >
               Change Password
-            </Button>
-
-            <Button
-              leftSection={<IconArrowLeft size={18} />}
-              variant="subtle"
-              onClick={() => router.push("/dashboard")}
-              fullWidth
-            >
-              Back to Dashboard
             </Button>
           </Stack>
         </Card>

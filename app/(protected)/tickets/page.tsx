@@ -1,6 +1,6 @@
 "use client";
 import { getAllMyTickets } from "@/actions/get";
-import LoadingState from "@/components/LoadingState";
+import LoadingStateProtected from "@/components/LoadingStateProtected";
 import { useUserStore } from "@/stores/userStore";
 import { MyTicketType } from "@/utils/types";
 import {
@@ -107,7 +107,7 @@ const TicketList = () => {
   });
 
   if (!user || loading) {
-    return <LoadingState />;
+    return <LoadingStateProtected />;
   }
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { getCurrentUser } from "@/actions/get";
-import LoadingState from "@/components/LoadingState";
+import LoadingStatePublic from "@/components/LoadingStatePublic";
 import Sidebar from "@/components/Sidebar";
 import { useUserStore } from "@/stores/userStore";
 import { UserType } from "@/utils/types";
@@ -38,7 +38,7 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
     fetchUser();
   }, [setUser]);
 
-  if (!user) return <LoadingState />;
+  if (!user) return <LoadingStatePublic />;
 
   return (
     <main>

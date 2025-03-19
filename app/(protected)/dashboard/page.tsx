@@ -135,13 +135,6 @@ const DashboardPage = () => {
           ))}
         </Stack>
       )}
-
-      {/* ✅ Quick Actions */}
-      <Stack mt="xl" align="center">
-        <Link href="/tickets">
-          <Button size="md">View All Tickets</Button>
-        </Link>
-      </Stack>
     </Container>
   );
 };
