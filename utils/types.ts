@@ -87,7 +87,6 @@ export type CanvassDetail = {
   canvass_form_lead_time_day: number;
   canvass_form_total_amount: number;
   canvass_form_payment_terms: string | null;
-  canvass_form_attachment_url: string | null;
   canvass_form_submitted_by: string;
   canvass_form_date_submitted: string;
   submitted_by: CanvassSubmitter;
