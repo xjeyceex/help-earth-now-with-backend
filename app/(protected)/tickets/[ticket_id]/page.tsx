@@ -3,12 +3,14 @@
 import {
   getAllUsers,
   getCanvassDetails,
+  getComments,
   getTicketDetails,
 } from "@/actions/get";
 import { shareTicket } from "@/actions/post";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
+import { useCommentsStore } from "@/stores/commentStore";
 import { useUserStore } from "@/stores/userStore";
 import {
   CanvassAttachment,
@@ -47,6 +49,7 @@ import { useEffect, useState } from "react";
 const TicketDetailsPage = () => {
   const { ticket_id } = useParams() as { ticket_id: string };
   const { user } = useUserStore();
+  const { setComments } = useCommentsStore();
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
@@ -114,11 +117,21 @@ const TicketDetailsPage = () => {
     }
   };
 
+  const fetchComments = async () => {
+    try {
+      const fetchedComments = await getComments(ticket_id);
+      setComments(fetchedComments);
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    }
+  };
+
   useEffect(() => {
     fetchTicketDetails();
-    fetchUsers(); // ✅ No need to call fetchUsers API anymore
+    fetchComments();
+    fetchUsers();
     fetchCanvassDetails();
-  }, [ticket_id]);
+  }, []);
 
   if (!user || loading) {
     return <LoadingStateProtected />;

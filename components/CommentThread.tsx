@@ -1,5 +1,4 @@
 import { deleteComment } from "@/actions/delete";
-import { getComments } from "@/actions/get";
 import { addComment } from "@/actions/post";
 import { editComment } from "@/actions/update";
 import { useCommentsStore } from "@/stores/commentStore";
@@ -7,6 +6,7 @@ import { useUserStore } from "@/stores/userStore";
 import { createClient } from "@/utils/supabase/client";
 import { CommentType } from "@/utils/types";
 import {
+  ActionIcon,
   Avatar,
   Box,
   Button,
@@ -14,12 +14,15 @@ import {
   Divider,
   Group,
   Loader,
+  Menu,
   Modal,
   Paper,
   Text,
   Textarea,
 } from "@mantine/core";
+import { IconDotsVertical, IconEdit, IconTrash } from "@tabler/icons-react";
 import React, { useEffect, useState } from "react";
+import LoadingStateProtected from "./LoadingStateProtected";
 
 type CommentThreadProps = {
   ticket_id: string;
@@ -29,7 +32,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   const { user } = useUserStore();
 
   const { comments, setComments } = useCommentsStore();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [newComment, setNewComment] = useState<string>("");
 
   const [editingComment, setEditingComment] = useState<CommentType | null>(
@@ -45,22 +47,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     null
   );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setIsLoading(true);
-        const fetchedComments = await getComments(ticket_id);
-        setComments(fetchedComments);
-      } catch (error) {
-        console.error("Unexpected error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchComments();
-  }, [ticket_id]);
 
   useEffect(() => {
     if (!user || !ticket_id) return;
@@ -222,12 +208,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     setEditContent("");
   };
 
-  if (isLoading) {
-    return (
-      <Container style={{ display: "flex", justifyContent: "center" }}>
-        <Loader size="lg" />
-      </Container>
-    );
+  if (!comments) {
+    return <LoadingStateProtected />;
   }
 
   return (
@@ -289,26 +271,33 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
 
                     <Group gap="xs">
                       {user?.user_id === comment.comment_user_id && (
-                        <>
-                          <Button
-                            variant="outline"
-                            color="red"
-                            size="xs"
-                            onClick={() => openDeleteModal(comment)} // Open the delete confirmation modal
-                            disabled={loadingStates[comment.comment_id]}
-                          >
-                            Delete
-                          </Button>
-                          <Button
-                            variant="outline"
-                            color="blue"
-                            size="xs"
-                            onClick={() => openEditModal(comment)}
-                            disabled={loadingStates[comment.comment_id]}
-                          >
-                            Edit
-                          </Button>
-                        </>
+                        <Menu trigger="click" position="bottom-end">
+                          <Menu.Target>
+                            <ActionIcon
+                              variant="transparent"
+                              style={{ color: "inherit" }}
+                            >
+                              <IconDotsVertical size={18} />
+                            </ActionIcon>
+                          </Menu.Target>
+
+                          <Menu.Dropdown>
+                            <Menu.Item
+                              leftSection={<IconEdit size={16} />} // Edit icon using leftSection
+                              onClick={() => openEditModal(comment)} // Open the edit modal
+                              disabled={loadingStates[comment.comment_id]}
+                            >
+                              Edit
+                            </Menu.Item>
+                            <Menu.Item
+                              leftSection={<IconTrash size={16} />} // Trash icon using leftSection
+                              onClick={() => openDeleteModal(comment)} // Open the delete confirmation modal
+                              disabled={loadingStates[comment.comment_id]}
+                            >
+                              Delete
+                            </Menu.Item>
+                          </Menu.Dropdown>
+                        </Menu>
                       )}
                     </Group>
                   </Group>
@@ -328,12 +317,12 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
             placeholder="Add a comment..."
             rows={4}
             style={{ width: "100%", marginBottom: "10px" }}
-            disabled={isAddingComment || isLoading} // Disable while adding or loading
+            disabled={isAddingComment} // Disable while adding or loading
           />
           <Button
             type="submit"
             fullWidth
-            disabled={isAddingComment || isLoading || !newComment.trim()}
+            disabled={isAddingComment || !newComment.trim()}
             style={{ marginBottom: "10px" }}
           >
             {isAddingComment ? <Loader size="xs" /> : "Add Comment"}
@@ -359,7 +348,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
           fullWidth
           onClick={handleEditComment}
           disabled={
-            isLoading ||
             !editContent.trim() ||
             loadingStates[editingComment?.comment_id || ""]
           }
