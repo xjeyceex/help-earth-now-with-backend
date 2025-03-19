@@ -355,7 +355,7 @@ export default function HomePage() {
                   }}
                 >
                   <Text size="lg" fs="italic" mb="md">
-                    "{testimonial.quote}"
+                    {testimonial.quote}
                   </Text>
                   <Group>
                     <div>
