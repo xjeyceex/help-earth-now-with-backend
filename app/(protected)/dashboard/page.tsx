@@ -1,6 +1,7 @@
 "use client";
 
 import { getDashboardTickets } from "@/actions/get";
+import LoadingStateProtected from "@/components/LoadingStateProtected";
 import { useUserStore } from "@/stores/userStore";
 import { DashboardTicketType } from "@/utils/types";
 import {
@@ -63,6 +64,10 @@ const DashboardPage = () => {
     fetchTickets();
   }, [isAdmin, user?.user_id]);
 
+  if (!user || loading) {
+    return <LoadingStateProtected />;
+  }
+
   return (
     <Container size="lg" py="xl">
       <Title ta="center" mb="lg">
@@ -101,9 +106,7 @@ const DashboardPage = () => {
         {user?.user_role === "REVIEWER" && "Tickets to Review"}
       </Title>
 
-      {loading ? (
-        <Text>Loading tickets...</Text>
-      ) : tickets.length === 0 ? (
+      {tickets.length === 0 ? (
         <Text>No tickets found.</Text>
       ) : (
         <Stack mt="md">
