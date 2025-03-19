@@ -66,9 +66,9 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
       .on<CommentType>(
         "postgres_changes",
         {
-          event: "*", // Listen to all events
+          event: "*",
           schema: "public",
-          table: "comment_table", // Subscribe to the actual table
+          table: "comment_table",
           filter: `comment_ticket_id=eq.${ticket_id}`,
         },
         async (payload) => {
@@ -78,9 +78,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
           }
 
           if (payload.eventType === "INSERT") {
-            // Fetch the new comment WITH avatar and name
             const { data: newComment, error } = await createClient()
-              .from("comment_with_avatar_view") // Fetch from the view
+              .from("comment_with_avatar_view")
               .select("*")
               .eq("comment_id", payload.new.comment_id)
               .single();
@@ -141,11 +140,12 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     try {
       await addComment(ticket_id, newComment, user.user_id);
 
-      setNewComment(""); // Clear the input after adding
+      setNewComment("");
+      commentEditorRef.current?.reset();
     } catch (error) {
       console.error("Unexpected error:", error);
     } finally {
-      setIsAddingComment(false); // Re-enable the form
+      setIsAddingComment(false);
     }
   };
 
@@ -283,8 +283,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                         size="md"
                         style={{
                           wordBreak: "break-word",
-                          maxWidth: "100%", // Let the content grow naturally
-                          marginTop: "4px", // Adjusted margin for closer spacing
+                          maxWidth: "100%",
+                          marginTop: "4px",
                         }}
                       >
                         <span
@@ -303,7 +303,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                           variant="transparent"
                           style={{
                             color: "inherit",
-                            marginLeft: "auto", // Ensures the icon aligns to the right
+                            marginLeft: "auto",
                           }}
                         >
                           <IconDotsVertical size={18} />
