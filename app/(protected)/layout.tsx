@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from "@/actions/get";
 import LoadingState from "@/components/LoadingState";
+import Sidebar from "@/components/Sidebar";
 import { useUserStore } from "@/stores/userStore";
 import { UserType } from "@/utils/types";
 import { notifications } from "@mantine/notifications";
@@ -39,6 +40,13 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
 
   if (!user) return <LoadingState />;
 
-  return <main>{children}</main>;
+  return (
+    <main>
+      <div style={{ display: "flex" }}>
+        <Sidebar />
+        <main style={{ flexGrow: 1, paddingLeft: 300 }}>{children}</main>
+      </div>
+    </main>
+  );
 };
 export default ProtectedLayout;

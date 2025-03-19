@@ -20,10 +20,10 @@ const Navbar = () => {
   const { user, clearUser } = useUserStore();
   const [, startTransition] = useTransition();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
-  const [mounted, setMounted] = useState(false); // Ensure hydration consistency
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true); // Ensures this runs only on the client
+    setMounted(true);
   }, []);
 
   const handleLogout = () => {
@@ -32,6 +32,8 @@ const Navbar = () => {
       clearUser();
     });
   };
+
+  if (!mounted || !user) return null;
 
   return (
     <Flex
@@ -46,6 +48,9 @@ const Navbar = () => {
         zIndex: 50,
         width: "100%",
         boxShadow: "0px 2px 10px rgba(0,0,0,0.1)",
+        borderBottom: `1px solid ${
+          mounted && colorScheme === "dark" ? "#444" : "#ccc"
+        }`,
       }}
     >
       <Title

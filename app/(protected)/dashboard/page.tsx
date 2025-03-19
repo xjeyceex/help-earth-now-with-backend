@@ -107,7 +107,7 @@ const DashboardPage = () => {
         <Text>No tickets found.</Text>
       ) : (
         <Stack mt="md">
-          {tickets.slice(0, 5).map((ticket) => (
+          {tickets.slice(0, 3).map((ticket) => (
             <Card key={ticket.ticket_id} shadow="sm" padding="md" withBorder>
               <Text size="md" fw={500}>
                 {ticket.ticket_item_description}
