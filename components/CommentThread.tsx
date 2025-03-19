@@ -97,8 +97,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
               return;
             }
 
-            // Update state synchronously
-            setComments((prev) => [newComment, ...prev]);
+            // Append new comment at the end instead of the beginning
+            setComments((prev) => [...prev, newComment]);
           }
 
           if (payload.eventType === "UPDATE") {

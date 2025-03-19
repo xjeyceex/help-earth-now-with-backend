@@ -452,7 +452,7 @@ as $$
     user_table u on c.comment_user_id = u.user_id
   where
     c.comment_ticket_id = ticket_id
-    and c.comment_type = 'COMMENT';
+    and c.comment_type = 'COMMENT'
   order by c.comment_date_created asc;
 $$;
 
