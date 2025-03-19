@@ -12,7 +12,7 @@ import {
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 
-const LoadingState = () => {
+const LoadingStatePublic = () => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -51,11 +51,11 @@ const LoadingState = () => {
       {/* Absolute Centered Loading */}
       <div
         style={{
-          height: "100dvh",
-          width: "100vw",
+          height: "100vh", // Full height of the viewport
+          width: "100vw", // Full width of the viewport
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+          justifyContent: "center", // Center horizontally
+          alignItems: "center", // Center vertically
           position: "absolute",
           top: 0,
           left: 0,
@@ -84,4 +84,4 @@ const LoadingState = () => {
   );
 };
 
-export default LoadingState;
+export default LoadingStatePublic;

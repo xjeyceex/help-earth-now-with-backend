@@ -4,6 +4,39 @@ CREATE TYPE ticket_status_enum AS ENUM (
     'IN REVIEW', 'FOR APPROVAL', 'DONE', 'CANCELED'
 );
 
+create policy "Allow authenticated users to insert" 
+on storage.objects 
+for insert 
+to authenticated 
+with check (auth.uid() is not null);
+
+create policy "Allow authenticated users to delete" 
+on storage.objects 
+for delete 
+to authenticated 
+using (auth.uid() is not null);
+
+create policy "Allow authenticated users to select" 
+on storage.objects 
+for select 
+to authenticated 
+using (auth.uid() is not null);
+
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects
+FOR INSERT
+WITH CHECK (auth.uid() = owner);
+
+CREATE POLICY "Users can delete their own avatar"
+ON storage.objects
+FOR DELETE
+USING (auth.uid() = owner);
+
+CREATE POLICY "Allow public read access to avatars"
+ON storage.objects
+FOR SELECT
+USING (TRUE);
+
 CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING');
 CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'PURCHASER', 'REVIEWER');
 
@@ -25,14 +58,18 @@ CREATE TABLE comment_table (
   comment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comment_ticket_id UUID NOT NULL,
   comment_content TEXT NOT NULL,
-  comment_date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  comment_date_created TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
   comment_is_edited BOOLEAN DEFAULT FALSE,
   comment_is_disabled BOOLEAN DEFAULT FALSE,
   comment_type TEXT NOT NULL,
-  comment_last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  comment_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
   comment_user_id UUID NOT NULL,  -- Add the user_id to track the user who posted the comment
   FOREIGN KEY (comment_user_id) REFERENCES user_table(user_id)  -- Assuming you have a user_table
 );
+
+-- Enable Supabase Realtime on this table
+ALTER PUBLICATION supabase_realtime ADD TABLE comment_table;
+ALTER TABLE comment_table REPLICA IDENTITY FULL;
 
 CREATE TABLE comment_reply_table (
   reply_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -91,7 +128,7 @@ CREATE TABLE public.canvass_attachment_table (
     canvass_attachment_canvass_form_id UUID NULL DEFAULT gen_random_uuid(),
     canvass_attachment_type TEXT NULL,
     canvass_attachment_url TEXT NULL,
-    canvass_attachment_created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    canvass_attachment_created_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
     CONSTRAINT canvass_attachment_table_pkey PRIMARY KEY (canvass_attachment_id),
     CONSTRAINT canvass_attachment_table_canvass_attachment_canvass_form_id_fkey
         FOREIGN KEY (canvass_attachment_canvass_form_id)
@@ -362,6 +399,24 @@ as $$
 
 $$;
 
+--view for realtime comment
+CREATE VIEW comment_with_avatar_view AS
+SELECT 
+    c.comment_id,
+    c.comment_ticket_id,
+    c.comment_content,
+    c.comment_date_created,
+    c.comment_is_edited,
+    c.comment_is_disabled,
+    c.comment_type,
+    c.comment_last_updated,
+    c.comment_user_id,
+    u.user_full_name AS comment_user_full_name,
+    u.user_avatar AS comment_user_avatar
+FROM comment_table c
+LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
+
+
 --function for comment
 create or replace function get_comments_with_avatars(ticket_id uuid)
 returns table(
@@ -397,8 +452,8 @@ as $$
     user_table u on c.comment_user_id = u.user_id
   where
     c.comment_ticket_id = ticket_id
-    and c.comment_type = 'COMMENT';
-
+    and c.comment_type = 'COMMENT'
+  order by c.comment_date_created asc;
 $$;
 
 --function for getting specific ticket

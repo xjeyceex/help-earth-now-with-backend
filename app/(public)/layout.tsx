@@ -5,7 +5,6 @@ type PublicLayoutProps = {
 const PublicLayout = ({ children }: PublicLayoutProps) => {
   return (
     <main>
-      {/* Navbar */}
       {children}
       {/* Footer */}
     </main>

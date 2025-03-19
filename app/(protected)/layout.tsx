@@ -1,8 +1,9 @@
 "use client";
 
 import { getCurrentUser } from "@/actions/get";
-import LoadingState from "@/components/LoadingState";
+import LoadingStatePublic from "@/components/LoadingStatePublic";
 import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import { useUserStore } from "@/stores/userStore";
 import { UserType } from "@/utils/types";
 import { notifications } from "@mantine/notifications";
@@ -38,13 +39,15 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
     fetchUser();
   }, [setUser]);
 
-  if (!user) return <LoadingState />;
+  if (!user) return <LoadingStatePublic />;
 
   return (
     <main>
       <Navbar />
-
-      {children}
+      <div style={{ display: "flex" }}>
+        <Sidebar />
+        <main style={{ flexGrow: 1, paddingLeft: 300 }}>{children}</main>
+      </div>
     </main>
   );
 };

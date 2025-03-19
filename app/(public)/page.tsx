@@ -497,7 +497,6 @@ export default function HomePage() {
           {/*  CTA Section            */}
           {/* ----------------------- */}
         </Container>
-        <h1>heading</h1>
         {/* ----------------------- */}
         {/*  Footer Section         */}
         {/* ----------------------- */}

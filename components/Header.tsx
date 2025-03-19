@@ -15,6 +15,7 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useRouter } from "next/navigation";
 import ModeToggle from "./ModeToggle";
 
 const Header = () => {
@@ -22,6 +23,8 @@ const Header = () => {
 
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+
+  const router = useRouter();
 
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] =
     useDisclosure(false);
@@ -35,7 +38,7 @@ const Header = () => {
 
   return (
     <>
-      <Container size="xl" style={{ zIndex: 10000 }}>
+      <Container size="xl" style={{ zIndex: 10000 }} w="100%">
         <header>
           <Group justify="space-between" h={70}>
             {/* Logo */}
@@ -79,14 +82,7 @@ const Header = () => {
               <Button
                 radius="md"
                 size="sm"
-                styles={{
-                  root: {
-                    transition: "transform 0.2s ease",
-                    "&:hover": {
-                      transform: "translateY(-2px)",
-                    },
-                  },
-                }}
+                onClick={() => router.push("/login")}
               >
                 Log in
               </Button>
@@ -146,7 +142,7 @@ const Header = () => {
             ))}
           </Stack>
 
-          <Button fullWidth mt="xl">
+          <Button fullWidth mt="xl" onClick={() => router.push("/login")}>
             Log in
           </Button>
         </Flex>
