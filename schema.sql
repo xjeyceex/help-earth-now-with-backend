@@ -399,6 +399,24 @@ as $$
 
 $$;
 
+--view for realtime comment
+CREATE VIEW comment_with_avatar_view AS
+SELECT 
+    c.comment_id,
+    c.comment_ticket_id,
+    c.comment_content,
+    c.comment_date_created,
+    c.comment_is_edited,
+    c.comment_is_disabled,
+    c.comment_type,
+    c.comment_last_updated,
+    c.comment_user_id,
+    u.user_full_name AS comment_user_full_name,
+    u.user_avatar AS comment_user_avatar
+FROM comment_table c
+LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
+
+
 --function for comment
 create or replace function get_comments_with_avatars(ticket_id uuid)
 returns table(

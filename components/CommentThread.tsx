@@ -65,54 +65,59 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   useEffect(() => {
     if (!user || !ticket_id) return;
 
-    // Create a unique channel name for this ticket
     const channelName = `comment_changes_${ticket_id}`;
-
-    // Initialize Supabase client
     const client = createClient();
-
-    // Create real-time channel
     const channel = client.channel(channelName);
 
     channel
       .on<CommentType>(
         "postgres_changes",
         {
-          event: "*", // Listen to all events (INSERT, UPDATE, DELETE)
+          event: "*", // Listen to all events
           schema: "public",
-          table: "comment_table",
-          filter: `comment_ticket_id=eq.${ticket_id}`, // Filter by ticket_id
+          table: "comment_table", // Subscribe to the actual table
+          filter: `comment_ticket_id=eq.${ticket_id}`,
         },
-        (payload) => {
+        async (payload) => {
           if (!payload || !("eventType" in payload)) {
             console.warn("Received unexpected payload:", payload);
             return;
           }
 
-          setComments((prev) => {
-            switch (payload.eventType) {
-              case "INSERT":
-                if (prev.some((c) => c.comment_id === payload.new.comment_id)) {
-                  return prev;
-                }
-                return [payload.new as CommentType, ...prev];
+          if (payload.eventType === "INSERT") {
+            // Fetch the new comment WITH avatar and name
+            const { data: newComment, error } = await createClient()
+              .from("comment_with_avatar_view") // Fetch from the view
+              .select("*")
+              .eq("comment_id", payload.new.comment_id)
+              .single();
 
-              case "UPDATE":
-                return prev.map((comment) =>
-                  comment.comment_id === payload.new.comment_id
-                    ? { ...comment, ...payload.new }
-                    : comment
-                );
-
-              case "DELETE":
-                return prev.filter(
-                  (comment) => comment.comment_id !== payload.old?.comment_id
-                );
-
-              default:
-                return prev;
+            if (error) {
+              console.error("Error fetching new comment:", error.message);
+              return;
             }
-          });
+
+            // Update state synchronously
+            setComments((prev) => [newComment, ...prev]);
+          }
+
+          if (payload.eventType === "UPDATE") {
+            setComments((prev) =>
+              prev.map((comment) =>
+                comment.comment_id === payload.new.comment_id
+                  ? { ...comment, ...payload.new }
+                  : comment
+              )
+            );
+          }
+
+          if (payload.eventType === "DELETE") {
+            setComments((prev) =>
+              prev.filter(
+                (comment) => comment.comment_id !== payload.old?.comment_id
+              )
+            );
+          }
         }
       )
       .subscribe((status, err) => {
@@ -121,7 +126,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
         }
       });
 
-    // Cleanup function to unsubscribe when the component unmounts
     return () => {
       client.removeChannel(channel);
     };
