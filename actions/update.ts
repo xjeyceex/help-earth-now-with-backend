@@ -49,7 +49,7 @@ export const markAllUserNotificationsAsRead = async () => {
 
 export const editComment = async (
   comment_id: string,
-  newContent: string
+  newContent: string,
 ): Promise<void> => {
   const supabase = await createClient();
 
