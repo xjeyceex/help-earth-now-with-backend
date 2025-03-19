@@ -136,17 +136,17 @@ export const getAllUsers = async (ticket_id: string) => {
     console.error(
       "Error fetching related users:",
       sharedUsersResponse.error?.message,
-      reviewersResponse.error?.message
+      reviewersResponse.error?.message,
     );
     return { error: true, message: "Failed to fetch related users." };
   }
 
   const ticketCreatorId = ticketResponse.data.ticket_created_by;
   const sharedUserIds = sharedUsersResponse.data.map(
-    (u: SharedUser) => u.shared_user_id
+    (u: SharedUser) => u.shared_user_id,
   );
   const reviewerIds = reviewersResponse.data.map(
-    (r: Reviewer) => r.approval_reviewed_by
+    (r: Reviewer) => r.approval_reviewed_by,
   );
 
   // Collect all users to exclude

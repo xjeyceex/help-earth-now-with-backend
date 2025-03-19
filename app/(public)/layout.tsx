@@ -3,6 +3,12 @@ type PublicLayoutProps = {
 };
 
 const PublicLayout = ({ children }: PublicLayoutProps) => {
-  return <main>{children}</main>;
+  return (
+    <main>
+      {/* Navbar */}
+      {children}
+      {/* Footer */}
+    </main>
+  );
 };
 export default PublicLayout;

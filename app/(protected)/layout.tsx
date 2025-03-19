@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from "@/actions/get";
 import LoadingState from "@/components/LoadingState";
+import Navbar from "@/components/Navbar";
 import { useUserStore } from "@/stores/userStore";
 import { UserType } from "@/utils/types";
 import { notifications } from "@mantine/notifications";
@@ -39,6 +40,12 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
 
   if (!user) return <LoadingState />;
 
-  return <main>{children}</main>;
+  return (
+    <main>
+      <Navbar />
+
+      {children}
+    </main>
+  );
 };
 export default ProtectedLayout;
