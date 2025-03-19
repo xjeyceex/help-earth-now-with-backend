@@ -25,13 +25,13 @@ const DashboardPage = () => {
 
   const countUserTicketsByStatus = (
     tickets: DashboardTicketType[],
-    statusType: "OPEN" | "COMPLETED",
+    statusType: "OPEN" | "COMPLETED"
   ) => {
     if (statusType === "OPEN") {
       return tickets.filter(
         (ticket) =>
           ticket.ticket_status === "FOR CANVASS" ||
-          ticket.ticket_status === "IN PROGRESS",
+          ticket.ticket_status === "IN PROGRESS"
       ).length;
     }
 
@@ -49,7 +49,7 @@ const DashboardPage = () => {
         setLoading(true);
 
         const data = await getDashboardTickets(
-          isAdmin ? undefined : user?.user_id,
+          isAdmin ? undefined : user?.user_id
         );
 
         setTickets(data ?? []);
@@ -97,7 +97,7 @@ const DashboardPage = () => {
       {/* ✅ Recent Tickets Section */}
       <Title order={2} mt="xl">
         {user?.user_role === "ADMIN" && "Recent Tickets"}
-        {user?.user_role === "CANVASSER" && "Your Open Tickets"}
+        {user?.user_role === "PURCHASER" && "Your Open Tickets"}
         {user?.user_role === "REVIEWER" && "Tickets to Review"}
       </Title>
 
@@ -117,10 +117,10 @@ const DashboardPage = () => {
                   ticket.ticket_status === "FOR CANVASS"
                     ? "yellow"
                     : ticket.ticket_status === "IN PROGRESS"
-                      ? "blue"
-                      : ticket.ticket_status === "COMPLETED"
-                        ? "green"
-                        : "gray"
+                    ? "blue"
+                    : ticket.ticket_status === "COMPLETED"
+                    ? "green"
+                    : "gray"
                 }
                 mt="sm"
               >

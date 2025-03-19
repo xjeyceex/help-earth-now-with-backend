@@ -15,13 +15,13 @@ CREATE TYPE ticket_status_enum AS ENUM (
 );
 
 CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING');
-CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CANVASSER', 'REVIEWER');
+CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'PURCHASER', 'REVIEWER');
 
 -- USER TABLE (Manages User Roles)
 DROP TABLE IF EXISTS user_table CASCADE;
 CREATE TABLE user_table (
     user_id UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-    user_role user_role_enum DEFAULT 'CANVASSER' NOT NULL,
+    user_role user_role_enum DEFAULT 'PURCHASER' NOT NULL,
     user_avatar TEXT,
     user_full_name TEXT,
     user_email TEXT
@@ -122,14 +122,14 @@ FOR SELECT USING (
   )
 );
 
--- POLICY: Canvassers can create tickets
-DROP POLICY IF EXISTS "Canvassers can create tickets" ON ticket_table;
+-- POLICY: Purchasers can create tickets
+DROP POLICY IF EXISTS "Purchasers can create tickets" ON ticket_table;
 
-CREATE POLICY "Canvassers can create tickets" ON ticket_table
+CREATE POLICY "Purchasers can create tickets" ON ticket_table
 FOR INSERT WITH CHECK (
   auth.uid() IN (
     SELECT user_id FROM user_table 
-    WHERE user_role = 'CANVASSER'
+    WHERE user_role = 'PURCHASER'
   )
 );
 
@@ -203,9 +203,9 @@ CREATE TABLE public.canvass_form_table (
 );
 
 -- RLS for Canvass Form Table
-DROP POLICY IF EXISTS "Canvassers can submit canvass forms" ON canvass_form_table;
-CREATE POLICY "Canvassers can submit canvass forms" ON canvass_form_table
-    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'CANVASSER'));
+DROP POLICY IF EXISTS "Purchasers can submit canvass forms" ON canvass_form_table;
+CREATE POLICY "Purchasers can submit canvass forms" ON canvass_form_table
+    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'PURCHASER'));
 
 DROP POLICY IF EXISTS "Reviewers can view canvass forms" ON canvass_form_table;
 CREATE POLICY "Reviewers can view canvass forms" ON canvass_form_table
