@@ -89,25 +89,16 @@ const TicketDetailsPage = () => {
     }
     setLoading(false);
   };
-  // Fetch all users for the select dropdown
+
   const fetchUsers = async () => {
     const users = await getAllUsers(ticket_id);
 
-    // Type Guard to check if it's an error
     if ("error" in users) {
       console.error(users.message);
       return;
     }
 
-    // Filter out users who are already reviewers
-    const filteredUsers = users.filter(
-      (user) =>
-        !ticket?.reviewers.some(
-          (reviewer) => reviewer.reviewer_id === user.value
-        )
-    );
-
-    setAllUsers(filteredUsers);
+    setAllUsers(users);
   };
 
   const fetchCanvassDetails = async () => {

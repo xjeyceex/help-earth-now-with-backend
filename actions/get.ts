@@ -96,88 +96,82 @@ export const getAllMyTickets = async ({
   return data || [];
 };
 
+type SharedUser = { shared_user_id: string };
+type Reviewer = { approval_reviewed_by: string };
+
 export const getAllUsers = async (ticket_id: string) => {
   const supabase = await createClient();
 
-  // Get current user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  // Fetch current user
+  const { data: authData, error: userError } = await supabase.auth.getUser();
+  if (userError || !authData?.user) {
     console.error("Error fetching current user:", userError?.message);
-    return {
-      error: true,
-      message: "Failed to fetch current user.",
-    };
+    return { error: true, message: "Failed to fetch current user." };
+  }
+  const currentUserId = authData.user.id;
+
+  // Fetch ticket creator, shared users, and reviewers in parallel
+  const [ticketResponse, sharedUsersResponse, reviewersResponse] =
+    await Promise.all([
+      supabase
+        .from("ticket_table")
+        .select("ticket_created_by")
+        .eq("ticket_id", ticket_id)
+        .maybeSingle(),
+      supabase
+        .from("ticket_shared_with_table")
+        .select("shared_user_id")
+        .eq("ticket_id", ticket_id),
+      supabase
+        .from("approval_table")
+        .select("approval_reviewed_by")
+        .eq("approval_ticket_id", ticket_id),
+    ]);
+
+  if (!ticketResponse.data?.ticket_created_by) {
+    return { error: true, message: "Ticket not found." };
   }
 
-  const currentUserId = user.id;
+  if (sharedUsersResponse.error || reviewersResponse.error) {
+    console.error(
+      "Error fetching related users:",
+      sharedUsersResponse.error?.message,
+      reviewersResponse.error?.message
+    );
+    return { error: true, message: "Failed to fetch related users." };
+  }
 
-  // Get ticket creator and shared users in parallel
-  const [ticketResponse, sharedUsersResponse] = await Promise.all([
-    supabase
-      .from("ticket_table")
-      .select("ticket_created_by")
-      .eq("ticket_id", ticket_id)
-      .maybeSingle(),
-    supabase
-      .from("ticket_shared_with_table")
-      .select("shared_user_id")
-      .eq("ticket_id", ticket_id),
+  const ticketCreatorId = ticketResponse.data.ticket_created_by;
+  const sharedUserIds = sharedUsersResponse.data.map(
+    (u: SharedUser) => u.shared_user_id
+  );
+  const reviewerIds = reviewersResponse.data.map(
+    (r: Reviewer) => r.approval_reviewed_by
+  );
+
+  // Collect all users to exclude
+  const idsToExclude = new Set([
+    currentUserId,
+    ticketCreatorId,
+    ...sharedUserIds,
+    ...reviewerIds,
   ]);
 
-  const { data: ticket, error: ticketError } = ticketResponse;
-  const { data: sharedUsers, error: sharedUsersError } = sharedUsersResponse;
-
-  if (ticketError || !ticket?.ticket_created_by) {
-    console.error("Error fetching ticket:", ticketError?.message);
-    return {
-      error: true,
-      message: "Failed to fetch ticket data.",
-    };
-  }
-
-  if (sharedUsersError) {
-    console.error("Error fetching shared users:", sharedUsersError.message);
-    return {
-      error: true,
-      message: "Failed to fetch shared users.",
-    };
-  }
-
-  const ticketCreatorId = ticket.ticket_created_by;
-  const sharedUserIds = sharedUsers.map((user) => user.shared_user_id);
-
-  // Exclude current user and ticket creator
-  const idsToExclude =
-    currentUserId === ticketCreatorId
-      ? [currentUserId]
-      : [currentUserId, ticketCreatorId];
-
-  // Fetch all users except current user and creator
-  const { data, error } = await supabase
+  // Fetch all users except excluded ones
+  const { data: users, error: usersError } = await supabase
     .from("user_table")
     .select("user_id, user_full_name, user_email")
-    .not("user_id", "in", `(${idsToExclude.join(",")})`);
+    .not("user_id", "in", `(${[...idsToExclude].join(",")})`);
 
-  if (error) {
-    console.error("Error fetching users:", error.message);
-    return {
-      error: true,
-      message: "An unexpected error occurred while fetching user data.",
-    };
+  if (usersError) {
+    console.error("Error fetching users:", usersError.message);
+    return { error: true, message: "Failed to fetch users." };
   }
 
-  const formattedUsers = data
-    .filter((user) => !sharedUserIds.includes(user.user_id))
-    .map((user) => ({
-      value: user.user_id,
-      label: user.user_full_name,
-    }));
-
-  return formattedUsers as DropdownType[];
+  return users.map((user: ReviewerType) => ({
+    value: user.user_id,
+    label: user.user_full_name,
+  })) as DropdownType[];
 };
 
 export const getReviewers = async () => {
