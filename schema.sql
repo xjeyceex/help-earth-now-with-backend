@@ -135,14 +135,18 @@ CREATE TABLE public.ticket_shared_with_table (
 );
 
 -- POLICY: Users can view tickets they created or are shared with
-DROP POLICY IF EXISTS "Users can view their own and shared tickets" ON ticket_table;
+DROP POLICY IF EXISTS "Users and Reviewers can view their own and shared tickets" ON ticket_table;
 
-CREATE POLICY "Users can view their own and shared tickets" ON ticket_table
+CREATE POLICY "Users and Reviewers can view their own and shared tickets" ON ticket_table
 FOR SELECT USING (
   auth.uid() = ticket_created_by 
   OR auth.uid() IN (
     SELECT shared_user_id FROM ticket_shared_with_table 
     WHERE ticket_id = ticket_table.ticket_id
+  )
+  OR auth.uid() IN (
+    SELECT user_id FROM user_table 
+    WHERE user_role = 'REVIEWER'
   )
 );
 
