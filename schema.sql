@@ -7,6 +7,8 @@ ALTER TABLE IF EXISTS ticket_status_history_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ticket_shared_with_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS canvass_attachment_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notification_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS comment_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS comment_reply_table ENABLE ROW LEVEL SECURITY;
 
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
@@ -37,6 +39,28 @@ DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
 DROP POLICY IF EXISTS "Users can delete their own avatar" ON storage.objects;
 DROP POLICY IF EXISTS "Allow public read access to avatars" ON storage.objects;
 DROP POLICY IF EXISTS "Allow users to update their own avatar" ON user_table;
+DROP POLICY IF EXISTS "Allow authenticated users to insert" ON user_table;
+DROP POLICY IF EXISTS "Allow authenticated users to delete" ON user_table;
+DROP POLICY IF EXISTS "Allow authenticated users to select" ON user_table;
+
+create policy "Allow authenticated users to insert" 
+on storage.objects 
+for insert 
+to authenticated 
+with check (auth.uid() is not null);
+
+create policy "Allow authenticated users to delete" 
+on storage.objects 
+for delete 
+to authenticated 
+using (auth.uid() is not null);
+
+create policy "Allow authenticated users to select" 
+on storage.objects 
+for select 
+to authenticated 
+using (auth.uid() is not null);
+
 CREATE POLICY "Users can upload their own avatar"
 ON storage.objects
 FOR INSERT
@@ -306,6 +330,7 @@ CREATE TABLE notification_table (
 -- Enable Supabase Realtime on this table
 ALTER PUBLICATION supabase_realtime ADD TABLE notification_table;
 
+
 -- GRANT Permissions (Ensure Permissions Are Set)
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_table TO authenticated;
@@ -544,21 +569,3 @@ as $$
   where ticket_id = _ticket_id
   and ticket_created_by != _shared_user_id;
 $$;
-
-create policy "Allow authenticated users to insert" 
-on storage.objects 
-for insert 
-to authenticated 
-with check (auth.uid() is not null);
-
-create policy "Allow authenticated users to delete" 
-on storage.objects 
-for delete 
-to authenticated 
-using (auth.uid() is not null);
-
-create policy "Allow authenticated users to select" 
-on storage.objects 
-for select 
-to authenticated 
-using (auth.uid() is not null);
