@@ -306,7 +306,6 @@ CREATE TABLE notification_table (
 -- Enable Supabase Realtime on this table
 ALTER PUBLICATION supabase_realtime ADD TABLE notification_table;
 
-
 -- GRANT Permissions (Ensure Permissions Are Set)
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_table TO authenticated;
@@ -314,6 +313,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_form_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON approval_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_status_history_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON notification_table TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_shared_with_table TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_attachment_table TO authenticated;
 
 -- Update the create_user function to rely on default values
 CREATE OR REPLACE FUNCTION public.create_user() 
