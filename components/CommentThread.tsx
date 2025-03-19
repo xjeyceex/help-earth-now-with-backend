@@ -213,7 +213,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   }
 
   return (
-    <Container w="100%" mt="md">
+    <Container w="100%">
       {comments.length === 0 ? (
         <Text>No comments yet.</Text>
       ) : (
@@ -222,8 +222,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
             <Paper
               key={comment.comment_id}
               p="md"
-              shadow="xs"
-              style={{ marginBottom: "15px" }}
+              bg="transparent"
+              style={{ marginBottom: "15px", boxShadow: "none" }}
             >
               {loadingStates[comment.comment_id] ? (
                 <Container
@@ -247,8 +247,9 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                         <Box>
                           <Group gap={5}>
                             <Text
-                              size="xs"
-                              style={{ marginRight: 10, fontWeight: 500 }}
+                              size="sm"
+                              fw="500"
+                              style={{ marginRight: 10 }}
                             >
                               {comment.comment_user_full_name}
                             </Text>
@@ -259,13 +260,13 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                             </Text>
                           </Group>
                           <Text style={{ marginTop: 10 }}>
-                            <strong>{comment.comment_content}</strong>
+                            {comment.comment_content}
                           </Text>
                         </Box>
                       </Group>
 
                       <Text size="sm" c="dimmed">
-                        {comment.comment_is_edited && " (Edited)"}
+                        {comment.comment_is_edited && "(Edited)"}
                       </Text>
                     </Box>
 

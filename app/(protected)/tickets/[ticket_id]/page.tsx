@@ -519,7 +519,7 @@ const TicketDetailsPage = () => {
           </Collapse>
         </Card>
 
-        <Text size="md" mt="md">
+        <Text size="md" mt="xl" fw="500">
           {" "}
           Activity
         </Text>
