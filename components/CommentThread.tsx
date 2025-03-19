@@ -31,7 +31,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   const [newComment, setNewComment] = useState<string>("");
 
   const [editingComment, setEditingComment] = useState<CommentType | null>(
-    null
+    null,
   );
   const [editContent, setEditContent] = useState<string>("");
 
@@ -92,7 +92,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
       setIsLoading(true);
       await deleteComment(comment_id);
       setComments(
-        comments.filter((comment) => comment.comment_id !== comment_id)
+        comments.filter((comment) => comment.comment_id !== comment_id),
       );
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -116,8 +116,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                   comment_content: editContent,
                   comment_is_edited: true,
                 }
-              : comment
-          )
+              : comment,
+          ),
         );
         setEditingComment(null); // Close modal after successful edit
         setEditContent(""); // Clear edit content
@@ -178,7 +178,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                         </Text>
                         <Text size="xs" c="dimmed">
                           {new Date(
-                            comment.comment_date_created
+                            comment.comment_date_created,
                           ).toLocaleString()}
                         </Text>
                       </Group>

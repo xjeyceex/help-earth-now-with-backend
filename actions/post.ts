@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -142,7 +142,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -182,7 +182,7 @@ export const changePassword = async (
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -219,7 +219,7 @@ export const createTicket = async (
         approval_review_status: "PENDING",
         approval_review_comments: null,
         approval_review_date: new Date(),
-      })),
+      }))
     );
 
   if (reviewersError) {
@@ -239,7 +239,7 @@ export const createTicket = async (
           "You've been assigned as a reviewer for this ticket",
         notification_read: false,
         notification_url: `/tickets/${ticket.ticket_id}`,
-      })),
+      }))
     );
 
   if (notificationError) {
@@ -280,7 +280,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -362,7 +362,7 @@ export const createCanvass = async ({
   totalAmount,
   paymentTerms,
   canvassSheet,
-  quotation,
+  quotations,
   ticketId,
 }: {
   RfDateReceived: Date;
@@ -371,7 +371,7 @@ export const createCanvass = async ({
   totalAmount: number;
   paymentTerms: string;
   canvassSheet: File;
-  quotation: File;
+  quotations: File[];
   ticketId: string;
 }) => {
   try {
@@ -416,13 +416,17 @@ export const createCanvass = async ({
       };
     };
 
-    // Upload files
-    const [canvassSheetResult, quotationResult] = await Promise.all([
-      uploadFile(canvassSheet, "canvass_sheet"),
-      uploadFile(quotation, "quotation"),
-    ]);
+    // Upload canvass sheet
+    const canvassSheetResult = await uploadFile(canvassSheet, "canvass_sheet");
 
-    // Store canvass form data
+    // Upload all quotations
+    const quotationResults = await Promise.all(
+      quotations.map((quotation, index) =>
+        uploadFile(quotation, `quotation_${index + 1}`)
+      )
+    );
+
+    // Store canvass form data using the first quotation as the primary one
     const { error: canvassFormError, data: canvassFormData } = await supabase
       .from("canvass_form_table")
       .insert({
@@ -432,7 +436,6 @@ export const createCanvass = async ({
         canvass_form_lead_time_day: leadTimeDay,
         canvass_form_total_amount: totalAmount,
         canvass_form_payment_terms: paymentTerms,
-        canvass_form_attachment_url: quotationResult.publicUrl,
         canvass_form_submitted_by: userId,
       })
       .select()
@@ -440,26 +443,26 @@ export const createCanvass = async ({
 
     if (canvassFormError) {
       throw new Error(
-        `Failed to insert canvass form: ${canvassFormError.message}`,
+        `Failed to insert canvass form: ${canvassFormError.message}`
       );
     }
 
     const canvassFormId = canvassFormData?.canvass_form_id;
 
-    console.log(canvassFormId);
-
     // Prepare attachments data
     const attachments = [
+      // Add canvass sheet attachment
       {
         canvass_attachment_canvass_form_id: canvassFormId,
         canvass_attachment_type: "CANVASS_SHEET",
         canvass_attachment_url: canvassSheetResult.publicUrl,
       },
-      {
+      // Add all quotation attachments
+      ...quotationResults.map((result, index) => ({
         canvass_attachment_canvass_form_id: canvassFormId,
-        canvass_attachment_type: "QUOTATION",
-        canvass_attachment_url: quotationResult.publicUrl,
-      },
+        canvass_attachment_type: `QUOTATION_${index + 1}`,
+        canvass_attachment_url: result.publicUrl,
+      })),
     ];
 
     // Insert all attachments at once
@@ -469,7 +472,7 @@ export const createCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`,
+        `Failed to insert attachments: ${attachmentsError.message}`
       );
     }
 

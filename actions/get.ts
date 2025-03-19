@@ -222,7 +222,7 @@ export const getCanvassDetails = async ({
         canvass_attachment_url,
         canvass_attachment_created_at
       )
-    `
+    `,
     )
     .eq("canvass_form_ticket_id", ticketId);
 
@@ -271,13 +271,13 @@ export const getCurrentUserNotification = async () => {
 };
 
 export const getComments = async (
-  ticket_id: string
+  ticket_id: string,
 ): Promise<CommentType[]> => {
   const supabase = await createClient();
 
   const { data: comments, error: commentsError } = await supabase.rpc(
     "get_comments_with_avatars",
-    { ticket_id }
+    { ticket_id },
   );
 
   if (commentsError) {

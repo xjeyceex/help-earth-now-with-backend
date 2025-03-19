@@ -12,41 +12,52 @@ import {
   Title,
 } from "@mantine/core";
 import { useTransition } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { createCanvass } from "@/actions/post";
 import { CanvassFormSchema } from "@/utils/zod/schema";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
-import { IconX } from "@tabler/icons-react";
+import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import DropzoneFileInput from "./ui/DropzoneFileInput";
-
-type FormValues = z.infer<typeof CanvassFormSchema>;
 
 type CanvassFormProps = {
   ticketId: string;
   updateCanvassDetails: () => void;
 };
 
+type CanvassFormValues = z.infer<typeof CanvassFormSchema>;
+
 const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<FormValues>({
+  const form = useForm<CanvassFormValues>({
     resolver: zodResolver(CanvassFormSchema),
     defaultValues: {
       RfDateReceived: new Date(),
       leadTimeDay: 1,
       totalAmount: 0,
       paymentTerms: "",
+      quotations: [{ file: undefined }],
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
+  // Set up the field array for quotations
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "quotations",
+  });
+
+  const onSubmit = async (values: CanvassFormValues) => {
     const validatedFields = CanvassFormSchema.safeParse(values);
 
     if (validatedFields.success) {
       startTransition(async () => {
+        const validQuotations = values.quotations
+          .map((q) => q.file)
+          .filter((file): file is File => file instanceof File);
+
         const res = await createCanvass({
           RfDateReceived: values.RfDateReceived,
           recommendedSupplier: values.recommendedSupplier,
@@ -54,7 +65,7 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
           totalAmount: values.totalAmount,
           paymentTerms: values.paymentTerms,
           canvassSheet: values.canvassSheet,
-          quotation: values.quotation,
+          quotations: validQuotations,
           ticketId: ticketId,
         });
 
@@ -66,7 +77,6 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
             color: "red",
             icon: <IconX size={16} />,
           });
-          console.log(res.error);
         }
 
         if (res.success) {
@@ -83,6 +93,12 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
           updateCanvassDetails();
         }
       });
+    }
+  };
+
+  const addQuotation = () => {
+    if (fields.length < 4) {
+      append({ file: undefined });
     }
   };
 
@@ -132,7 +148,7 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
                 error={form.formState.errors.leadTimeDay?.message}
                 label="Lead Time (days)"
                 name="leadTimeDay"
-                placeholder="Enter total amount"
+                placeholder="Enter lead time in days"
                 type="number"
                 required
                 disabled={isPending}
@@ -193,31 +209,71 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
                 )}
               />
             </Box>
-            <Box>
-              <Text size="sm" fw={500} mb={5}>
-                Quotation 1{" "}
-                <Text component="span" c="red">
-                  *
-                </Text>
-              </Text>
-              <Controller
-                name="quotation"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <>
-                    <DropzoneFileInput
-                      onChange={(files) => field.onChange(files)}
-                      value={field.value}
-                    />
-                    {fieldState.error && (
-                      <Text c="red" size="sm" mt={5}>
-                        {fieldState.error.message}
-                      </Text>
+
+            {/* Quotation Fields */}
+            <Stack gap="md">
+              {fields.map((field, index) => (
+                <Box key={field.id}>
+                  <Flex align="center" justify="space-between" mb={5}>
+                    <Text size="sm" fw={500}>
+                      Quotation {index + 1}
+                      {index === 0 && (
+                        <Text component="span" c="red">
+                          {" "}
+                          *
+                        </Text>
+                      )}
+                    </Text>
+                    {index > 0 && (
+                      <Button
+                        variant="subtle"
+                        color="red"
+                        size="xs"
+                        onClick={() => remove(index)}
+                        disabled={isPending}
+                      >
+                        <IconTrash size={16} />
+                      </Button>
                     )}
-                  </>
-                )}
-              />
-            </Box>
+                  </Flex>
+                  <Controller
+                    name={`quotations.${index}.file`}
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <>
+                        <DropzoneFileInput
+                          onChange={(files) => field.onChange(files)}
+                          value={field.value}
+                        />
+                        {fieldState.error && (
+                          <Text c="red" size="sm" mt={5}>
+                            {fieldState.error.message}
+                          </Text>
+                        )}
+                      </>
+                    )}
+                  />
+                </Box>
+              ))}
+
+              {fields.length < 4 && (
+                <Button
+                  variant="light"
+                  onClick={addQuotation}
+                  disabled={isPending || fields.length >= 4}
+                  leftSection={<IconPlus size={16} />}
+                >
+                  Add Quotation ({fields.length}/4)
+                </Button>
+              )}
+
+              {form.formState.errors.quotations?.message && (
+                <Text c="red" size="sm">
+                  {form.formState.errors.quotations.message}
+                </Text>
+              )}
+            </Stack>
+
             <Flex justify="end">
               <Button type="submit" loading={isPending} w="fit-content" my="md">
                 Submit
