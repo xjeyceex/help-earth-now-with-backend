@@ -28,11 +28,18 @@ import {
   IconMap,
   IconUsers,
 } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === "dark";
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
 
   const styles = {
     title: {
@@ -41,19 +48,20 @@ export default function HomePage() {
       letterSpacing: -1,
       paddingLeft: theme.spacing.md,
       paddingRight: theme.spacing.md,
-      color: isDark ? theme.white : theme.black,
+      color: colorScheme === "dark" ? theme.white : theme.black,
       marginBottom: theme.spacing.xs,
     },
 
     highlight: {
-      color: theme.colors[theme.primaryColor][isDark ? 4 : 6],
+      color: theme.colors[theme.primaryColor][colorScheme === "dark" ? 4 : 6],
       fontWeight: 800,
       letterSpacing: -1,
       paddingRight: theme.spacing.sm,
     },
 
     description: {
-      color: isDark ? theme.colors.dark[1] : theme.colors.gray[7],
+      color:
+        colorScheme === "dark" ? theme.colors.dark[1] : theme.colors.gray[7],
       paddingLeft: theme.spacing.md,
       paddingRight: theme.spacing.md,
       marginBottom: rem(30),
@@ -70,14 +78,15 @@ export default function HomePage() {
     },
 
     testimonialCard: {
-      backgroundColor: isDark ? theme.colors.dark[6] : theme.colors.gray[0],
+      backgroundColor:
+        colorScheme === "dark" ? theme.colors.dark[6] : theme.colors.gray[0],
       padding: theme.spacing.xl,
     },
 
     footer: {
       marginTop: rem(120),
       borderTop: `${rem(1)} solid ${
-        isDark ? theme.colors.dark[5] : theme.colors.gray[2]
+        colorScheme === "dark" ? theme.colors.dark[5] : theme.colors.gray[2]
       }`,
     },
 
@@ -90,7 +99,8 @@ export default function HomePage() {
     },
 
     pricing: {
-      backgroundColor: isDark ? theme.colors.dark[7] : theme.white,
+      backgroundColor:
+        colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
       marginTop: rem(100),
     },
 
@@ -101,9 +111,10 @@ export default function HomePage() {
     },
 
     pricingCard: {
-      backgroundColor: isDark ? theme.colors.dark[6] : theme.white,
+      backgroundColor:
+        colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
       border: `${rem(1)} solid ${
-        isDark ? theme.colors.dark[5] : theme.colors.gray[1]
+        colorScheme === "dark" ? theme.colors.dark[5] : theme.colors.gray[1]
       }`,
     },
 
@@ -114,7 +125,7 @@ export default function HomePage() {
     pricingHeader: {
       padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
       borderBottom: `${rem(1)} solid ${
-        isDark ? theme.colors.dark[5] : theme.colors.gray[1]
+        colorScheme === "dark" ? theme.colors.dark[5] : theme.colors.gray[1]
       }`,
     },
 
@@ -125,7 +136,7 @@ export default function HomePage() {
     pricingFooter: {
       padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
       borderTop: `${rem(1)} solid ${
-        isDark ? theme.colors.dark[5] : theme.colors.gray[1]
+        colorScheme === "dark" ? theme.colors.dark[5] : theme.colors.gray[1]
       }`,
     },
   };
@@ -236,14 +247,19 @@ export default function HomePage() {
           {/* ----------------------- */}
           <Box py={rem(80)}>
             <Card
-              bg={isDark ? theme.colors.dark[6] : theme.colors.gray[0]}
+              bg={
+                colorScheme === "dark"
+                  ? theme.colors.dark[6]
+                  : theme.colors.gray[0]
+              }
               p={rem(60)}
               style={{
                 position: "relative",
                 overflow: "hidden",
-                borderColor: isDark
-                  ? theme.colors.dark[5]
-                  : theme.colors.gray[1],
+                borderColor:
+                  colorScheme === "dark"
+                    ? theme.colors.dark[5]
+                    : theme.colors.gray[1],
               }}
               withBorder
             >
@@ -300,9 +316,10 @@ export default function HomePage() {
                   padding="xl"
                   withBorder
                   style={{
-                    borderColor: isDark
-                      ? theme.colors.dark[5]
-                      : theme.colors.gray[1],
+                    borderColor:
+                      colorScheme === "dark"
+                        ? theme.colors.dark[5]
+                        : theme.colors.gray[1],
                   }}
                 >
                   <Card.Section p="lg">
@@ -349,9 +366,10 @@ export default function HomePage() {
                   p="xl"
                   style={{
                     ...styles.testimonialCard,
-                    borderColor: isDark
-                      ? theme.colors.dark[5]
-                      : theme.colors.gray[1],
+                    borderColor:
+                      colorScheme === "dark"
+                        ? theme.colors.dark[5]
+                        : theme.colors.gray[1],
                   }}
                 >
                   <Text size="lg" fs="italic" mb="md">
@@ -459,13 +477,14 @@ export default function HomePage() {
               p={40}
               style={{
                 backgroundColor: `${
-                  isDark
+                  colorScheme === "dark"
                     ? theme.colors.dark[6]
                     : theme.colors[theme.primaryColor][0]
                 }`,
-                borderColor: isDark
-                  ? theme.colors.dark[5]
-                  : theme.colors.gray[1],
+                borderColor:
+                  colorScheme === "dark"
+                    ? theme.colors.dark[5]
+                    : theme.colors.gray[1],
               }}
             >
               <Grid>
