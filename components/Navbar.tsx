@@ -33,7 +33,7 @@ const Navbar = () => {
     });
   };
 
-  if (!mounted || !user) return null;
+  if (!mounted) return null;
 
   return (
     <Flex
