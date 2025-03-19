@@ -435,7 +435,7 @@ as $$
   where
     c.comment_ticket_id = ticket_id
     and c.comment_type = 'COMMENT';
-  order by c.comment_date_created desc;
+  order by c.comment_date_created asc;
 $$;
 
 --function for getting specific ticket
