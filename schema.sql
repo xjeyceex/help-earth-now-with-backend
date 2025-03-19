@@ -58,11 +58,11 @@ CREATE TABLE comment_table (
   comment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comment_ticket_id UUID NOT NULL,
   comment_content TEXT NOT NULL,
-  comment_date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  comment_date_created TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
   comment_is_edited BOOLEAN DEFAULT FALSE,
   comment_is_disabled BOOLEAN DEFAULT FALSE,
   comment_type TEXT NOT NULL,
-  comment_last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  comment_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
   comment_user_id UUID NOT NULL,  -- Add the user_id to track the user who posted the comment
   FOREIGN KEY (comment_user_id) REFERENCES user_table(user_id)  -- Assuming you have a user_table
 );
@@ -128,7 +128,7 @@ CREATE TABLE public.canvass_attachment_table (
     canvass_attachment_canvass_form_id UUID NULL DEFAULT gen_random_uuid(),
     canvass_attachment_type TEXT NULL,
     canvass_attachment_url TEXT NULL,
-    canvass_attachment_created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    canvass_attachment_created_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
     CONSTRAINT canvass_attachment_table_pkey PRIMARY KEY (canvass_attachment_id),
     CONSTRAINT canvass_attachment_table_canvass_attachment_canvass_form_id_fkey
         FOREIGN KEY (canvass_attachment_canvass_form_id)
