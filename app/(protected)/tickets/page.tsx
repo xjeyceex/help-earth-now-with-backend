@@ -66,7 +66,7 @@ const TicketList = () => {
 
   // Filter Options based on User Role
   const filterOptions =
-    user?.user_role === "CANVASSER"
+    user?.user_role === "PURCHASER"
       ? [
           { value: "ALL", label: "My Tickets" },
           { value: "PENDING", label: "Pending" },
@@ -80,18 +80,18 @@ const TicketList = () => {
 
   // Filter Tickets based on User Role and Status
   const filteredTickets = tickets.filter((ticket) => {
-    const isCanvasser = user?.user_role === "CANVASSER";
+    const isPurchaser = user?.user_role === "PURCHASER";
 
     // Check if user is included in `shared_users`
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser === user?.user_id,
+      (sharedUser) => sharedUser === user?.user_id
     );
 
     // Check if the user is the creator of the ticket
     const isTicketOwner = ticket.ticket_created_by === user?.user_id;
 
-    // For Canvasser, show tickets shared with them or tickets they created
-    if (isCanvasser && !(isSharedWithUser || isTicketOwner)) {
+    // For Purchaser, show tickets shared with them or tickets they created
+    if (isPurchaser && !(isSharedWithUser || isTicketOwner)) {
       return false;
     }
 
@@ -127,7 +127,7 @@ const TicketList = () => {
               placeholder="Filter tickets"
             />
             <Button onClick={() => setFilter("ALL")}>Reset</Button>
-            {user.user_role === "CANVASSER" && (
+            {user.user_role === "PURCHASER" && (
               <Button
                 rightSection={<IconPlus size={20} />}
                 onClick={() => router.push("/tickets/create-ticket")}

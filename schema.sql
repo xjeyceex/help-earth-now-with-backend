@@ -1,13 +1,3 @@
--- Enable RLS on all tables
-ALTER TABLE IF EXISTS user_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ticket_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS canvass_form_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS approval_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ticket_status_history_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ticket_shared_with_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS canvass_attachment_table ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS notification_table ENABLE ROW LEVEL SECURITY;
-
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
     'FOR CANVASS', 'WORK IN PROGRESS', 'FOR REVIEW', 
@@ -15,47 +5,17 @@ CREATE TYPE ticket_status_enum AS ENUM (
 );
 
 CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING');
-CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CANVASSER', 'REVIEWER');
+CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'PURCHASER', 'REVIEWER');
 
 -- USER TABLE (Manages User Roles)
 DROP TABLE IF EXISTS user_table CASCADE;
 CREATE TABLE user_table (
     user_id UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-    user_role user_role_enum DEFAULT 'CANVASSER' NOT NULL,
+    user_role user_role_enum DEFAULT 'PURCHASER' NOT NULL,
     user_avatar TEXT,
     user_full_name TEXT,
     user_email TEXT
 );
-
--- RLS for User Table
-DROP POLICY IF EXISTS "Users can view their own role data" ON user_table;
-CREATE POLICY "Users can view their own role data" ON user_table
-    FOR SELECT USING (auth.uid() = user_id);
-
---RLS for Avatars
-DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
-DROP POLICY IF EXISTS "Users can delete their own avatar" ON storage.objects;
-DROP POLICY IF EXISTS "Allow public read access to avatars" ON storage.objects;
-DROP POLICY IF EXISTS "Allow users to update their own avatar" ON user_table;
-CREATE POLICY "Users can upload their own avatar"
-ON storage.objects
-FOR INSERT
-WITH CHECK (auth.uid() = owner);
-
-CREATE POLICY "Users can delete their own avatar"
-ON storage.objects
-FOR DELETE
-USING (auth.uid() = owner);
-
-CREATE POLICY "Allow public read access to avatars"
-ON storage.objects
-FOR SELECT
-USING (TRUE);
-
-CREATE POLICY "Allow users to update their own avatar"
-ON user_table
-FOR UPDATE
-USING (auth.uid() = user_id);
 
 -- create comment_table and comment_reply_table
 DROP TABLE IF EXISTS comment_reply_table CASCADE;
@@ -110,83 +70,6 @@ CREATE TABLE public.ticket_shared_with_table (
     PRIMARY KEY (ticket_id, shared_user_id)
 );
 
--- POLICY: Users can view tickets they created or are shared with
-DROP POLICY IF EXISTS "Users can view their own and shared tickets" ON ticket_table;
-
-CREATE POLICY "Users can view their own and shared tickets" ON ticket_table
-FOR SELECT USING (
-  auth.uid() = ticket_created_by 
-  OR auth.uid() IN (
-    SELECT shared_user_id FROM ticket_shared_with_table 
-    WHERE ticket_id = ticket_table.ticket_id
-  )
-);
-
--- POLICY: Canvassers can create tickets
-DROP POLICY IF EXISTS "Canvassers can create tickets" ON ticket_table;
-
-CREATE POLICY "Canvassers can create tickets" ON ticket_table
-FOR INSERT WITH CHECK (
-  auth.uid() IN (
-    SELECT user_id FROM user_table 
-    WHERE user_role = 'CANVASSER'
-  )
-);
-
--- ✅ POLICY: Users can update tickets if they are the creator or shared
-DROP POLICY IF EXISTS "Users can update tickets if shared" ON ticket_table;
-
-CREATE POLICY "Users can update tickets if shared" ON ticket_table
-FOR UPDATE USING (
-  auth.uid() = ticket_created_by 
-  OR auth.uid() IN (
-    SELECT shared_user_id FROM ticket_shared_with_table 
-    WHERE ticket_id = ticket_table.ticket_id
-  )
-);
-
-
--- ✅ POLICY: Only the ticket creator can delete a ticket
-DROP POLICY IF EXISTS "Only ticket creator can delete" ON ticket_table;
-
-CREATE POLICY "Only ticket creator can delete" ON ticket_table
-FOR DELETE USING (
-  auth.uid() = ticket_created_by
-);
-
--- POLICY: Users can view tickets they are shared with
-DROP POLICY IF EXISTS "Users can view shared tickets" ON ticket_shared_with_table;
-CREATE POLICY "Users can view shared tickets" ON ticket_shared_with_table
-    FOR SELECT USING (
-        auth.uid() = shared_user_id 
-        OR auth.uid() IN (SELECT ticket_created_by FROM ticket_table WHERE ticket_id = ticket_shared_with_table.ticket_id)
-    );
-
--- POLICY: Users can add any user to a shared ticket if they are the ticket creator or already shared
-DROP POLICY IF EXISTS "Users can share tickets with others" ON ticket_shared_with_table;
-CREATE POLICY "Users can share tickets with others" ON ticket_shared_with_table
-    FOR INSERT WITH CHECK (
-        auth.uid() IN (
-            SELECT ticket_created_by FROM ticket_table 
-            WHERE ticket_id = ticket_shared_with_table.ticket_id
-        ) 
-        OR auth.uid() IN (
-            SELECT shared_user_id FROM ticket_shared_with_table 
-            WHERE ticket_id = ticket_shared_with_table.ticket_id
-        )
-    );
-
--- POLICY: Only the ticket creator or the shared user can remove a shared user
-DROP POLICY IF EXISTS "Users can remove shared users" ON ticket_shared_with_table;
-CREATE POLICY "Users can remove shared users" ON ticket_shared_with_table
-    FOR DELETE USING (
-        auth.uid() = shared_user_id 
-        OR auth.uid() IN (
-            SELECT ticket_created_by FROM ticket_table 
-            WHERE ticket_id = ticket_shared_with_table.ticket_id
-        )
-    );
-
 -- CANVASS FORM TABLE (Stores Supplier Quotes & Submissions)
 DROP TABLE IF EXISTS canvass_form_table CASCADE;
 CREATE TABLE public.canvass_form_table (
@@ -201,16 +84,6 @@ CREATE TABLE public.canvass_form_table (
     canvass_form_date_submitted TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
--- RLS for Canvass Form Table
-DROP POLICY IF EXISTS "Canvassers can submit canvass forms" ON canvass_form_table;
-CREATE POLICY "Canvassers can submit canvass forms" ON canvass_form_table
-    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'CANVASSER'));
-
-DROP POLICY IF EXISTS "Reviewers can view canvass forms" ON canvass_form_table;
-CREATE POLICY "Reviewers can view canvass forms" ON canvass_form_table
-    FOR SELECT USING (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'REVIEWER'));
-
-  
 -- CANVASS ATTACHMENT TABLE (Stores Canvass Attachments)
 DROP TABLE IF EXISTS canvass_attachment_table CASCADE;
 CREATE TABLE public.canvass_attachment_table (
@@ -227,32 +100,6 @@ CREATE TABLE public.canvass_attachment_table (
         ON DELETE CASCADE
 ) TABLESPACE pg_default;
 
--- RLS for Canvass Attachment Table
-CREATE POLICY "allow_authenticated_users_to_insert"
-ON public.canvass_attachment_table
-FOR INSERT
-TO authenticated
-WITH CHECK (auth.uid() IS NOT NULL);
-
-CREATE POLICY "allow_authenticated_users_to_delete"
-ON public.canvass_attachment_table
-FOR DELETE
-TO authenticated
-USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "allow_authenticated_users_to_update"
-ON public.canvass_attachment_table
-FOR UPDATE
-TO authenticated
-WITH CHECK (auth.uid() IS NOT NULL);
-
-CREATE POLICY "allow_authenticated_users_to_select"
-ON public.canvass_attachment_table
-FOR SELECT
-TO authenticated
-USING (auth.uid() IS NOT NULL);
-
-
 -- APPROVAL TABLE (Tracks Review & Approvals)
 DROP TABLE IF EXISTS approval_table CASCADE;
 CREATE TABLE public.approval_table (
@@ -264,11 +111,6 @@ CREATE TABLE public.approval_table (
     approval_review_date TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
--- RLS for Approval Table
-DROP POLICY IF EXISTS "Reviewers can review" ON approval_table;
-CREATE POLICY "Reviewers can review" ON approval_table
-    FOR INSERT WITH CHECK (auth.uid() IN (SELECT user_id FROM user_table WHERE user_role = 'REVIEWER'));
-
 -- TICKET STATUS HISTORY TABLE (Tracks Status Changes for Workflow)
 DROP TABLE IF EXISTS ticket_status_history_table CASCADE;
 CREATE TABLE public.ticket_status_history_table (
@@ -278,18 +120,6 @@ CREATE TABLE public.ticket_status_history_table (
     ticket_status_history_new_status ticket_status_enum NOT NULL, 
     ticket_status_history_changed_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     ticket_status_history_change_date TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
-);
-
--- RLS for Ticket Status History Table
-DROP POLICY IF EXISTS "Users can view ticket status history of their shared tickets" ON ticket_status_history_table;
-CREATE POLICY "Users can view ticket status history of their shared tickets" 
-ON ticket_status_history_table
-FOR SELECT USING (
-    auth.uid() IN (
-        SELECT shared_user_id 
-        FROM ticket_shared_with_table 
-        WHERE ticket_shared_with_table.ticket_id = ticket_status_history_table.ticket_status_history_ticket_id
-    )
 );
 
 DROP TABLE IF EXISTS notification_table CASCADE;
@@ -305,7 +135,6 @@ CREATE TABLE notification_table (
 -- Enable Supabase Realtime on this table
 ALTER PUBLICATION supabase_realtime ADD TABLE notification_table;
 
-
 -- GRANT Permissions (Ensure Permissions Are Set)
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_table TO authenticated;
@@ -313,6 +142,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_form_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON approval_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_status_history_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON notification_table TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_shared_with_table TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_attachment_table TO authenticated;
 
 -- Update the create_user function to rely on default values
 CREATE OR REPLACE FUNCTION public.create_user() 
@@ -531,7 +362,7 @@ as $$
 
 $$;
 
--- Create function that returns comments with user avatars and full names
+--function for comment
 create or replace function get_comments_with_avatars(ticket_id uuid)
 returns table(
   comment_id uuid,
@@ -545,30 +376,120 @@ returns table(
   comment_user_id uuid,
   comment_user_avatar text,
   comment_user_full_name text -- Add full name column
-) as $$
-begin
-  return query
-    select
-      c.comment_id,
-      c.comment_ticket_id,
-      c.comment_content,
-      c.comment_date_created,
-      c.comment_is_edited,
-      c.comment_is_disabled,
-      c.comment_type,
-      c.comment_last_updated,
-      c.comment_user_id,
-      u.user_avatar as comment_user_avatar,
-      u.user_full_name as comment_user_full_name -- Select full name
-    from
-      comment_table c
-    left join
-      user_table u on c.comment_user_id = u.user_id
-    where
-      c.comment_ticket_id = ticket_id
-      and c.comment_type = 'COMMENT';
-end;
-$$ language plpgsql;
+) language sql
+as $$
+
+  select
+    c.comment_id,
+    c.comment_ticket_id,
+    c.comment_content,
+    c.comment_date_created,
+    c.comment_is_edited,
+    c.comment_is_disabled,
+    c.comment_type,
+    c.comment_last_updated,
+    c.comment_user_id,
+    u.user_avatar as comment_user_avatar,
+    u.user_full_name as comment_user_full_name
+  from
+    comment_table c
+  left join
+    user_table u on c.comment_user_id = u.user_id
+  where
+    c.comment_ticket_id = ticket_id
+    and c.comment_type = 'COMMENT';
+
+$$;
+
+--function for getting specific ticket
+drop function if exists get_ticket_details(uuid);
+create or replace function get_ticket_details(ticket_uuid uuid)
+returns table (
+  ticket_id uuid,
+  ticket_item_description text,
+  ticket_status text,
+  ticket_created_by uuid,
+  ticket_created_by_name text, 
+  ticket_created_by_avatar text, 
+  ticket_quantity integer,
+  ticket_specifications text,
+  approval_status text,
+  ticket_date_created timestamp,
+  ticket_last_updated timestamp,
+  ticket_notes text,
+  ticket_rf_date_received timestamp, 
+  shared_users json,
+  reviewers json
+)
+language sql
+as $$
+
+  select 
+    t.ticket_id,
+    t.ticket_item_description,
+    t.ticket_status,
+    t.ticket_created_by,
+
+    u.user_full_name as ticket_created_by_name,
+    u.user_avatar as ticket_created_by_avatar,  
+
+    t.ticket_quantity,
+    t.ticket_specifications,
+
+    coalesce(
+      (
+        select a.approval_review_status
+        from approval_table a
+        where a.approval_ticket_id = t.ticket_id
+        limit 1
+      ), 'PENDING'
+    ) as approval_status,
+
+    t.ticket_date_created,
+    t.ticket_last_updated,
+    t.ticket_notes,
+    t.ticket_rf_date_received,
+
+    (
+      select coalesce(
+        json_agg(
+          json_build_object(
+            'user_id', u2.user_id,
+            'user_full_name', u2.user_full_name,
+            'user_email', u2.user_email,
+            'user_avatar', u2.user_avatar 
+          )
+        ), '[]'
+      )
+      from ticket_shared_with_table ts
+      left join user_table u2 on u2.user_id = ts.shared_user_id
+      where ts.ticket_id = t.ticket_id
+    )::json as shared_users,
+
+    (
+      select coalesce(
+        json_agg(
+          json_build_object(
+            'reviewer_id', a.approval_reviewed_by,
+            'reviewer_name', u3.user_full_name,
+            'reviewer_avatar', u3.user_avatar, 
+            'approval_status', a.approval_review_status
+          )
+        ), '[]'
+      )
+      from approval_table a
+      left join user_table u3 on u3.user_id = a.approval_reviewed_by
+      where a.approval_ticket_id = t.ticket_id
+    )::json as reviewers
+
+  from 
+    ticket_table t
+
+  left join user_table u on u.user_id = t.ticket_created_by
+
+  where t.ticket_id = ticket_uuid
+
+$$;
 
 -- share ticket function
 drop function if exists share_ticket(uuid, uuid, uuid);
@@ -593,21 +514,3 @@ as $$
   where ticket_id = _ticket_id
   and ticket_created_by != _shared_user_id;
 $$;
-
-create policy "Allow authenticated users to insert" 
-on storage.objects 
-for insert 
-to authenticated 
-with check (auth.uid() is not null);
-
-create policy "Allow authenticated users to delete" 
-on storage.objects 
-for delete 
-to authenticated 
-using (auth.uid() is not null);
-
-create policy "Allow authenticated users to select" 
-on storage.objects 
-for select 
-to authenticated 
-using (auth.uid() is not null);
