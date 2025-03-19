@@ -140,10 +140,7 @@ DROP POLICY IF EXISTS "Users can view their own and shared tickets" ON ticket_ta
 CREATE POLICY "Users can view their own and shared tickets" ON ticket_table
 FOR SELECT USING (
   auth.uid() = ticket_created_by 
-  OR auth.uid() IN (
-    SELECT shared_user_id FROM ticket_shared_with_table 
-    WHERE ticket_id = ticket_table.ticket_id
-  )
+  OR ticket_id IN (SELECT ticket_id FROM user_shared_tickets WHERE shared_user_id = auth.uid())
 );
 
 -- POLICY: Purchasers can create tickets
@@ -178,13 +175,18 @@ FOR DELETE USING (
   auth.uid() = ticket_created_by
 );
 
+--create a view for shared
+CREATE OR REPLACE VIEW user_shared_tickets AS
+SELECT ts.shared_user_id, ts.ticket_id
+FROM ticket_shared_with_table ts;
+
 -- POLICY: Users can view tickets they are shared with
 DROP POLICY IF EXISTS "Users can view shared tickets" ON ticket_shared_with_table;
+
 CREATE POLICY "Users can view shared tickets" ON ticket_shared_with_table
-    FOR SELECT USING (
-        auth.uid() = shared_user_id 
-        OR auth.uid() IN (SELECT ticket_created_by FROM ticket_table WHERE ticket_id = ticket_shared_with_table.ticket_id)
-    );
+FOR SELECT USING (
+  auth.uid() = shared_user_id 
+);
 
 -- POLICY: Users can add any user to a shared ticket if they are the ticket creator or already shared
 DROP POLICY IF EXISTS "Users can share tickets with others" ON ticket_shared_with_table;
