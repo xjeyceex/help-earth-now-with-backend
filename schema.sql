@@ -140,7 +140,10 @@ DROP POLICY IF EXISTS "Users can view their own and shared tickets" ON ticket_ta
 CREATE POLICY "Users can view their own and shared tickets" ON ticket_table
 FOR SELECT USING (
   auth.uid() = ticket_created_by 
-  OR ticket_id IN (SELECT ticket_id FROM user_shared_tickets WHERE shared_user_id = auth.uid())
+  OR auth.uid() IN (
+    SELECT shared_user_id FROM ticket_shared_with_table 
+    WHERE ticket_id = ticket_table.ticket_id
+  )
 );
 
 -- POLICY: Purchasers can create tickets
@@ -175,18 +178,13 @@ FOR DELETE USING (
   auth.uid() = ticket_created_by
 );
 
---create a view for shared
-CREATE OR REPLACE VIEW user_shared_tickets AS
-SELECT ts.shared_user_id, ts.ticket_id
-FROM ticket_shared_with_table ts;
-
 -- POLICY: Users can view tickets they are shared with
 DROP POLICY IF EXISTS "Users can view shared tickets" ON ticket_shared_with_table;
-
 CREATE POLICY "Users can view shared tickets" ON ticket_shared_with_table
-FOR SELECT USING (
-  auth.uid() = shared_user_id 
-);
+    FOR SELECT USING (
+        auth.uid() = shared_user_id 
+        OR auth.uid() IN (SELECT ticket_created_by FROM ticket_table WHERE ticket_id = ticket_shared_with_table.ticket_id)
+    );
 
 -- POLICY: Users can add any user to a shared ticket if they are the ticket creator or already shared
 DROP POLICY IF EXISTS "Users can share tickets with others" ON ticket_shared_with_table;
@@ -599,44 +597,95 @@ as $$
 
 $$;
 
--- Create function that returns comments with user avatars and full names
-create or replace function get_comments_with_avatars(ticket_id uuid)
-returns table(
-  comment_id uuid,
-  comment_ticket_id uuid,
-  comment_content text,
-  comment_date_created timestamp,
-  comment_is_edited boolean,
-  comment_is_disabled boolean,
-  comment_type text,
-  comment_last_updated timestamp,
-  comment_user_id uuid,
-  comment_user_avatar text,
-  comment_user_full_name text -- Add full name column
-) as $$
-begin
-  return query
-    select
-      c.comment_id,
-      c.comment_ticket_id,
-      c.comment_content,
-      c.comment_date_created,
-      c.comment_is_edited,
-      c.comment_is_disabled,
-      c.comment_type,
-      c.comment_last_updated,
-      c.comment_user_id,
-      u.user_avatar as comment_user_avatar,
-      u.user_full_name as comment_user_full_name -- Select full name
-    from
-      comment_table c
-    left join
-      user_table u on c.comment_user_id = u.user_id
-    where
-      c.comment_ticket_id = ticket_id
-      and c.comment_type = 'COMMENT';
-end;
-$$ language plpgsql;
+--function for getting specific ticket
+drop function if exists get_ticket_details(uuid);
+create or replace function get_ticket_details(ticket_uuid uuid)
+returns table (
+  ticket_id uuid,
+  ticket_item_description text,
+  ticket_status text,
+  ticket_created_by uuid,
+  ticket_created_by_name text, 
+  ticket_created_by_avatar text, 
+  ticket_quantity integer,
+  ticket_specifications text,
+  approval_status text,
+  ticket_date_created timestamp,
+  ticket_last_updated timestamp,
+  ticket_notes text,
+  ticket_rf_date_received timestamp, 
+  shared_users json,
+  reviewers json
+)
+language sql
+as $$
+
+  select 
+    t.ticket_id,
+    t.ticket_item_description,
+    t.ticket_status,
+    t.ticket_created_by,
+
+    u.user_full_name as ticket_created_by_name,
+    u.user_avatar as ticket_created_by_avatar,  
+
+    t.ticket_quantity,
+    t.ticket_specifications,
+
+    coalesce(
+      (
+        select a.approval_review_status
+        from approval_table a
+        where a.approval_ticket_id = t.ticket_id
+        limit 1
+      ), 'PENDING'
+    ) as approval_status,
+
+    t.ticket_date_created,
+    t.ticket_last_updated,
+    t.ticket_notes,
+    t.ticket_rf_date_received,
+
+    (
+      select coalesce(
+        json_agg(
+          json_build_object(
+            'user_id', u2.user_id,
+            'user_full_name', u2.user_full_name,
+            'user_email', u2.user_email,
+            'user_avatar', u2.user_avatar 
+          )
+        ), '[]'
+      )
+      from ticket_shared_with_table ts
+      left join user_table u2 on u2.user_id = ts.shared_user_id
+      where ts.ticket_id = t.ticket_id
+    )::json as shared_users,
+
+    (
+      select coalesce(
+        json_agg(
+          json_build_object(
+            'reviewer_id', a.approval_reviewed_by,
+            'reviewer_name', u3.user_full_name,
+            'reviewer_avatar', u3.user_avatar, 
+            'approval_status', a.approval_review_status
+          )
+        ), '[]'
+      )
+      from approval_table a
+      left join user_table u3 on u3.user_id = a.approval_reviewed_by
+      where a.approval_ticket_id = t.ticket_id
+    )::json as reviewers
+
+  from 
+    ticket_table t
+
+  left join user_table u on u.user_id = t.ticket_created_by
+
+  where t.ticket_id = ticket_uuid
+
+$$;
 
 -- share ticket function
 drop function if exists share_ticket(uuid, uuid, uuid);
