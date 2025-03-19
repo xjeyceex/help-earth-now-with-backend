@@ -34,6 +34,10 @@ CREATE TABLE comment_table (
   FOREIGN KEY (comment_user_id) REFERENCES user_table(user_id)  -- Assuming you have a user_table
 );
 
+-- Enable Supabase Realtime on this table
+ALTER PUBLICATION supabase_realtime ADD TABLE comment_table;
+ALTER TABLE comment_table REPLICA IDENTITY FULL;
+
 CREATE TABLE comment_reply_table (
   reply_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reply_parent_comment_id UUID NOT NULL,

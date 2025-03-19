@@ -2,9 +2,7 @@ import { deleteComment } from "@/actions/delete";
 import { getComments } from "@/actions/get";
 import { addComment } from "@/actions/post";
 import { editComment } from "@/actions/update";
-import { useCommentsStore } from "@/stores/commentStore";
 import { useUserStore } from "@/stores/userStore";
-import { createClient } from "@/utils/supabase/client";
 import { CommentType } from "@/utils/types";
 import {
   Avatar,
@@ -22,13 +20,13 @@ import {
 import React, { useEffect, useState } from "react";
 
 type CommentThreadProps = {
-  ticket_id: string;
+  ticket_id: string; // The ticket ID for which comments are fetched
 };
 
 const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   const { user } = useUserStore();
 
-  const { comments, setComments } = useCommentsStore();
+  const [comments, setComments] = useState<CommentType[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [newComment, setNewComment] = useState<string>("");
 
@@ -62,71 +60,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     fetchComments();
   }, [ticket_id]);
 
-  useEffect(() => {
-    if (!user || !ticket_id) return;
-
-    // Create a unique channel name for this ticket
-    const channelName = `comment_changes_${ticket_id}`;
-
-    // Initialize Supabase client
-    const client = createClient();
-
-    // Create real-time channel
-    const channel = client.channel(channelName);
-
-    channel
-      .on<CommentType>(
-        "postgres_changes",
-        {
-          event: "*", // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: "public",
-          table: "comment_table",
-          filter: `comment_ticket_id=eq.${ticket_id}`, // Filter by ticket_id
-        },
-        (payload) => {
-          if (!payload || !("eventType" in payload)) {
-            console.warn("Received unexpected payload:", payload);
-            return;
-          }
-
-          setComments((prev) => {
-            switch (payload.eventType) {
-              case "INSERT":
-                if (prev.some((c) => c.comment_id === payload.new.comment_id)) {
-                  return prev;
-                }
-                return [payload.new as CommentType, ...prev];
-
-              case "UPDATE":
-                return prev.map((comment) =>
-                  comment.comment_id === payload.new.comment_id
-                    ? { ...comment, ...payload.new }
-                    : comment
-                );
-
-              case "DELETE":
-                return prev.filter(
-                  (comment) => comment.comment_id !== payload.old?.comment_id
-                );
-
-              default:
-                return prev;
-            }
-          });
-        }
-      )
-      .subscribe((status, err) => {
-        if (err) {
-          console.error("Subscription error:", err);
-        }
-      });
-
-    // Cleanup function to unsubscribe when the component unmounts
-    return () => {
-      client.removeChannel(channel);
-    };
-  }, [user, ticket_id, setComments]);
-
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -139,8 +72,23 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     setIsAddingComment(true); // Disable the form
 
     try {
-      await addComment(ticket_id, newComment, user.user_id);
-
+      const commentId = await addComment(ticket_id, newComment, user.user_id);
+      setComments([
+        ...comments,
+        {
+          comment_id: commentId,
+          comment_ticket_id: ticket_id,
+          comment_user_id: user.user_id,
+          comment_content: newComment,
+          comment_date_created: new Date().toISOString(),
+          comment_is_edited: false,
+          comment_type: "COMMENT",
+          comment_user_full_name: user.user_full_name,
+          comment_user_avatar: user?.user_avatar,
+          comment_last_updated: new Date().toISOString(),
+          replies: [],
+        },
+      ]);
       setNewComment(""); // Clear the input after adding
     } catch (error) {
       console.error("Unexpected error:", error);
