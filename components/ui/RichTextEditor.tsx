@@ -11,16 +11,18 @@ import { forwardRef, useImperativeHandle } from "react";
 type RichTextEditorProps = {
   value: string;
   onChange: (value: string) => void;
+  onFocus?: () => void;
 };
 
 export type RichTextEditorRef = {
   reset: () => void;
+  focus: () => void; // Add focus method
 };
 
 export const RichTextEditor = forwardRef<
   RichTextEditorRef,
   RichTextEditorProps
->(({ value, onChange }, ref) => {
+>(({ value, onChange, onFocus }, ref) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -35,12 +37,18 @@ export const RichTextEditor = forwardRef<
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    onFocus: () => {
+      if (onFocus) onFocus();
+    },
   });
 
   // Expose the reset method through ref
   useImperativeHandle(ref, () => ({
     reset: () => {
       editor?.commands.setContent("");
+    },
+    focus: () => {
+      editor?.commands.focus(); // This will focus the editor
     },
   }));
 

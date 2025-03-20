@@ -59,7 +59,7 @@ const TicketDetailsPage = () => {
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
-    null,
+    null
   );
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
@@ -69,7 +69,7 @@ const TicketDetailsPage = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
+    []
   );
 
   const handleShareTicket = async () => {
@@ -77,12 +77,12 @@ const TicketDetailsPage = () => {
 
     // Share the ticket with each selected user
     await Promise.all(
-      selectedUsers.map((userId) => shareTicket(ticket_id, userId)),
+      selectedUsers.map((userId) => shareTicket(ticket_id, userId))
     );
 
     // Filter out the selected users from the dropdown
     setAllUsers((prev) =>
-      prev.filter((user) => !selectedUsers.includes(user.value)),
+      prev.filter((user) => !selectedUsers.includes(user.value))
     );
 
     setIsSharing(false);
@@ -171,10 +171,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isAssigned = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+    (u) => u.user_id === user?.user_id
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
   // ✅ Check if the user is the creator of the ticket
   const isCreator = ticket.ticket_created_by === user?.user_id;
@@ -227,7 +227,7 @@ const TicketDetailsPage = () => {
                           hour: "numeric",
                           minute: "numeric",
                           hour12: true,
-                        },
+                        }
                       )}
                     </Text>
                   </Group>
@@ -254,89 +254,105 @@ const TicketDetailsPage = () => {
                 <Collapse in={isFormVisible}>
                   {isFormVisible && (
                     <>
-                      <br />
-                      <Stack>
-                        <Text size="md">
-                          <strong>RF Date Received:</strong>{" "}
-                          {new Date(
-                            ticket.ticket_rf_date_received,
-                          ).toLocaleString("en-US", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </Text>
+                      <Box p="md">
+                        <Stack align="start" px="md" gap="md">
+                          <Stack gap="sm">
+                            <Text size="md" fw={600} ta="left">
+                              RF Date Received:
+                            </Text>
+                            <Text size="sm">
+                              {new Date(
+                                ticket.ticket_rf_date_received
+                              ).toLocaleString("en-US", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </Text>
+                          </Stack>
 
-                        <Text size="md">
-                          <strong>Item Name:</strong> {ticket.ticket_item_name}
-                        </Text>
-                        <Text size="md">
-                          <strong>Item Description:</strong>{" "}
-                          {ticket.ticket_item_description}
-                        </Text>
-                        <Text size="md">
-                          <strong>Quantity:</strong> {ticket.ticket_quantity}
-                        </Text>
-                        <Text size="md">
-                          <strong>Specifications:</strong>
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: DOMPurify.sanitize(
-                                ticket.ticket_specifications,
-                              ),
-                            }}
-                          />
-                        </Text>
-                        <div>
-                          <strong>Reviewer</strong>
-                          {ticket.reviewers.length > 0 ? (
-                            <ul>
-                              {ticket.reviewers.map((r) => (
-                                <li key={r.reviewer_id}>{r.reviewer_name}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <Text c="dimmed">No reviewers assigned.</Text>
-                          )}
-                        </div>
+                          {/* Item Name */}
+                          <Stack gap="sm">
+                            <Text size="md" fw={600} ta="left">
+                              Item Name:
+                            </Text>
+                            <Text size="sm">{ticket.ticket_item_name}</Text>
+                          </Stack>
 
-                        {/* ✅ Shared Users */}
+                          {/* Item Description */}
+                          <Stack gap="sm">
+                            <Text size="md" fw={600} ta="left">
+                              Item Description:
+                            </Text>
+                            <Text size="sm">
+                              {ticket.ticket_item_description}
+                            </Text>
+                          </Stack>
 
-                        {(isAdmin ||
-                          ticket?.ticket_created_by === user?.user_id) && (
-                          <>
-                            <Modal
-                              opened={isSharing}
-                              onClose={() => setIsSharing(false)}
-                              title="Share Ticket"
-                              centered
-                            >
-                              <MultiSelect
-                                data={allUsers}
-                                value={selectedUsers}
-                                onChange={setSelectedUsers}
-                                placeholder="Select users to share with"
-                                searchable
-                                clearable
+                          {/* Quantity */}
+                          <Stack gap="sm">
+                            <Text size="md" fw={600} ta="left">
+                              Quantity:
+                            </Text>
+                            <Text size="sm">{ticket.ticket_quantity}</Text>
+                          </Stack>
+                          <Stack gap="xs">
+                            <Text size="md" fw={600} ta="left">
+                              Specifications:
+                            </Text>
+                            <Text size="md">
+                              <span
+                                dangerouslySetInnerHTML={{
+                                  __html: DOMPurify.sanitize(
+                                    ticket.ticket_specifications
+                                  ),
+                                }}
                               />
-                              <Button onClick={handleShareTicket} mt="md">
-                                Share
-                              </Button>
-                            </Modal>
-                          </>
-                        )}
-                      </Stack>
+                            </Text>
+                          </Stack>
+                          <Stack gap="xs">
+                            <Text size="md" fw={600} ta="left">
+                              Notes:
+                            </Text>
+                            <Text size="md">
+                              <span
+                                dangerouslySetInnerHTML={{
+                                  __html: DOMPurify.sanitize(
+                                    ticket.ticket_notes
+                                  ),
+                                }}
+                              />
+                            </Text>
+                          </Stack>
+                        </Stack>
+                      </Box>
+
+                      {(isAdmin ||
+                        ticket?.ticket_created_by === user?.user_id) && (
+                        <>
+                          <Modal
+                            opened={isSharing}
+                            onClose={() => setIsSharing(false)}
+                            title="Share Ticket"
+                            centered
+                          >
+                            <MultiSelect
+                              data={allUsers}
+                              value={selectedUsers}
+                              onChange={setSelectedUsers}
+                              placeholder="Select users to share with"
+                              searchable
+                              clearable
+                            />
+                            <Button onClick={handleShareTicket} mt="md">
+                              Share
+                            </Button>
+                          </Modal>
+                        </>
+                      )}
 
                       <br />
 
-                      <Text size="md">
-                        <strong>Notes:</strong>
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: DOMPurify.sanitize(ticket.ticket_notes),
-                          }}
-                        />
-                      </Text>
                       {ticket?.ticket_status !== "FOR CANVASS" && (
                         <Card
                           shadow="sm"
@@ -395,7 +411,7 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>RF Date Received:</strong>{" "}
                                             {new Date(
-                                              canvass.canvass_form_rf_date_received,
+                                              canvass.canvass_form_rf_date_received
                                             ).toLocaleDateString("en-US", {
                                               day: "2-digit",
                                               month: "short",
@@ -417,7 +433,7 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>Total Amount:</strong> ₱
                                             {canvass.canvass_form_total_amount.toFixed(
-                                              2,
+                                              2
                                             )}
                                           </Text>
                                           {canvass.canvass_form_payment_terms && (
@@ -436,16 +452,16 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>Date Submitted:</strong>{" "}
                                             {new Date(
-                                              canvass.canvass_form_date_submitted,
+                                              canvass.canvass_form_date_submitted
                                             ).toLocaleDateString()}
                                           </Text>
 
                                           {canvass.attachments.length > 0 && (
                                             <div>
-                                              <Text fw={500}>Attachments:</Text>
+                                              <Text fw={600}>Attachments:</Text>
                                               {canvass.attachments.map(
                                                 (
-                                                  attachment: CanvassAttachment,
+                                                  attachment: CanvassAttachment
                                                 ) => (
                                                   <Link
                                                     key={
@@ -470,16 +486,16 @@ const TicketDetailsPage = () => {
                                                       "Document"}{" "}
                                                     (
                                                     {new Date(
-                                                      attachment.canvass_attachment_created_at,
+                                                      attachment.canvass_attachment_created_at
                                                     ).toLocaleDateString()}
                                                     )
                                                   </Link>
-                                                ),
+                                                )
                                               )}
                                             </div>
                                           )}
                                         </Stack>
-                                      ),
+                                      )
                                     )}
                                   </>
                                 ) : user?.user_id ===
@@ -513,7 +529,7 @@ const TicketDetailsPage = () => {
               <Stack align="start" px="md">
                 <Stack gap="sm">
                   <Group gap="xs" align="center" wrap="nowrap">
-                    <Text size="sm" fw={500} ta="left">
+                    <Text size="sm" fw={600} ta="left">
                       Ticket Status:
                     </Text>
                   </Group>
@@ -522,14 +538,14 @@ const TicketDetailsPage = () => {
                       ticket?.ticket_status === "PENDING"
                         ? "yellow"
                         : ticket?.ticket_status === "APPROVED"
-                          ? "green"
-                          : ticket?.ticket_status === "WORK IN PROGRESS"
-                            ? "blue"
-                            : ticket?.ticket_status === "COMPLETED"
-                              ? "teal"
-                              : ticket?.ticket_status === "REJECTED"
-                                ? "red"
-                                : "gray"
+                        ? "green"
+                        : ticket?.ticket_status === "WORK IN PROGRESS"
+                        ? "blue"
+                        : ticket?.ticket_status === "COMPLETED"
+                        ? "teal"
+                        : ticket?.ticket_status === "REJECTED"
+                        ? "red"
+                        : "gray"
                     }
                     size="md"
                     variant="filled"
@@ -543,7 +559,7 @@ const TicketDetailsPage = () => {
                 {ticket?.ticket_status !== "CANCELED" && (
                   <>
                     <Group gap="xs" align="center" wrap="nowrap">
-                      <Text size="sm" fw={500} ta="left">
+                      <Text size="sm" fw={600} ta="left">
                         Actions:
                       </Text>
                     </Group>
@@ -570,7 +586,7 @@ const TicketDetailsPage = () => {
                           }
                         >
                           <IconClipboardCheck size={18} />
-                          <Text size="sm" fw={500}>
+                          <Text size="sm" fw={600}>
                             Start Canvass
                           </Text>
                         </Group>
@@ -596,7 +612,7 @@ const TicketDetailsPage = () => {
                         onClick={() => handleCanvassAction("CANCELED")}
                       >
                         <IconX size={18} />
-                        <Text size="sm" fw={500}>
+                        <Text size="sm" fw={600}>
                           Cancel Request
                         </Text>
                       </Group>
@@ -605,7 +621,7 @@ const TicketDetailsPage = () => {
                 )}
 
                 <Stack gap="sm">
-                  <Text size="sm" fw={500}>
+                  <Text size="sm" fw={600}>
                     Request type:
                   </Text>
                   <Group gap="xs">
@@ -619,7 +635,7 @@ const TicketDetailsPage = () => {
                 {/* Shared With */}
                 <Stack gap="sm">
                   <Group gap="xs" align="center" wrap="nowrap">
-                    <Text size="sm" fw={500} ta="left">
+                    <Text size="sm" fw={600} ta="left">
                       Shared With:
                     </Text>
                   </Group>
@@ -652,7 +668,7 @@ const TicketDetailsPage = () => {
                   leftSection={<IconPlus size={18} />}
                   onClick={() => setIsSharing(true)}
                 >
-                  <Text size="sm" fw={500}>
+                  <Text size="sm" fw={600}>
                     Share Ticket
                   </Text>
                 </Button>
