@@ -506,28 +506,23 @@ export const addComment = async (
     throw new Error("Missing required fields: ticket_id, content, or user_id.");
   }
 
-  // Start a transaction for inserting the comment
-  const { data: commentData, error: commentError } = await supabase
-    .from("comment_table")
-    .insert([
+  try {
+    // Start a transaction
+    const { data, error } = await supabase.rpc(
+      "add_comment_with_notification",
       {
-        comment_ticket_id: ticket_id,
-        comment_content: content,
-        comment_type: "COMMENT",
-        comment_date_created: new Date(),
-        comment_is_edited: false,
-        comment_user_id: user_id, // Add the user_id to the comment
-      },
-    ])
-    .select("comment_id");
+        p_ticket_id: ticket_id,
+        p_content: content,
+        p_user_id: user_id,
+      }
+    );
 
-  if (commentError) {
-    console.error("Error adding comment:", commentError.message);
-    throw new Error("Failed to add comment.");
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error in transaction:", error);
+    throw new Error("Failed to add comment and notification.");
   }
-
-  // Return the comment ID
-  return commentData[0].comment_id;
 };
 
 export const startCanvass = async (

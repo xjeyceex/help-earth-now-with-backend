@@ -481,3 +481,76 @@ as $$
   where ticket_id = _ticket_id
   and ticket_created_by != _shared_user_id;
 $$;
+
+CREATE OR REPLACE FUNCTION public.add_comment_with_notification(
+  p_ticket_id UUID,
+  p_content TEXT,
+  p_user_id UUID
+) RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_comment_id UUID;
+  v_commenter_role user_role_enum;
+  v_target_user_id UUID;
+  v_commenter_name TEXT;
+  v_ticket_creator_id UUID;
+BEGIN
+  -- Get the role and name of the user who is commenting
+  SELECT user_role, user_full_name
+  INTO v_commenter_role, v_commenter_name
+  FROM public.user_table
+  WHERE user_id = p_user_id;
+
+  -- Get the ticket creator's ID
+  SELECT ticket_created_by
+  INTO v_ticket_creator_id
+  FROM public.ticket_table
+  WHERE ticket_id = p_ticket_id;
+
+  -- Insert the comment
+  INSERT INTO public.comment_table (
+    comment_ticket_id,
+    comment_content,
+    comment_type,
+    comment_date_created,
+    comment_is_edited,
+    comment_user_id
+  ) VALUES (
+    p_ticket_id,
+    p_content,
+    'COMMENT',
+    timezone('Asia/Manila', now()),
+    false,
+    p_user_id
+  ) RETURNING comment_id INTO v_comment_id;
+
+  -- Determine the target user for notification based on commenter's role
+  IF v_commenter_role = 'REVIEWER' THEN
+    -- If commenter is REVIEWER, notify the ticket creator (PURCHASER)
+    v_target_user_id := v_ticket_creator_id;
+  ELSE
+    -- If commenter is PURCHASER, notify a REVIEWER
+    SELECT user_id INTO v_target_user_id
+    FROM public.user_table
+    WHERE user_role = 'REVIEWER'
+    LIMIT 1;
+  END IF;
+
+  -- Insert the notification
+  INSERT INTO public.notification_table (
+    notification_user_id,
+    notification_message,
+    notification_url,
+    notification_read
+  ) VALUES (
+    v_target_user_id,
+    v_commenter_name || ' has added a new comment on ticket ' || p_ticket_id,
+    '/tickets/' || p_ticket_id,
+    false
+  );
+
+  RETURN v_comment_id;
+END;
+$$;

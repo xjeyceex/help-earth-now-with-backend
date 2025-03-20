@@ -6,7 +6,7 @@ import { create } from "zustand";
 type CommentStore = {
   comments: CommentType[];
   setComments: (
-    comments: CommentType[] | ((prev: CommentType[]) => CommentType[])
+    comments: CommentType[] | ((prev: CommentType[]) => CommentType[]),
   ) => void;
 };
 

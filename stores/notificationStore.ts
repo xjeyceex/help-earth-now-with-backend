@@ -8,7 +8,7 @@ type NotificationStore = {
   setNotifications: (
     notifications:
       | NotificationType[]
-      | ((prev: NotificationType[]) => NotificationType[])
+      | ((prev: NotificationType[]) => NotificationType[]),
   ) => void;
 };
 

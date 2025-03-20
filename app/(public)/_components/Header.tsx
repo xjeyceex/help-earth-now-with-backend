@@ -16,7 +16,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useRouter } from "next/navigation";
-import ModeToggle from "./ModeToggle";
+import ThemeToggle from "../../../components/ThemeToggle";
 
 const Header = () => {
   const theme = useMantineTheme();
@@ -78,7 +78,7 @@ const Header = () => {
             </Group>
 
             <Group visibleFrom="sm" gap="md">
-              <ModeToggle />
+              <ThemeToggle />
               <Button
                 radius="md"
                 size="sm"

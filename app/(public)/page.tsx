@@ -1,9 +1,7 @@
 "use client";
 
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
+import Footer from "@/app/(public)/_components/Footer";
 import {
-  AppShell,
   Box,
   Button,
   Card,
@@ -28,18 +26,10 @@ import {
   IconMap,
   IconUsers,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
 
   const styles = {
     title: {
@@ -113,12 +103,15 @@ export default function HomePage() {
     pricingCard: {
       backgroundColor:
         colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
-      border: `${rem(1)} solid ${
-        colorScheme === "dark" ? theme.colors.dark[5] : theme.colors.gray[1]
-      }`,
+      borderWidth: rem(1),
+      borderStyle: "solid",
+      borderColor:
+        colorScheme === "dark" ? theme.colors.dark[5] : theme.colors.gray[1],
     },
 
     pricingCardActive: {
+      borderWidth: rem(1),
+      borderStyle: "solid",
       borderColor: theme.colors[theme.primaryColor][5],
     },
 
@@ -231,296 +224,281 @@ export default function HomePage() {
   ];
 
   return (
-    <AppShell
-      header={{
-        height: 70,
-      }}
-    >
-      <AppShell.Header>
-        <Header />
-      </AppShell.Header>
-
-      <AppShell.Main>
-        <Container size="xl">
-          {/* ----------------------- */}
-          {/*  Hero Section           */}
-          {/* ----------------------- */}
-          <Box py={rem(80)}>
-            <Card
-              bg={
+    <main>
+      <Container size="xl">
+        {/* ----------------------- */}
+        {/*  Hero Section           */}
+        {/* ----------------------- */}
+        <Box py={rem(80)}>
+          <Card
+            bg={
+              colorScheme === "dark"
+                ? theme.colors.dark[6]
+                : theme.colors.gray[0]
+            }
+            p={rem(60)}
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              borderColor:
                 colorScheme === "dark"
-                  ? theme.colors.dark[6]
-                  : theme.colors.gray[0]
-              }
-              p={rem(60)}
-              style={{
-                position: "relative",
-                overflow: "hidden",
-                borderColor:
-                  colorScheme === "dark"
-                    ? theme.colors.dark[5]
-                    : theme.colors.gray[1],
-              }}
-              withBorder
-            >
-              <Box style={{ relative: "relative", zIndex: 1 }}>
-                <Title style={styles.title}>
-                  <span style={styles.highlight}>Transform</span>
-                  Canvassing Operations with Data-Driven Tools
-                </Title>
+                  ? theme.colors.dark[5]
+                  : theme.colors.gray[1],
+            }}
+            withBorder
+          >
+            <Box style={{ relative: "relative", zIndex: 1 }}>
+              <Title style={styles.title}>
+                <span style={styles.highlight}>Transform</span>
+                Canvassing Operations with Data-Driven Tools
+              </Title>
 
-                <Text style={styles.description} size="xl">
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                  Adipisci, ratione? Lorem ipsum dolor sit amet consectetur
-                  adipisicing elit. Quo, libero corporis laudantium, ad
-                  assumenda expedita quos ea porro iste a rerum sequi.
-                  Architecto, ab rerum sint vero delectus beatae sunt.
-                </Text>
+              <Text style={styles.description} size="xl">
+                Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                Adipisci, ratione? Lorem ipsum dolor sit amet consectetur
+                adipisicing elit. Quo, libero corporis laudantium, ad assumenda
+                expedita quos ea porro iste a rerum sequi. Architecto, ab rerum
+                sint vero delectus beatae sunt.
+              </Text>
 
-                <Group style={styles.controls}>
-                  <Button
-                    size="xl"
-                    rightSection={<IconArrowRight size={20} />}
-                    style={styles.control}
-                  >
-                    Get Started
-                  </Button>
-
-                  <Button size="xl" variant="outline" style={styles.control}>
-                    Watch Demo
-                  </Button>
-                </Group>
-              </Box>
-            </Card>
-          </Box>
-          {/* ----------------------- */}
-          {/*  Hero Section           */}
-          {/* ----------------------- */}
-
-          {/* ----------------------- */}
-          {/*  Featured Section       */}
-          {/* ----------------------- */}
-          <Container mt={{ base: "md", sm: "xl", md: "xl" }} size="xl">
-            <Title fw={800} ta="center" mb={50} fz={rem(40)}>
-              Built For Modern <span style={styles.highlight}>Campaigns</span>
-            </Title>
-
-            <SimpleGrid
-              cols={{ base: 1, sm: 2 }}
-              spacing={{ base: "md", sm: "xl" }}
-            >
-              {features.map((feature, index) => (
-                <Card
-                  key={index}
-                  shadow="sm"
-                  padding="xl"
-                  withBorder
-                  style={{
-                    borderColor:
-                      colorScheme === "dark"
-                        ? theme.colors.dark[5]
-                        : theme.colors.gray[1],
-                  }}
+              <Group style={styles.controls}>
+                <Button
+                  size="xl"
+                  rightSection={<IconArrowRight size={20} />}
+                  style={styles.control}
                 >
-                  <Card.Section p="lg">
-                    <Group gap="md">
-                      <ThemeIcon
-                        size={56}
-                        radius="md"
-                        variant="light"
-                        color="blue"
-                      >
-                        <feature.icon size={34} stroke={1.5} />
-                      </ThemeIcon>
-                      <Text size="xl" fw={600} lh={1.3}>
-                        {feature.title}
-                      </Text>
-                    </Group>
-                  </Card.Section>
+                  Get Started
+                </Button>
 
-                  <Text size="sm" c="dimmed" lh={1.6}>
-                    {feature.description}
-                  </Text>
-                </Card>
-              ))}
-            </SimpleGrid>
-          </Container>
-          {/* ----------------------- */}
-          {/*  Featured Section       */}
-          {/* ----------------------- */}
+                <Button size="xl" variant="outline" style={styles.control}>
+                  Watch Demo
+                </Button>
+              </Group>
+            </Box>
+          </Card>
+        </Box>
+        {/* ----------------------- */}
+        {/*  Hero Section           */}
+        {/* ----------------------- */}
 
-          {/* ----------------------- */}
-          {/*  Testimonials Section   */}
-          {/* ----------------------- */}
-          <Container mt={100} size="xl">
-            <Title fw={800} ta="center" mb={50} fz={rem(40)}>
-              Trusted by <span style={styles.highlight}>Leading Campaigns</span>
-            </Title>
+        {/* ----------------------- */}
+        {/*  Featured Section       */}
+        {/* ----------------------- */}
+        <Container mt={{ base: "md", sm: "xl", md: "xl" }} size="xl">
+          <Title fw={800} ta="center" mb={50} fz={rem(40)}>
+            Built For Modern <span style={styles.highlight}>Campaigns</span>
+          </Title>
 
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={30}>
-              {testimonials.map((testimonial, index) => (
-                <Card
-                  key={index}
-                  shadow="sm"
-                  withBorder
-                  p="xl"
-                  style={{
-                    ...styles.testimonialCard,
-                    borderColor:
-                      colorScheme === "dark"
-                        ? theme.colors.dark[5]
-                        : theme.colors.gray[1],
-                  }}
-                >
-                  <Text size="lg" fs="italic" mb="md">
-                    {testimonial.quote}
-                  </Text>
-                  <Group>
-                    <div>
-                      <Text fw={500}>{testimonial.author}</Text>
-                      <Text size="xs" c="dimmed">
-                        {testimonial.role}
-                      </Text>
-                    </div>
+          <SimpleGrid
+            cols={{ base: 1, sm: 2 }}
+            spacing={{ base: "md", sm: "xl" }}
+          >
+            {features.map((feature, index) => (
+              <Card
+                key={index}
+                shadow="sm"
+                padding="xl"
+                withBorder
+                style={{
+                  borderColor:
+                    colorScheme === "dark"
+                      ? theme.colors.dark[5]
+                      : theme.colors.gray[1],
+                }}
+              >
+                <Card.Section p="lg">
+                  <Group gap="md">
+                    <ThemeIcon
+                      size={56}
+                      radius="md"
+                      variant="light"
+                      color="blue"
+                    >
+                      <feature.icon size={34} stroke={1.5} />
+                    </ThemeIcon>
+                    <Text size="xl" fw={600} lh={1.3}>
+                      {feature.title}
+                    </Text>
                   </Group>
-                </Card>
-              ))}
-            </SimpleGrid>
-          </Container>
-          {/* ----------------------- */}
-          {/*  Testimonials Section   */}
-          {/* ----------------------- */}
+                </Card.Section>
 
-          {/* ----------------------- */}
-          {/*  Pricing Section        */}
-          {/* ----------------------- */}
-          <Container size="lg" py="xl" style={styles.pricing}>
-            <Title
-              fw={800}
-              ta="center"
-              style={styles.pricingTitle}
-              fz={rem(40)}
-            >
-              <span style={styles.highlight}>Pricing</span>Plans
-            </Title>
-
-            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={30}>
-              {pricingPlans.map((plan, index) => (
-                <Card
-                  key={index}
-                  shadow="md"
-                  withBorder
-                  style={{
-                    ...styles.pricingCard,
-                    ...(plan.active ? styles.pricingCardActive : {}),
-                  }}
-                >
-                  <div style={styles.pricingHeader}>
-                    <Text fw={700} size="xl">
-                      {plan.title}
-                    </Text>
-                    <Group gap={5} mt="xs">
-                      <Text fw={700} size="xl">
-                        {plan.price}
-                      </Text>
-                      <Text size="sm" c="dimmed">
-                        {plan.period}
-                      </Text>
-                    </Group>
-                    <Text size="sm" c="dimmed" mt="xs">
-                      {plan.description}
-                    </Text>
-                  </div>
-
-                  <div style={styles.pricingFeatures}>
-                    <List
-                      spacing="sm"
-                      size="sm"
-                      icon={
-                        <ThemeIcon
-                          color={plan.active ? "blue" : "gray"}
-                          size={20}
-                          radius="xl"
-                        >
-                          <IconCheck size={12} />
-                        </ThemeIcon>
-                      }
-                    >
-                      {plan.features.map((feature, featureIndex) => (
-                        <List.Item key={featureIndex}>{feature}</List.Item>
-                      ))}
-                    </List>
-                  </div>
-
-                  <div style={styles.pricingFooter}>
-                    <Button
-                      fullWidth
-                      variant={plan.active ? "filled" : "outline"}
-                    >
-                      {plan.cta}
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </SimpleGrid>
-          </Container>
-          {/* ----------------------- */}
-          {/*  Pricing Section        */}
-          {/* ----------------------- */}
-
-          {/* ----------------------- */}
-          {/*  CTA Section            */}
-          {/* ----------------------- */}
-          <Container mt={100} mb={30} size="xl">
-            <Card
-              withBorder
-              p={40}
-              style={{
-                backgroundColor: `${
-                  colorScheme === "dark"
-                    ? theme.colors.dark[6]
-                    : theme.colors[theme.primaryColor][0]
-                }`,
-                borderColor:
-                  colorScheme === "dark"
-                    ? theme.colors.dark[5]
-                    : theme.colors.gray[1],
-              }}
-            >
-              <Grid>
-                <Grid.Col span={{ base: 12, md: 8 }}>
-                  <Title size={28} mb="xs">
-                    Ready to revolutionize your canvassing operation?
-                  </Title>
-                  <Text size="lg">
-                    Join thousands of campaigns using CanvassingApp to reach
-                    more voters and drive better results.
-                  </Text>
-                </Grid.Col>
-                <Grid.Col
-                  span={{ base: 12, md: 4 }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <Button size="xl" fz="md">
-                    Start Free Trial
-                  </Button>
-                </Grid.Col>
-              </Grid>
-            </Card>
-          </Container>
-          {/* ----------------------- */}
-          {/*  CTA Section            */}
-          {/* ----------------------- */}
+                <Text size="sm" c="dimmed" lh={1.6}>
+                  {feature.description}
+                </Text>
+              </Card>
+            ))}
+          </SimpleGrid>
         </Container>
         {/* ----------------------- */}
-        {/*  Footer Section         */}
+        {/*  Featured Section       */}
         {/* ----------------------- */}
-        <Footer />
-      </AppShell.Main>
-    </AppShell>
+
+        {/* ----------------------- */}
+        {/*  Testimonials Section   */}
+        {/* ----------------------- */}
+        <Container mt={100} size="xl">
+          <Title fw={800} ta="center" mb={50} fz={rem(40)}>
+            Trusted by <span style={styles.highlight}>Leading Campaigns</span>
+          </Title>
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={30}>
+            {testimonials.map((testimonial, index) => (
+              <Card
+                key={index}
+                shadow="sm"
+                withBorder
+                p="xl"
+                style={{
+                  ...styles.testimonialCard,
+                  borderColor:
+                    colorScheme === "dark"
+                      ? theme.colors.dark[5]
+                      : theme.colors.gray[1],
+                }}
+              >
+                <Text size="lg" fs="italic" mb="md">
+                  {testimonial.quote}
+                </Text>
+                <Group>
+                  <div>
+                    <Text fw={500}>{testimonial.author}</Text>
+                    <Text size="xs" c="dimmed">
+                      {testimonial.role}
+                    </Text>
+                  </div>
+                </Group>
+              </Card>
+            ))}
+          </SimpleGrid>
+        </Container>
+        {/* ----------------------- */}
+        {/*  Testimonials Section   */}
+        {/* ----------------------- */}
+
+        {/* ----------------------- */}
+        {/*  Pricing Section        */}
+        {/* ----------------------- */}
+        <Container size="lg" py="xl" style={styles.pricing}>
+          <Title fw={800} ta="center" style={styles.pricingTitle} fz={rem(40)}>
+            <span style={styles.highlight}>Pricing</span>Plans
+          </Title>
+
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={30}>
+            {pricingPlans.map((plan, index) => (
+              <Card
+                key={index}
+                shadow="md"
+                withBorder
+                style={{
+                  ...styles.pricingCard,
+                  ...(plan.active ? styles.pricingCardActive : {}),
+                }}
+              >
+                <div style={styles.pricingHeader}>
+                  <Text fw={700} size="xl">
+                    {plan.title}
+                  </Text>
+                  <Group gap={5} mt="xs">
+                    <Text fw={700} size="xl">
+                      {plan.price}
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                      {plan.period}
+                    </Text>
+                  </Group>
+                  <Text size="sm" c="dimmed" mt="xs">
+                    {plan.description}
+                  </Text>
+                </div>
+
+                <div style={styles.pricingFeatures}>
+                  <List
+                    spacing="sm"
+                    size="sm"
+                    icon={
+                      <ThemeIcon
+                        color={plan.active ? "blue" : "gray"}
+                        size={20}
+                        radius="xl"
+                      >
+                        <IconCheck size={12} />
+                      </ThemeIcon>
+                    }
+                  >
+                    {plan.features.map((feature, featureIndex) => (
+                      <List.Item key={featureIndex}>{feature}</List.Item>
+                    ))}
+                  </List>
+                </div>
+
+                <div style={styles.pricingFooter}>
+                  <Button
+                    fullWidth
+                    variant={plan.active ? "filled" : "outline"}
+                  >
+                    {plan.cta}
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </SimpleGrid>
+        </Container>
+        {/* ----------------------- */}
+        {/*  Pricing Section        */}
+        {/* ----------------------- */}
+
+        {/* ----------------------- */}
+        {/*  CTA Section            */}
+        {/* ----------------------- */}
+        <Container mt={100} mb={30} size="xl">
+          <Card
+            withBorder
+            p={40}
+            style={{
+              backgroundColor: `${
+                colorScheme === "dark"
+                  ? theme.colors.dark[6]
+                  : theme.colors[theme.primaryColor][0]
+              }`,
+              borderColor:
+                colorScheme === "dark"
+                  ? theme.colors.dark[5]
+                  : theme.colors.gray[1],
+            }}
+          >
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 8 }}>
+                <Title size={28} mb="xs">
+                  Ready to revolutionize your canvassing operation?
+                </Title>
+                <Text size="lg">
+                  Join thousands of campaigns using CanvassingApp to reach more
+                  voters and drive better results.
+                </Text>
+              </Grid.Col>
+              <Grid.Col
+                span={{ base: 12, md: 4 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Button size="xl" fz="md">
+                  Start Free Trial
+                </Button>
+              </Grid.Col>
+            </Grid>
+          </Card>
+        </Container>
+        {/* ----------------------- */}
+        {/*  CTA Section            */}
+        {/* ----------------------- */}
+      </Container>
+      {/* ----------------------- */}
+      {/*  Footer Section         */}
+      {/* ----------------------- */}
+      <Footer />
+    </main>
   );
 }
