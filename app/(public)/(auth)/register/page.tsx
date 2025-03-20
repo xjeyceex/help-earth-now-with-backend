@@ -2,16 +2,21 @@
 
 import { userRegister } from "@/actions/post";
 import {
+  Alert,
+  Anchor,
+  Box,
   Button,
-  Container,
+  Center,
   Paper,
   PasswordInput,
+  Stack,
   Text,
   TextInput,
   Title,
+  rem,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconCheck } from "@tabler/icons-react";
+import { IconAt, IconCheck, IconLock, IconUser } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -41,48 +46,82 @@ const RegisterPage = () => {
   };
 
   return (
-    <Container size={420} my={40}>
-      <Title ta="center">Create an Account</Title>
-      <Text c="dimmed" size="sm" ta="center" mt={5}>
-        Already have an account? <Link href="/login">Log in</Link>
-      </Text>
-
-      <Paper withBorder shadow="md" p={30} mt={30} radius="md">
-        <form onSubmit={onSubmit}>
-          <TextInput
-            label="Full Name"
-            name="name"
-            placeholder="John Doe"
-            required
-          />
-          <TextInput
-            label="Email"
-            name="email"
-            placeholder="you@example.com"
-            type="email"
-            mt="md"
-            required
-          />
-          <PasswordInput
-            label="Password"
-            name="password"
-            placeholder="Your password"
-            mt="md"
-            required
-          />
-
-          {errors && (
-            <Text color="red" size="sm" mt="md">
-              {errors}
+    <Box h="100%" mt={70}>
+      <Center h="100%" p="xl">
+        <Stack w={450} gap="lg">
+          <Stack gap={5}>
+            <Title order={1} size="2rem" fw={800}>
+              Create Account
+            </Title>
+            <Text c="dimmed" size="md">
+              Join us today and get started
             </Text>
-          )}
+          </Stack>
 
-          <Button fullWidth mt="xl" type="submit">
-            Register
-          </Button>
-        </form>
-      </Paper>
-    </Container>
+          <Paper w="100%" radius="md">
+            <form onSubmit={onSubmit}>
+              <Stack gap="md">
+                {errors && (
+                  <Alert variant="light" color="red" radius="md">
+                    {errors}
+                  </Alert>
+                )}
+
+                <Stack gap="sm">
+                  <TextInput
+                    label="Full Name"
+                    placeholder="John Doe"
+                    size="md"
+                    radius="md"
+                    name="name"
+                    required
+                    leftSection={
+                      <IconUser style={{ width: rem(18), height: rem(18) }} />
+                    }
+                  />
+
+                  <TextInput
+                    label="Email address"
+                    placeholder="you@example.com"
+                    size="md"
+                    radius="md"
+                    name="email"
+                    type="email"
+                    required
+                    leftSection={
+                      <IconAt style={{ width: rem(18), height: rem(18) }} />
+                    }
+                  />
+
+                  <PasswordInput
+                    label="Password"
+                    placeholder="Create a strong password"
+                    size="md"
+                    radius="md"
+                    name="password"
+                    required
+                    leftSection={
+                      <IconLock style={{ width: rem(18), height: rem(18) }} />
+                    }
+                  />
+                </Stack>
+
+                <Button fullWidth size="md" radius="md" type="submit" h={48}>
+                  Create your account
+                </Button>
+
+                <Text ta="center" mt="md">
+                  Already have an account?{" "}
+                  <Anchor component={Link} href="/login" fw={700}>
+                    Sign in
+                  </Anchor>
+                </Text>
+              </Stack>
+            </form>
+          </Paper>
+        </Stack>
+      </Center>
+    </Box>
   );
 };
 
