@@ -15,7 +15,9 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import ThemeToggle from "../../../components/ThemeToggle";
 
 const Header = () => {
@@ -44,6 +46,7 @@ const Header = () => {
             {/* Logo */}
             <Anchor
               href="/"
+              component={Link}
               underline="never"
               fw={900}
               fz={rem(22)}
