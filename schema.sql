@@ -1,7 +1,7 @@
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
     'FOR CANVASS', 'WORK IN PROGRESS', 'FOR REVIEW', 
-    'IN REVIEW', 'FOR APPROVAL', 'DONE', 'CANCELED'
+    'IN REVIEW', 'FOR APPROVAL', 'DONE', 'CANCELED', 'FOR REVIEW OF SUBMISSIONS'
 );
 
 create policy "Allow authenticated users to insert" 

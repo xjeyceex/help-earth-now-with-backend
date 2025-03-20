@@ -96,7 +96,7 @@ const TicketDetailsPage = () => {
     setIsProcessing(true);
     try {
       await startCanvass(ticket_id, user.user_id, status); // Pass the status argument
-      await fetchTicketDetails();
+      fetchTicketDetails();
     } catch (error) {
       console.error("Error starting canvass:", error);
     } finally {
@@ -128,10 +128,10 @@ const TicketDetailsPage = () => {
     if (!ticket_id) return;
 
     setCanvasLoading(true);
-
     try {
       const data = await getCanvassDetails({ ticketId: ticket_id });
       setCanvassDetails(data);
+      fetchTicketDetails();
     } finally {
       setCanvasLoading(false);
     }
@@ -535,7 +535,7 @@ const TicketDetailsPage = () => {
                   </Group>
                   <Badge
                     color={
-                      ticket?.ticket_status === "PENDING"
+                      ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
                         ? "yellow"
                         : ticket?.ticket_status === "APPROVED"
                         ? "green"
