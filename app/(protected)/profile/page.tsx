@@ -14,7 +14,6 @@ import {
   Container,
   FileInput,
   Group,
-  LoadingOverlay,
   Modal,
   Paper,
   Stack,
@@ -95,7 +94,7 @@ const ProfilePage = () => {
     }
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       setError(
-        "Password must contain at least one uppercase letter and one number.",
+        "Password must contain at least one uppercase letter and one number."
       );
       return;
     }
@@ -123,7 +122,6 @@ const ProfilePage = () => {
     <>
       <Container size="sm" py="xl">
         <Card shadow="sm" padding="xl" radius="md" withBorder>
-          <LoadingOverlay visible={loading} />
           <Stack align="center">
             {/* Avatar */}
             <Avatar src={user.user_avatar} size={120} radius="xl" />
