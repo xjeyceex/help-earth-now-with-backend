@@ -254,89 +254,99 @@ const TicketDetailsPage = () => {
                 <Collapse in={isFormVisible}>
                   {isFormVisible && (
                     <>
-                      <br />
-                      <Stack>
-                        <Text size="md">
-                          <strong>RF Date Received:</strong>{" "}
-                          {new Date(
-                            ticket.ticket_rf_date_received
-                          ).toLocaleString("en-US", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </Text>
+                      <Box p="md">
+                        <Stack align="start" px="md" gap="md">
+                          <Stack gap="sm">
+                            <Text size="sm" fw={500} ta="left">
+                              RF Date Received:
+                            </Text>
+                            <Text size="sm">
+                              {new Date(
+                                ticket.ticket_rf_date_received
+                              ).toLocaleString("en-US", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </Text>
+                          </Stack>
 
-                        <Text size="md">
-                          <strong>Item Name:</strong> {ticket.ticket_item_name}
-                        </Text>
-                        <Text size="md">
-                          <strong>Item Description:</strong>{" "}
-                          {ticket.ticket_item_description}
-                        </Text>
-                        <Text size="md">
-                          <strong>Quantity:</strong> {ticket.ticket_quantity}
-                        </Text>
-                        <Text size="md">
-                          <strong>Specifications:</strong>
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: DOMPurify.sanitize(
-                                ticket.ticket_specifications
-                              ),
-                            }}
-                          />
-                        </Text>
-                        <div>
-                          <strong>Reviewer</strong>
-                          {ticket.reviewers.length > 0 ? (
-                            <ul>
-                              {ticket.reviewers.map((r) => (
-                                <li key={r.reviewer_id}>{r.reviewer_name}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <Text c="dimmed">No reviewers assigned.</Text>
-                          )}
-                        </div>
+                          {/* Item Name */}
+                          <Stack gap="sm">
+                            <Text size="sm" fw={500} ta="left">
+                              Item Name:
+                            </Text>
+                            <Text size="sm">{ticket.ticket_item_name}</Text>
+                          </Stack>
 
-                        {/* ✅ Shared Users */}
+                          {/* Item Description */}
+                          <Stack gap="sm">
+                            <Text size="sm" fw={500} ta="left">
+                              Item Description:
+                            </Text>
+                            <Text size="sm">
+                              {ticket.ticket_item_description}
+                            </Text>
+                          </Stack>
 
-                        {(isAdmin ||
-                          ticket?.ticket_created_by === user?.user_id) && (
-                          <>
-                            <Modal
-                              opened={isSharing}
-                              onClose={() => setIsSharing(false)}
-                              title="Share Ticket"
-                              centered
-                            >
-                              <MultiSelect
-                                data={allUsers}
-                                value={selectedUsers}
-                                onChange={setSelectedUsers}
-                                placeholder="Select users to share with"
-                                searchable
-                                clearable
+                          {/* Quantity */}
+                          <Stack gap="sm">
+                            <Text size="sm" fw={500} ta="left">
+                              Quantity:
+                            </Text>
+                            <Text size="sm">{ticket.ticket_quantity}</Text>
+                          </Stack>
+
+                          {/* Specifications */}
+                          <Stack gap="sm">
+                            <Text size="sm">
+                              <strong>Specifications:</strong>
+                              <span
+                                dangerouslySetInnerHTML={{
+                                  __html: DOMPurify.sanitize(
+                                    ticket.ticket_specifications
+                                  ),
+                                }}
                               />
-                              <Button onClick={handleShareTicket} mt="md">
-                                Share
-                              </Button>
-                            </Modal>
-                          </>
-                        )}
-                      </Stack>
+                            </Text>
+                          </Stack>
+                          <Text size="sm">
+                            <strong>Notes:</strong>
+                            <span
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(ticket.ticket_notes),
+                              }}
+                            />
+                          </Text>
+                        </Stack>
+                      </Box>
+
+                      {(isAdmin ||
+                        ticket?.ticket_created_by === user?.user_id) && (
+                        <>
+                          <Modal
+                            opened={isSharing}
+                            onClose={() => setIsSharing(false)}
+                            title="Share Ticket"
+                            centered
+                          >
+                            <MultiSelect
+                              data={allUsers}
+                              value={selectedUsers}
+                              onChange={setSelectedUsers}
+                              placeholder="Select users to share with"
+                              searchable
+                              clearable
+                            />
+                            <Button onClick={handleShareTicket} mt="md">
+                              Share
+                            </Button>
+                          </Modal>
+                        </>
+                      )}
 
                       <br />
 
-                      <Text size="md">
-                        <strong>Notes:</strong>
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: DOMPurify.sanitize(ticket.ticket_notes),
-                          }}
-                        />
-                      </Text>
                       {ticket?.ticket_status !== "FOR CANVASS" && (
                         <Card
                           shadow="sm"
