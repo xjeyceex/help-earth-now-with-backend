@@ -14,7 +14,8 @@ import { useTransition } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { createCanvass } from "@/actions/post";
+import { createCanvass, startCanvass } from "@/actions/post";
+import { useUserStore } from "@/stores/userStore";
 import { CanvassFormSchema } from "@/utils/zod/schema";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
@@ -30,6 +31,7 @@ type CanvassFormValues = z.infer<typeof CanvassFormSchema>;
 
 const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
   const [isPending, startTransition] = useTransition();
+  const { user } = useUserStore();
 
   const form = useForm<CanvassFormValues>({
     resolver: zodResolver(CanvassFormSchema),
@@ -41,6 +43,16 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
       quotations: [{ file: undefined }],
     },
   });
+
+  const handleCanvassAction = async (status: string) => {
+    if (!user || !ticketId) return;
+
+    try {
+      await startCanvass(ticketId, user.user_id, status); // Pass the status argument
+    } catch (error) {
+      console.error("Error starting canvass:", error);
+    }
+  };
 
   // Set up the field array for quotations
   const { fields, append, remove } = useFieldArray({
@@ -88,8 +100,8 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
           });
           form.reset();
 
-          // Update canvass details
           updateCanvassDetails();
+          handleCanvassAction("FOR REVIEW OF SUBMISSIONS");
         }
       });
     }
