@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -142,7 +142,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -182,7 +182,7 @@ export const changePassword = async (
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -219,7 +219,7 @@ export const createTicket = async (
         approval_review_status: "PENDING",
         approval_review_comments: null,
         approval_review_date: new Date(),
-      })),
+      }))
     );
 
   if (reviewersError) {
@@ -239,7 +239,7 @@ export const createTicket = async (
           "You've been assigned as a reviewer for this ticket",
         notification_read: false,
         notification_url: `/tickets/${ticket.ticket_id}`,
-      })),
+      }))
     );
 
   if (notificationError) {
@@ -280,7 +280,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -422,8 +422,8 @@ export const createCanvass = async ({
     // Upload all quotations
     const quotationResults = await Promise.all(
       quotations.map((quotation, index) =>
-        uploadFile(quotation, `quotation_${index + 1}`),
-      ),
+        uploadFile(quotation, `quotation_${index + 1}`)
+      )
     );
 
     // Store canvass form data using the first quotation as the primary one
@@ -443,7 +443,7 @@ export const createCanvass = async ({
 
     if (canvassFormError) {
       throw new Error(
-        `Failed to insert canvass form: ${canvassFormError.message}`,
+        `Failed to insert canvass form: ${canvassFormError.message}`
       );
     }
 
@@ -472,7 +472,7 @@ export const createCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`,
+        `Failed to insert attachments: ${attachmentsError.message}`
       );
     }
 
@@ -497,7 +497,7 @@ export const createCanvass = async ({
 export const addComment = async (
   ticket_id: string,
   content: string,
-  user_id: string,
+  user_id: string
 ) => {
   const supabase = await createClient();
 
@@ -528,4 +528,61 @@ export const addComment = async (
 
   // Return the comment ID
   return commentData[0].comment_id;
+};
+
+export const startCanvass = async (
+  ticket_id: string,
+  user_id: string,
+  status: string
+) => {
+  const supabase = await createClient();
+
+  if (!ticket_id || !user_id) {
+    throw new Error("Missing required fields: ticket_id or user_id");
+  }
+
+  // Fetch the current ticket status before updating
+  const { data: ticketData, error: fetchError } = await supabase
+    .from("ticket_table")
+    .select("ticket_status")
+    .eq("ticket_id", ticket_id)
+    .single();
+
+  if (fetchError) {
+    console.error("Error fetching ticket status:", fetchError.message);
+    throw new Error("Failed to fetch ticket status.");
+  }
+
+  const previousStatus = ticketData?.ticket_status || "UNKNOWN";
+
+  // Update ticket status
+  const { error: updateError } = await supabase
+    .from("ticket_table")
+    .update({ ticket_status: status })
+    .eq("ticket_id", ticket_id);
+
+  if (updateError) {
+    console.error("Error updating ticket status:", updateError.message);
+    throw new Error("Failed to update ticket status.");
+  }
+
+  // Insert record into ticket_status_history_table
+  const { error: historyError } = await supabase
+    .from("ticket_status_history_table")
+    .insert([
+      {
+        ticket_status_history_ticket_id: ticket_id,
+        ticket_status_history_previous_status: previousStatus,
+        ticket_status_history_new_status: status,
+        ticket_status_history_changed_by: user_id,
+        ticket_status_history_change_date: new Date().toISOString(), // Store as ISO string
+      },
+    ]);
+
+  if (historyError) {
+    console.error("Error inserting into status history:", historyError.message);
+    throw new Error("Failed to insert status history.");
+  }
+
+  return { success: true, message: "Canvassing started successfully" };
 };

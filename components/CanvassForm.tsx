@@ -9,7 +9,6 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
 } from "@mantine/core";
 import { useTransition } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
@@ -103,14 +102,8 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
   };
 
   return (
-    <Container w="100%" p={0}>
+    <Container w="100%" p={0} pt="lg">
       <Stack>
-        <Box>
-          <Title fw={600} order={3} mb={4} ta={"center"} size="h2">
-            Canvass Form
-          </Title>
-        </Box>
-
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Stack gap="lg">
             <Box>

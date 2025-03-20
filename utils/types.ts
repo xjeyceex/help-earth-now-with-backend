@@ -19,6 +19,7 @@ export type DropdownType = {
 
 export type TicketDetailsType = {
   ticket_id: string;
+  ticket_item_name: string;
   ticket_item_description: string;
   ticket_status: string;
   ticket_created_by: string;
@@ -38,6 +39,7 @@ export type TicketDetailsType = {
   ticket_last_updated: string;
   shared_users: {
     user_id: string;
+    user_avatar: string;
     user_full_name: string;
     user_email: string;
   }[];
