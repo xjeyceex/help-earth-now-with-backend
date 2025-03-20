@@ -2,9 +2,7 @@
 
 import { useUserStore } from "@/stores/userStore";
 import {
-  Anchor,
   Box,
-  Group,
   NavLink,
   Paper,
   rem,
@@ -21,7 +19,6 @@ import {
   IconTicket,
   IconUser,
 } from "@tabler/icons-react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -97,43 +94,6 @@ const Sidebar = () => {
     >
       <Stack h="100%" justify="space-between">
         <Stack gap="xl">
-          {/* Logoooooooooo */}
-          <Group justify="center" py="md">
-            <Anchor
-              href="/"
-              component={Link}
-              underline="never"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: theme.spacing.xs,
-                color:
-                  theme.colors[theme.primaryColor][
-                    colorScheme === "dark" ? 4 : 6
-                  ],
-                transition: "color 0.2s ease",
-                "&:hover": {
-                  color:
-                    theme.colors[theme.primaryColor][
-                      colorScheme === "dark" ? 3 : 7
-                    ],
-                },
-              }}
-            >
-              <Text
-                component="span"
-                fw={900}
-                fz={rem(22)}
-                style={{
-                  letterSpacing: "-0.5px",
-                  textTransform: "uppercase",
-                }}
-              >
-                CanvassingApp
-              </Text>
-            </Anchor>
-          </Group>
-
           {/* Navigation Linksssssssssssssss */}
           <Stack gap={6}>
             <Text size="sm" fw={500} c="dimmed" pb={4} pl="xs">
@@ -150,8 +110,8 @@ const Sidebar = () => {
                             colorScheme === "dark" ? 4 : 6
                           ]
                         : colorScheme === "dark"
-                          ? theme.colors.dark[0]
-                          : theme.colors.gray[7],
+                        ? theme.colors.dark[0]
+                        : theme.colors.gray[7],
                       position: "relative",
                       top: 3,
                     }}
