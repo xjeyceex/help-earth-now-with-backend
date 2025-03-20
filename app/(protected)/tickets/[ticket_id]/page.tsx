@@ -257,7 +257,7 @@ const TicketDetailsPage = () => {
                       <Box p="md">
                         <Stack align="start" px="md" gap="md">
                           <Stack gap="sm">
-                            <Text size="sm" fw={500} ta="left">
+                            <Text size="md" fw={600} ta="left">
                               RF Date Received:
                             </Text>
                             <Text size="sm">
@@ -273,7 +273,7 @@ const TicketDetailsPage = () => {
 
                           {/* Item Name */}
                           <Stack gap="sm">
-                            <Text size="sm" fw={500} ta="left">
+                            <Text size="md" fw={600} ta="left">
                               Item Name:
                             </Text>
                             <Text size="sm">{ticket.ticket_item_name}</Text>
@@ -281,7 +281,7 @@ const TicketDetailsPage = () => {
 
                           {/* Item Description */}
                           <Stack gap="sm">
-                            <Text size="sm" fw={500} ta="left">
+                            <Text size="md" fw={600} ta="left">
                               Item Description:
                             </Text>
                             <Text size="sm">
@@ -291,16 +291,16 @@ const TicketDetailsPage = () => {
 
                           {/* Quantity */}
                           <Stack gap="sm">
-                            <Text size="sm" fw={500} ta="left">
+                            <Text size="md" fw={600} ta="left">
                               Quantity:
                             </Text>
                             <Text size="sm">{ticket.ticket_quantity}</Text>
                           </Stack>
-
-                          {/* Specifications */}
-                          <Stack gap="sm">
-                            <Text size="sm">
-                              <strong>Specifications:</strong>
+                          <Stack gap="xs">
+                            <Text size="md" fw={600} ta="left">
+                              Specifications:
+                            </Text>
+                            <Text size="md">
                               <span
                                 dangerouslySetInnerHTML={{
                                   __html: DOMPurify.sanitize(
@@ -310,14 +310,20 @@ const TicketDetailsPage = () => {
                               />
                             </Text>
                           </Stack>
-                          <Text size="sm">
-                            <strong>Notes:</strong>
-                            <span
-                              dangerouslySetInnerHTML={{
-                                __html: DOMPurify.sanitize(ticket.ticket_notes),
-                              }}
-                            />
-                          </Text>
+                          <Stack gap="xs">
+                            <Text size="md" fw={600} ta="left">
+                              Notes:
+                            </Text>
+                            <Text size="md">
+                              <span
+                                dangerouslySetInnerHTML={{
+                                  __html: DOMPurify.sanitize(
+                                    ticket.ticket_notes
+                                  ),
+                                }}
+                              />
+                            </Text>
+                          </Stack>
                         </Stack>
                       </Box>
 
@@ -452,7 +458,7 @@ const TicketDetailsPage = () => {
 
                                           {canvass.attachments.length > 0 && (
                                             <div>
-                                              <Text fw={500}>Attachments:</Text>
+                                              <Text fw={600}>Attachments:</Text>
                                               {canvass.attachments.map(
                                                 (
                                                   attachment: CanvassAttachment
@@ -523,7 +529,7 @@ const TicketDetailsPage = () => {
               <Stack align="start" px="md">
                 <Stack gap="sm">
                   <Group gap="xs" align="center" wrap="nowrap">
-                    <Text size="sm" fw={500} ta="left">
+                    <Text size="sm" fw={600} ta="left">
                       Ticket Status:
                     </Text>
                   </Group>
@@ -553,7 +559,7 @@ const TicketDetailsPage = () => {
                 {ticket?.ticket_status !== "CANCELED" && (
                   <>
                     <Group gap="xs" align="center" wrap="nowrap">
-                      <Text size="sm" fw={500} ta="left">
+                      <Text size="sm" fw={600} ta="left">
                         Actions:
                       </Text>
                     </Group>
@@ -580,7 +586,7 @@ const TicketDetailsPage = () => {
                           }
                         >
                           <IconClipboardCheck size={18} />
-                          <Text size="sm" fw={500}>
+                          <Text size="sm" fw={600}>
                             Start Canvass
                           </Text>
                         </Group>
@@ -606,7 +612,7 @@ const TicketDetailsPage = () => {
                         onClick={() => handleCanvassAction("CANCELED")}
                       >
                         <IconX size={18} />
-                        <Text size="sm" fw={500}>
+                        <Text size="sm" fw={600}>
                           Cancel Request
                         </Text>
                       </Group>
@@ -615,7 +621,7 @@ const TicketDetailsPage = () => {
                 )}
 
                 <Stack gap="sm">
-                  <Text size="sm" fw={500}>
+                  <Text size="sm" fw={600}>
                     Request type:
                   </Text>
                   <Group gap="xs">
@@ -629,7 +635,7 @@ const TicketDetailsPage = () => {
                 {/* Shared With */}
                 <Stack gap="sm">
                   <Group gap="xs" align="center" wrap="nowrap">
-                    <Text size="sm" fw={500} ta="left">
+                    <Text size="sm" fw={600} ta="left">
                       Shared With:
                     </Text>
                   </Group>
@@ -662,7 +668,7 @@ const TicketDetailsPage = () => {
                   leftSection={<IconPlus size={18} />}
                   onClick={() => setIsSharing(true)}
                 >
-                  <Text size="sm" fw={500}>
+                  <Text size="sm" fw={600}>
                     Share Ticket
                   </Text>
                 </Button>
