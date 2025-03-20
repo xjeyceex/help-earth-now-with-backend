@@ -47,6 +47,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {}
   );
+  const [isFocused, setIsFocus] = useState(false);
+
   const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
   const [deletingComment, setDeletingComment] = useState<CommentType | null>(
     null
@@ -122,6 +124,14 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
       client.removeChannel(channel);
     };
   }, [user, ticket_id, setComments]);
+
+  useEffect(() => {
+    if (isFocused) {
+      setTimeout(() => {
+        commentEditorRef.current?.focus();
+      }, 50);
+    }
+  }, [isFocused]);
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -335,43 +345,63 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
         </div>
       )}
 
-      <Paper p="md" shadow="xs" style={{ marginBottom: "20px" }}>
+      <Paper p="md" shadow="xs">
         <form onSubmit={handleAddComment}>
-          <RichTextEditor
-            ref={commentEditorRef} // Add the ref if needed for the editor
-            value={newComment} // Set the value from state
-            onChange={(value) => {
-              setNewComment(value); // Update the state on change
-            }}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            disabled={
-              isAddingComment ||
-              cleanComment === "<p></p>" ||
-              cleanComment === ""
-            }
-            style={{ marginBottom: "10px" }}
-          >
-            {isAddingComment ? <Loader size="xs" /> : "Add Comment"}
-          </Button>
+          {isFocused ? (
+            <>
+              <RichTextEditor
+                ref={commentEditorRef}
+                value={newComment}
+                onChange={(value) => setNewComment(value)}
+                onFocus={() => setIsFocus(true)}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                disabled={
+                  isAddingComment ||
+                  cleanComment === "<p></p>" ||
+                  cleanComment === ""
+                }
+                style={{ marginTop: "10px" }}
+              >
+                {isAddingComment ? <Loader size="xs" /> : "Add Comment"}
+              </Button>
+            </>
+          ) : (
+            <Paper
+              p="sm"
+              shadow="xs"
+              withBorder
+              radius="md"
+              onClick={() => setIsFocus(true)}
+              style={{ cursor: "text", minHeight: "40px" }}
+            >
+              {cleanComment ? (
+                <Text size="sm" c="dimmed">
+                  {cleanComment}
+                </Text>
+              ) : (
+                <Text size="sm" c="dimmed">
+                  Add a comment...
+                </Text>
+              )}
+            </Paper>
+          )}
         </form>
       </Paper>
 
-      {/* Edit Comment Modal */}
       <Modal
         opened={!!editingComment}
         onClose={closeEditModal}
         title="Edit Comment"
         centered
-        size="xl" // Use 'lg' for a larger modal
+        size="xl"
       >
         <form onSubmit={handleEditComment}>
           <RichTextEditor
-            ref={commentEditorRef} // Add a separate ref for the editor in the modal
-            value={editContent} // Set the value from the edit state
-            onChange={(value) => setEditContent(value)} // Update the edit state on change
+            value={editContent}
+            onChange={(value) => setEditContent(value)}
           />
           <Button
             fullWidth
