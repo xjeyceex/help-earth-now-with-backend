@@ -3,23 +3,23 @@
 import { userLogout } from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
 import {
-  ActionIcon,
+  Anchor,
   Avatar,
   Button,
   Flex,
   Menu,
-  Title,
+  rem,
   useMantineColorScheme,
 } from "@mantine/core";
-import { IconMoon, IconSun } from "@tabler/icons-react";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import NotificationMenu from "./NotificationMenu";
+import ModeToggle from "./ThemeToggle";
 
 const Navbar = () => {
   const { user, clearUser } = useUserStore();
   const [, startTransition] = useTransition();
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { colorScheme } = useMantineColorScheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -53,30 +53,22 @@ const Navbar = () => {
         }`,
       }}
     >
-      <Title
-        size="h2"
-        c={mounted && colorScheme === "dark" ? "gray.2" : "black"}
+      <Anchor
+        href="/"
+        underline="never"
+        fw={900}
+        fz={rem(22)}
+        style={{
+          letterSpacing: "-0.5px",
+          transition: "color 0.2s ease",
+          textTransform: "uppercase",
+        }}
       >
-        Sourcing & Canvassing
-      </Title>
+        CANVASSINGAPP
+      </Anchor>
 
       <Flex align="center" gap="md">
-        {/* Light Mode / Dark Mode Toggle */}
-        {mounted && (
-          <ActionIcon
-            variant="light"
-            size="lg"
-            onClick={toggleColorScheme}
-            aria-label="Toggle theme"
-          >
-            {colorScheme === "dark" ? (
-              <IconSun size={18} />
-            ) : (
-              <IconMoon size={18} />
-            )}
-          </ActionIcon>
-        )}
-
+        {mounted && <ModeToggle />}
         {user ? (
           <>
             <NotificationMenu />

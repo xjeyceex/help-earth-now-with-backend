@@ -1,13 +1,19 @@
 "use client";
 
+import { userLogout } from "@/actions/post";
+import NotificationMenu from "@/components/NotificationMenu";
+import ModeToggle from "@/components/ThemeToggle";
+import { useUserStore } from "@/stores/userStore";
 import {
   Anchor,
+  Avatar,
   Burger,
   Button,
   Container,
   Drawer,
   Flex,
   Group,
+  Menu,
   rem,
   Stack,
   Text,
@@ -17,14 +23,14 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-import ThemeToggle from "../../../components/ThemeToggle";
+import { useTransition } from "react";
 
 const Header = () => {
   const theme = useMantineTheme();
-
+  const { user, clearUser } = useUserStore();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+  const [, startTransition] = useTransition();
 
   const router = useRouter();
 
@@ -37,6 +43,13 @@ const Header = () => {
     { label: "Features", href: "#features" },
     { label: "Contact Us", href: "#contact-us" },
   ];
+
+  const handleLogout = () => {
+    startTransition(() => {
+      userLogout();
+      clearUser();
+    });
+  };
 
   return (
     <>
@@ -80,16 +93,55 @@ const Header = () => {
               ))}
             </Group>
 
-            <Group visibleFrom="sm" gap="md">
-              <ThemeToggle />
-              <Button
-                radius="md"
-                size="sm"
-                onClick={() => router.push("/login")}
-              >
-                Log in
-              </Button>
-            </Group>
+            {user ? (
+              <Group visibleFrom="sm" gap="md">
+                <ModeToggle />
+                <NotificationMenu />
+                <Menu shadow="md" width={200} withinPortal>
+                  <Menu.Target>
+                    <Avatar
+                      src={user.user_avatar}
+                      radius="xl"
+                      size="md"
+                      style={{
+                        cursor: "pointer",
+                        transition: "transform 0.2s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.1)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
+                    />
+                  </Menu.Target>
+
+                  <Menu.Dropdown style={{ zIndex: 1100 }}>
+                    <Menu.Label>Account</Menu.Label>
+                    <Menu.Item component={Link} href="/profile">
+                      View Profile
+                    </Menu.Item>
+                    <Menu.Item color="red" onClick={handleLogout}>
+                      Logout
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              </Group>
+            ) : (
+              <Flex gap="sm">
+                <Button component={Link} href="/login" variant="outline">
+                  Sign In
+                </Button>
+                <Button
+                  component={Link}
+                  href="/register"
+                  variant="filled"
+                  color="blue"
+                >
+                  Sign Up
+                </Button>
+              </Flex>
+            )}
 
             <Burger
               opened={drawerOpened}
