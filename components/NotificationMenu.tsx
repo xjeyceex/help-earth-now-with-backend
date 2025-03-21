@@ -16,7 +16,7 @@ import {
   IconChevronRight,
 } from "@tabler/icons-react";
 import moment from "moment";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { getCurrentUserNotification } from "@/actions/get";
@@ -28,12 +28,13 @@ import { NotificationType } from "@/utils/types";
 
 const NotificationMenu = () => {
   const router = useRouter();
+  const pathname = usePathname();
 
   const { user } = useUserStore();
   const { notifications, setNotifications } = useNotificationStore();
 
   const unreadCount = notifications.filter(
-    (notif) => !notif.notification_read,
+    (notif) => !notif.notification_read
   ).length;
 
   const getRelativeTime = (timestamp: string) => {
@@ -76,12 +77,12 @@ const NotificationMenu = () => {
       }
 
       const unreadNotifications = res.data?.filter(
-        (notification) => !notification.notification_read,
+        (notification) => !notification.notification_read
       );
       setNotifications(unreadNotifications as NotificationType[]);
     };
 
-    fetchNotifications();
+    if (pathname != "/notifications") fetchNotifications();
   }, []);
 
   // Set up real-time subscription
@@ -125,8 +126,8 @@ const NotificationMenu = () => {
                   prev.map((notification) =>
                     notification.notification_id === payload.new.notification_id
                       ? { ...notification, ...payload.new }
-                      : notification,
-                  ),
+                      : notification
+                  )
                 );
                 break;
 
@@ -136,12 +137,12 @@ const NotificationMenu = () => {
                   prev.filter(
                     (notification) =>
                       notification.notification_id !==
-                      payload.old.notification_id,
-                  ),
+                      payload.old.notification_id
+                  )
                 );
                 break;
             }
-          },
+          }
         )
         .subscribe();
 

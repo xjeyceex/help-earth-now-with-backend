@@ -9,8 +9,8 @@ import { useNotificationStore } from "@/stores/notificationStore";
 import { NotificationType } from "@/utils/types";
 import {
   ActionIcon,
+  Box,
   Button,
-  Container,
   Group,
   Paper,
   SegmentedControl,
@@ -19,6 +19,7 @@ import {
   Text,
   Title,
   Tooltip,
+  useMantineColorScheme,
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import {
@@ -38,6 +39,8 @@ type filterType = "all" | "unread";
 const NotificationsPage = () => {
   const router = useRouter();
 
+  const { colorScheme } = useMantineColorScheme();
+
   const { notifications, setNotifications } = useNotificationStore();
 
   const [filter, setFilter] = useState<filterType>("all");
@@ -48,7 +51,7 @@ const NotificationsPage = () => {
   };
 
   const filteredNotifications = notifications.filter((notification) =>
-    filter === "unread" ? !notification.notification_read : true,
+    filter === "unread" ? !notification.notification_read : true
   );
 
   const sortedNotifications = [...filteredNotifications].sort((a, b) => {
@@ -78,8 +81,8 @@ const NotificationsPage = () => {
       prev.map((notification) =>
         notification.notification_id === notificationId
           ? { ...notification, notification_read: true }
-          : notification,
-      ),
+          : notification
+      )
     );
   };
 
@@ -100,7 +103,7 @@ const NotificationsPage = () => {
       prev.map((notification) => ({
         ...notification,
         notification_read: true,
-      })),
+      }))
     );
 
     Notifications.show({
@@ -129,13 +132,15 @@ const NotificationsPage = () => {
     };
 
     fetchNotifications();
-  }, []);
+  }, [notifications.length === 0]);
 
   return (
-    <Container size="lg" py="xl">
+    <Box p={{ base: "md", sm: "xl" }}>
       <Stack gap="lg">
         <Group justify="space-between" align="center">
-          <Title order={2}>Notifications</Title>
+          <Title order={2} fw={600}>
+            Notifications
+          </Title>
           <Group gap="sm">
             <Tooltip label="Mark all as read">
               <ActionIcon
@@ -174,9 +179,18 @@ const NotificationsPage = () => {
               <Paper
                 key={notification.notification_id}
                 shadow="xs"
-                p="md"
-                withBorder
                 opacity={notification.notification_read ? 0.8 : 1}
+                p="lg"
+                radius="md"
+                style={(theme) => ({
+                  backgroundColor:
+                    colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
+                  border: `1px solid ${
+                    colorScheme === "dark"
+                      ? theme.colors.dark[4]
+                      : theme.colors.gray[2]
+                  }`,
+                })}
               >
                 <Group justify="space-between" wrap="nowrap">
                   <Stack gap="xs">
@@ -231,7 +245,7 @@ const NotificationsPage = () => {
           )}
         </Stack>
       </Stack>
-    </Container>
+    </Box>
   );
 };
 

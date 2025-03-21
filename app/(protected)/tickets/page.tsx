@@ -1,4 +1,5 @@
 "use client";
+
 import { getAllMyTickets } from "@/actions/get";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
 import { useUserStore } from "@/stores/userStore";
