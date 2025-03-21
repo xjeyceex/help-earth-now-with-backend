@@ -260,7 +260,7 @@ const TicketList = () => {
         </Box>
 
         {filteredTickets.length > 0 ? (
-          filteredTickets.map((ticket, index) => (
+          filteredTickets.map((ticket) => (
             <Box
               key={ticket.ticket_id}
               p="lg"
