@@ -56,6 +56,7 @@ export type MyTicketType = {
   ticket_status: string;
   ticket_item_description: string;
   ticket_created_by: string;
+  ticket_date_created: string;
   shared_user_id: string | null;
   approval_status: string | null;
   approval_reviewed_by: string | null;

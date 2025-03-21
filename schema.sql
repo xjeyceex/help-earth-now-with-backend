@@ -257,6 +257,7 @@ RETURNS TABLE (
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_created_by UUID,
+  ticket_date_created TIMESTAMP, -- Added this field
   shared_users JSON,
   reviewers JSON
 )
@@ -267,6 +268,7 @@ AS $$
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
+    t.ticket_date_created, -- Added this field
 
     -- Combine all shared users into an array
     COALESCE(
@@ -286,7 +288,7 @@ AS $$
     ) AS reviewers
 
   FROM
-    ticket_table t
+    (SELECT * FROM ticket_table ORDER BY ticket_date_created DESC) t -- Sorting before aggregation
 
   LEFT JOIN
     ticket_shared_with_table ts ON ts.ticket_id = t.ticket_id
@@ -313,7 +315,10 @@ AS $$
     t.ticket_id,
     t.ticket_status,
     t.ticket_item_description,
-    t.ticket_created_by
+    t.ticket_created_by,
+    t.ticket_date_created -- Ensuring this is grouped properly
+  ORDER BY
+    t.ticket_date_created DESC -- Ensuring the final output is sorted
 $$;
 
 --view for realtime comment

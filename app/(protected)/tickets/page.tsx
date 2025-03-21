@@ -85,7 +85,7 @@ const TicketList = () => {
 
     // Check if user is included in `shared_users`
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser === user?.user_id,
+      (sharedUser) => sharedUser === user?.user_id
     );
 
     // Check if the user is the creator of the ticket
@@ -148,7 +148,6 @@ const TicketList = () => {
                   style={{
                     textAlign: "center",
                     padding: "12px",
-                    width: "150px",
                   }}
                 >
                   <Text size="sm" style={{ fontWeight: 500 }}>
@@ -165,12 +164,17 @@ const TicketList = () => {
                     Status
                   </Text>
                 </th>
+                <th style={{ textAlign: "center", padding: "12px" }}>
+                  <Text size="sm" style={{ fontWeight: 500 }}>
+                    Created date
+                  </Text>
+                </th>
               </tr>
             </thead>
 
             <tbody>
               <tr>
-                <td colSpan={3}>
+                <td colSpan={4}>
                   <Divider my="xs" />
                 </td>
               </tr>
@@ -194,6 +198,18 @@ const TicketList = () => {
                     <Badge color={getStatusColor(ticket.ticket_status)}>
                       {ticket.ticket_status}
                     </Badge>
+                  </td>
+                  <td style={{ textAlign: "center", padding: "12px" }}>
+                    <Text size="sm">
+                      {new Date(ticket.ticket_date_created).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </Text>
                   </td>
                 </tr>
               ))}
