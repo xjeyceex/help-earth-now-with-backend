@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useUserStore } from "@/stores/userStore";
 import { UserType } from "@/utils/types";
+import { Box, Flex } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { useEffect } from "react";
@@ -42,13 +43,31 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
   if (!user) return <LoadingStatePublic />;
 
   return (
-    <main>
-      <Navbar />
-      <div style={{ display: "flex" }}>
-        <Sidebar />
-        <main style={{ flexGrow: 1, paddingLeft: 300 }}>{children}</main>
-      </div>
-    </main>
+    <Flex style={{ minHeight: "100vh" }}>
+      <Sidebar />
+      <Box
+        style={{
+          flex: 1,
+          marginLeft: "280px",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Navbar />
+        <Box
+          p="md"
+          style={{
+            flex: 1,
+            width: "100%",
+            maxWidth: "100%",
+          }}
+        >
+          {children}
+        </Box>
+      </Box>
+    </Flex>
   );
 };
+
 export default ProtectedLayout;
