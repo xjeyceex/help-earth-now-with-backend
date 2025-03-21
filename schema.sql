@@ -182,25 +182,33 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON notification_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ticket_shared_with_table TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON canvass_attachment_table TO authenticated;
 
--- Update the create_user function to rely on default values
 CREATE OR REPLACE FUNCTION public.create_user() 
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.user_table (
     user_id, 
     user_full_name, 
-    user_email
+    user_email,
+    user_avatar
   )
   VALUES (
     NEW.id, 
-    NEW.raw_user_meta_data->>'display_name', 
-    NEW.email
+    COALESCE(
+      NEW.raw_user_meta_data->>'display_name', 
+      NEW.raw_user_meta_data->>'full_name', 
+      'Unnamed User'
+    ), 
+    NEW.email,
+    COALESCE(
+      NEW.raw_user_meta_data->>'avatar_url', 
+      ''
+    )
   );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger the function every time a user is created
+-- Recreate the trigger
 DROP TRIGGER IF EXISTS after_user_signup ON auth.users;
 CREATE TRIGGER after_user_signup
   AFTER INSERT ON auth.users
