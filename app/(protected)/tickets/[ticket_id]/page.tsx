@@ -7,6 +7,7 @@ import {
   getTicketDetails,
 } from "@/actions/get";
 import { addComment, shareTicket, startCanvass } from "@/actions/post";
+import { updateApprovalStatus } from "@/actions/update";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
@@ -85,27 +86,61 @@ const TicketDetailsPage = () => {
       console.error("User not logged in.");
       return;
     }
+
     setStatusLoading(true);
+
+    // Define the correct `approval_status` values
+    const newApprovalStatus =
+      approvalStatus === "IN REVIEW" ? "APPROVED" : "REJECTED";
+
+    // Optimistic update
+    setTicket((prev) =>
+      prev
+        ? {
+            ...prev,
+            ticket_status: approvalStatus || prev.ticket_status, // Ensure it's always a string
+            reviewers: prev.reviewers.map((reviewer) =>
+              reviewer.reviewer_id === user.user_id
+                ? { ...reviewer, approval_status: newApprovalStatus }
+                : reviewer
+            ),
+          }
+        : null
+    );
+
     try {
       if (newComment.trim()) {
         await addComment(ticket_id, newComment, user.user_id);
         setNewComment("");
       }
 
-      if (approvalStatus) {
-        handleCanvassAction(approvalStatus); // Use stored status
-        setTicket((prev) =>
-          prev ? { ...prev, ticket_status: approvalStatus } : null
-        );
-      }
+      // Insert approval record
+      await updateApprovalStatus({
+        approval_ticket_id: ticket_id,
+        approval_review_status: newApprovalStatus, // Save APPROVED or REJECTED
+        approval_reviewed_by: user.user_id,
+      });
 
+      handleCanvassAction(approvalStatus ?? "IN REVIEW");
       setCanvassApprovalOpen(false);
-      setApprovalStatus(null); // Reset status after action
+      setApprovalStatus(null);
     } catch (error) {
-      setTicket((prev) =>
-        prev ? { ...prev, ticket_status: "FOR REVIEW OF SUBMISSIONS" } : null
-      );
       console.error("Error adding comment or starting canvass:", error);
+
+      // Revert UI if API call fails
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              ticket_status: "FOR REVIEW OF SUBMISSIONS",
+              reviewers: prev.reviewers.map((reviewer) =>
+                reviewer.reviewer_id === user.user_id
+                  ? { ...reviewer, approval_status: "PENDING" } // Reset to a safe fallback
+                  : reviewer
+              ),
+            }
+          : null
+      );
     } finally {
       setStatusLoading(false);
     }
@@ -165,7 +200,6 @@ const TicketDetailsPage = () => {
     setIsProcessing(true);
     try {
       await startCanvass(ticket_id, user.user_id, status); // Pass the status argument
-      fetchTicketDetails();
     } catch (error) {
       console.error("Error starting canvass:", error);
     } finally {
@@ -387,37 +421,41 @@ const TicketDetailsPage = () => {
                               />
                             </Text>
                           </Stack>
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              Reviewers:
-                            </Text>
-                            {ticket.reviewers.length > 0 ? (
-                              ticket.reviewers.map((reviewer) => (
-                                <Group key={reviewer.reviewer_id} gap="xs">
-                                  <Text size="sm">
-                                    {reviewer.reviewer_name}
-                                  </Text>
-                                  <Badge
-                                    color={
-                                      reviewer.approval_status === "APPROVED"
-                                        ? "green"
-                                        : reviewer.approval_status ===
-                                          "REJECTED"
-                                        ? "red"
-                                        : "gray"
-                                    }
-                                    size="xs"
-                                  >
-                                    {reviewer.approval_status ?? "PENDING"}
-                                  </Badge>
-                                </Group>
-                              ))
-                            ) : (
-                              <Text size="sm" c="dimmed">
-                                No reviewers assigned
+                          {statusLoading ? (
+                            <Skeleton height={24} width={120} radius="sm" />
+                          ) : (
+                            <Stack gap="sm">
+                              <Text size="md" fw={600} ta="left">
+                                Reviewers:
                               </Text>
-                            )}
-                          </Stack>
+                              {ticket.reviewers.length > 0 ? (
+                                ticket.reviewers.map((reviewer) => (
+                                  <Group key={reviewer.reviewer_id} gap="xs">
+                                    <Text size="sm">
+                                      {reviewer.reviewer_name}
+                                    </Text>
+                                    <Badge
+                                      color={
+                                        reviewer.approval_status === "APPROVED"
+                                          ? "green"
+                                          : reviewer.approval_status ===
+                                            "REJECTED"
+                                          ? "red"
+                                          : "gray"
+                                      }
+                                      size="xs"
+                                    >
+                                      {reviewer.approval_status}
+                                    </Badge>
+                                  </Group>
+                                ))
+                              ) : (
+                                <Text size="sm" c="dimmed">
+                                  No reviewers assigned
+                                </Text>
+                              )}
+                            </Stack>
+                          )}
                         </Stack>
                       </Box>
                       <Modal
@@ -858,25 +896,34 @@ const TicketDetailsPage = () => {
                       Shared With:
                     </Text>
                   </Group>
-                  {ticket.shared_users.length > 0 ? (
-                    <Stack gap="sm">
-                      {ticket.shared_users.map((u) => (
-                        <Group
-                          key={u.user_id}
-                          gap="xs"
-                          align="center"
-                          wrap="nowrap"
-                        >
-                          <Avatar src={u.user_avatar} radius="xl" size="sm" />
-                          <Text size="sm">{u.user_full_name}</Text>
-                        </Group>
-                      ))}
-                    </Stack>
-                  ) : (
-                    <Text c="dimmed" size="sm" ta="left">
-                      Not shared with anyone yet.
-                    </Text>
-                  )}
+
+                  <Stack gap="sm">
+                    {/* Display ticket creator at the top */}
+                    <Group gap="xs" align="center" wrap="nowrap">
+                      <Avatar
+                        src={ticket.ticket_created_by_avatar}
+                        radius="xl"
+                        size="sm"
+                      />
+                      <Text size="sm">{ticket.ticket_created_by_name}</Text>{" "}
+                      <Text size="xs" p="0" c="dimmed">
+                        (Creator)
+                      </Text>
+                    </Group>
+
+                    {/* Display shared users */}
+                    {ticket.shared_users.map((u) => (
+                      <Group
+                        key={u.user_id}
+                        gap="xs"
+                        align="center"
+                        wrap="nowrap"
+                      >
+                        <Avatar src={u.user_avatar} radius="xl" size="sm" />
+                        <Text size="sm">{u.user_full_name}</Text>
+                      </Group>
+                    ))}
+                  </Stack>
                 </Stack>
 
                 {/* Share Button */}

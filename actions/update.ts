@@ -108,3 +108,31 @@ export const changePassword = async (
 
   return { success: true };
 };
+
+export const updateApprovalStatus = async ({
+  approval_ticket_id,
+  approval_review_status,
+  approval_reviewed_by,
+}: {
+  approval_ticket_id: string;
+  approval_review_status: string;
+  approval_reviewed_by: string;
+}) => {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("approval_table")
+    .update({
+      approval_review_status,
+      approval_review_date: new Date(),
+    })
+    .eq("approval_ticket_id", approval_ticket_id)
+    .eq("approval_reviewed_by", approval_reviewed_by);
+
+  if (error) {
+    console.error("Error updating approval status:", error.message);
+    return { success: false, message: "Failed to update approval status." };
+  }
+
+  return { success: true };
+};
