@@ -31,6 +31,7 @@ import {
   Loader,
   Modal,
   MultiSelect,
+  Skeleton,
   Stack,
   Text,
   Textarea,
@@ -42,6 +43,7 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconClipboardCheck,
+  IconClipboardX,
   IconFile,
   IconFileText,
   IconPlus,
@@ -72,25 +74,70 @@ const TicketDetailsPage = () => {
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
     []
   );
+  const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
   const [canvassStartOpen, setCanvassStartOpen] = useState(false);
+  const [canvassApprovalOpen, setCanvassApprovalOpen] = useState(false);
   const [newComment, setNewComment] = useState<string>("");
+  const [statusLoading, setStatusLoading] = useState(false);
 
-  const handleConfirm = async () => {
+  const handleApprovalConfirm = async () => {
     if (!user) {
       console.error("User not logged in.");
       return;
     }
-
+    setStatusLoading(true);
     try {
       if (newComment.trim()) {
         await addComment(ticket_id, newComment, user.user_id);
         setNewComment("");
       }
 
-      handleCanvassAction("WORK IN PROGRESS");
+      if (approvalStatus) {
+        handleCanvassAction(approvalStatus); // Use stored status
+        setTicket((prev) =>
+          prev ? { ...prev, ticket_status: approvalStatus } : null
+        );
+      }
+
+      setCanvassApprovalOpen(false);
+      setApprovalStatus(null); // Reset status after action
+    } catch (error) {
+      setTicket((prev) =>
+        prev ? { ...prev, ticket_status: "FOR REVIEW OF SUBMISSIONS" } : null
+      );
+      console.error("Error adding comment or starting canvass:", error);
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  const handleStartConfirm = async () => {
+    if (!user) {
+      console.error("User not logged in.");
+      return;
+    }
+    setStatusLoading(true);
+    try {
+      if (newComment.trim()) {
+        await addComment(ticket_id, newComment, user.user_id);
+        setNewComment("");
+      }
+
+      setTicket((prev) =>
+        prev ? { ...prev, ticket_status: "WORK IN PROGRESS" } : null
+      );
+
+      await handleCanvassAction("WORK IN PROGRESS");
+
       setCanvassStartOpen(false);
     } catch (error) {
       console.error("Error adding comment or starting canvass:", error);
+
+      setTicket((prev) =>
+        prev ? { ...prev, ticket_status: "FOR CANVASS" } : null
+      );
+    } finally {
+      setStatusLoading(false);
     }
   };
 
@@ -153,7 +200,6 @@ const TicketDetailsPage = () => {
     try {
       const data = await getCanvassDetails({ ticketId: ticket_id });
       setCanvassDetails(data);
-      fetchTicketDetails();
     } finally {
       setCanvasLoading(false);
     }
@@ -192,16 +238,17 @@ const TicketDetailsPage = () => {
   }
 
   const isAdmin = user?.user_role === "ADMIN";
-  const isAssigned = ticket.shared_users?.some(
+  const isSharedToMe = ticket.shared_users?.some(
     (u) => u.user_id === user?.user_id
   );
   const isReviewer = ticket.reviewers?.some(
     (r) => r.reviewer_id === user?.user_id
   );
+
   // ✅ Check if the user is the creator of the ticket
   const isCreator = ticket.ticket_created_by === user?.user_id;
 
-  if (!isAdmin && !isAssigned && !isReviewer && !isCreator) {
+  if (!isAdmin && !isSharedToMe && !isReviewer && !isCreator) {
     return (
       <Container size="sm" py="xl">
         <Title>Unauthorized Access</Title>
@@ -350,15 +397,46 @@ const TicketDetailsPage = () => {
                       </Box>
 
                       <Modal
+                        opened={canvassApprovalOpen}
+                        onClose={() => setCanvassApprovalOpen(false)}
+                        title={`Confirm ${
+                          approvalStatus === "IN REVIEW"
+                            ? "Approval"
+                            : "Decline"
+                        }`}
+                        centered
+                      >
+                        <Textarea
+                          value={newComment}
+                          onChange={(event) =>
+                            setNewComment(event.target.value)
+                          }
+                          placeholder="Optional comment..."
+                          autosize
+                          minRows={3}
+                        />
+
+                        <Group mt="md" justify="flex-end">
+                          <Button
+                            variant="default"
+                            onClick={() => setCanvassApprovalOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button color="blue" onClick={handleApprovalConfirm}>
+                            {approvalStatus === "IN REVIEW"
+                              ? "Approve"
+                              : "Decline"}
+                          </Button>
+                        </Group>
+                      </Modal>
+
+                      <Modal
                         opened={canvassStartOpen}
                         onClose={() => setCanvassStartOpen(false)}
                         title="Confirm Action"
                         centered
                       >
-                        <Text size="sm" mb="sm">
-                          Are you sure you want to start canvassing?
-                        </Text>
-
                         <Textarea
                           value={newComment}
                           onChange={(event) =>
@@ -376,8 +454,8 @@ const TicketDetailsPage = () => {
                           >
                             Cancel
                           </Button>
-                          <Button color="blue" onClick={handleConfirm}>
-                            Confirm
+                          <Button color="blue" onClick={handleStartConfirm}>
+                            Start Canvass
                           </Button>
                         </Group>
                       </Modal>
@@ -558,6 +636,7 @@ const TicketDetailsPage = () => {
                                   <CanvassForm
                                     ticketId={ticket?.ticket_id}
                                     updateCanvassDetails={fetchCanvassDetails}
+                                    setTicket={setTicket}
                                   />
                                 ) : (
                                   <Text p="md" c="dimmed">
@@ -588,26 +667,31 @@ const TicketDetailsPage = () => {
                       Ticket Status:
                     </Text>
                   </Group>
-                  <Badge
-                    color={
-                      ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
-                        ? "yellow"
-                        : ticket?.ticket_status === "APPROVED"
-                        ? "green"
-                        : ticket?.ticket_status === "WORK IN PROGRESS"
-                        ? "blue"
-                        : ticket?.ticket_status === "COMPLETED"
-                        ? "teal"
-                        : ticket?.ticket_status === "REJECTED"
-                        ? "red"
-                        : "gray"
-                    }
-                    size="md"
-                    variant="filled"
-                    radius="sm"
-                  >
-                    {ticket?.ticket_status}
-                  </Badge>
+
+                  {statusLoading ? (
+                    <Skeleton height={24} width={120} radius="sm" />
+                  ) : (
+                    <Badge
+                      color={
+                        ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
+                          ? "yellow"
+                          : ticket?.ticket_status === "IN REVIEW"
+                          ? "blue"
+                          : ticket?.ticket_status === "WORK IN PROGRESS"
+                          ? "blue"
+                          : ticket?.ticket_status === "DONE"
+                          ? "green"
+                          : ticket?.ticket_status === "DECLINED"
+                          ? "red"
+                          : "gray"
+                      }
+                      size="md"
+                      variant="filled"
+                      radius="sm"
+                    >
+                      {ticket?.ticket_status}
+                    </Badge>
+                  )}
                 </Stack>
 
                 {/* Actions */}
@@ -619,7 +703,7 @@ const TicketDetailsPage = () => {
                       </Text>
                     </Group>
                     <Stack gap="md">
-                      {ticket?.ticket_status === "FOR CANVASS" && (
+                      {ticket?.ticket_status === "FOR CANVASS" && isCreator && (
                         <Group
                           gap="sm"
                           align="center"
@@ -644,6 +728,65 @@ const TicketDetailsPage = () => {
                           </Text>
                         </Group>
                       )}
+
+                      {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
+                        isReviewer && (
+                          <>
+                            <Group
+                              gap="sm"
+                              align="center"
+                              wrap="nowrap"
+                              style={{
+                                cursor: "pointer",
+                                transition: "transform 0.2s ease",
+                                borderRadius: "4px",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = "gray")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                              onClick={() => {
+                                setApprovalStatus("IN REVIEW"); // Store approval status
+                                setCanvassApprovalOpen(true); // Open modal
+                              }}
+                            >
+                              <IconClipboardCheck size={18} />
+                              <Text size="sm" fw={600}>
+                                Approve
+                              </Text>
+                            </Group>
+
+                            <Group
+                              gap="sm"
+                              align="center"
+                              wrap="nowrap"
+                              style={{
+                                cursor: "pointer",
+                                transition: "transform 0.2s ease",
+                                borderRadius: "4px",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = "gray")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                              onClick={() => {
+                                setApprovalStatus("DECLINED"); // Store approval status
+                                setCanvassApprovalOpen(true); // Open modal
+                              }}
+                            >
+                              <IconClipboardX size={18} />
+                              <Text size="sm" fw={600}>
+                                Decline
+                              </Text>
+                            </Group>
+                          </>
+                        )}
 
                       <Group
                         gap="sm"
@@ -714,17 +857,19 @@ const TicketDetailsPage = () => {
                 </Stack>
 
                 {/* Share Button */}
-                <Button
-                  mt="sm"
-                  size="xs"
-                  variant="light"
-                  leftSection={<IconPlus size={18} />}
-                  onClick={() => setIsSharing(true)}
-                >
-                  <Text size="sm" fw={600}>
-                    Share Ticket
-                  </Text>
-                </Button>
+                {isCreator && (
+                  <Button
+                    mt="sm"
+                    size="xs"
+                    variant="light"
+                    leftSection={<IconPlus size={18} />}
+                    onClick={() => setIsSharing(true)}
+                  >
+                    <Text size="sm" fw={600}>
+                      Share Ticket
+                    </Text>
+                  </Button>
+                )}
               </Stack>
             </Box>
           </Flex>
