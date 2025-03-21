@@ -8,33 +8,41 @@ import {
 import LoadingStateProtected from "@/components/LoadingStateProtected";
 import { useUserStore } from "@/stores/userStore";
 import {
+  ActionIcon,
   Avatar,
+  Box,
   Button,
-  Card,
-  Container,
-  FileInput,
+  Divider,
   Group,
   Modal,
   Paper,
+  rem,
   Stack,
   Text,
   TextInput,
+  ThemeIcon,
   Title,
+  Tooltip,
+  useMantineColorScheme,
 } from "@mantine/core";
-import { IconCamera, IconLock, IconUser } from "@tabler/icons-react";
+import { notifications } from "@mantine/notifications";
+import {
+  IconAlertCircle,
+  IconCheck,
+  IconEdit,
+  IconLock,
+  IconMail,
+  IconUserShield,
+} from "@tabler/icons-react";
 import { useState } from "react";
 
 const ProfilePage = () => {
+  const { colorScheme } = useMantineColorScheme();
   const { user, setUser } = useUserStore();
 
-  // Modal state
   const [isEditingName, setIsEditingName] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-
-  // Input state
   const [newName, setNewName] = useState(user?.user_full_name || "");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -45,22 +53,31 @@ const ProfilePage = () => {
     return <LoadingStateProtected />;
   }
 
-  const handleAvatarUpload = async () => {
-    if (!selectedFile) return;
-    setLoading(true);
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const result = await updateProfilePicture(selectedFile);
+    setLoading(true);
+    const result = await updateProfilePicture(file);
     setLoading(false);
 
     if (result?.error) {
-      alert("Failed to update profile picture: " + result.error);
+      notifications.show({
+        title: "Error",
+        message: "Failed to update profile picture",
+        color: "red",
+        icon: <IconAlertCircle size={16} />,
+      });
     } else {
-      alert("Profile picture updated successfully!");
-
-      // Ensure `user_avatar` is always a string
+      notifications.show({
+        title: "Success",
+        message: "Profile picture updated successfully",
+        color: "green",
+        icon: <IconCheck size={16} />,
+      });
       setUser({ ...user, user_avatar: result.url ?? "" });
-
-      setIsUploadingAvatar(false);
     }
   };
 
@@ -72,9 +89,19 @@ const ProfilePage = () => {
     setLoading(false);
 
     if (result?.error) {
-      alert("Failed to update name: " + result.message);
+      notifications.show({
+        title: "Error",
+        message: result.message,
+        color: "red",
+        icon: <IconAlertCircle size={16} />,
+      });
     } else {
-      alert("Name updated successfully!");
+      notifications.show({
+        title: "Success",
+        message: "Name updated successfully",
+        color: "green",
+        icon: <IconCheck size={16} />,
+      });
       setUser({ ...user, user_full_name: newName });
       setIsEditingName(false);
     }
@@ -83,9 +110,9 @@ const ProfilePage = () => {
   const handleChangePassword = async () => {
     setError("");
 
-    // Validate input
+    // Validation logic
     if (!oldPassword.trim()) {
-      setError("Old password is required.");
+      setError("Current password is required.");
       return;
     }
     if (newPassword.length < 8) {
@@ -94,7 +121,7 @@ const ProfilePage = () => {
     }
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       setError(
-        "Password must contain at least one uppercase letter and one number.",
+        "Password must contain at least one uppercase letter and one number."
       );
       return;
     }
@@ -110,7 +137,12 @@ const ProfilePage = () => {
     if (result?.error) {
       setError(result.message || "Failed to change password.");
     } else {
-      alert("Password changed successfully!");
+      notifications.show({
+        title: "Success",
+        message: "Password changed successfully",
+        color: "green",
+        icon: <IconCheck size={16} />,
+      });
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -119,160 +151,215 @@ const ProfilePage = () => {
   };
 
   return (
-    <>
-      <Container size="sm" py="xl">
-        <Card shadow="sm" padding="xl" radius="md" withBorder>
-          <Stack align="center">
-            {/* Avatar */}
-            <Avatar src={user.user_avatar} size={120} radius="xl" />
-            <Button
-              leftSection={<IconCamera size={18} />}
-              variant="light"
-              onClick={() => setIsUploadingAvatar(true)}
+    <Box p={{ base: "md", sm: "xl" }}>
+      <Stack gap={2} mb="xl">
+        <Title order={2} fw={600}>
+          Profile
+        </Title>
+        <Text c="dimmed" size="sm">
+          TODO: Breadcrumbs
+        </Text>
+      </Stack>
+      <Stack gap="xl">
+        {/* Header Section */}
+        <Paper
+          shadow="xs"
+          p="xl"
+          radius="md"
+          style={(theme) => ({
+            backgroundColor:
+              colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
+            border: `1px solid ${
+              colorScheme === "dark"
+                ? theme.colors.dark[4]
+                : theme.colors.gray[2]
+            }`,
+          })}
+        >
+          <Group wrap="nowrap" gap="xl">
+            <Box>
+              <label htmlFor="avatar-upload" style={{ cursor: "pointer" }}>
+                <Avatar
+                  variant="light"
+                  src={user.user_avatar}
+                  size={120}
+                  radius="md"
+                  color="blue"
+                  style={{
+                    cursor: "pointer",
+                    transition: "transform 0.2s ease",
+                    "&:hover": {
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                >
+                  {user.user_full_name?.charAt(0).toUpperCase()}
+                </Avatar>
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                style={{ display: "none" }}
+              />
+            </Box>
+
+            <Stack gap={4}>
+              <Group align="center" gap="xs">
+                <Title order={2} fw={600}>
+                  {user.user_full_name}
+                </Title>
+                <Tooltip label="Edit name">
+                  <ActionIcon
+                    variant="subtle"
+                    onClick={() => setIsEditingName(true)}
+                    size="sm"
+                  >
+                    <IconEdit style={{ width: rem(14), height: rem(14) }} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" radius="xl">
+                  <IconMail style={{ width: rem(12), height: rem(12) }} />
+                </ThemeIcon>
+                <Text size="sm" c="dimmed">
+                  {user.user_email}
+                </Text>
+              </Group>
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" radius="xl">
+                  <IconUserShield style={{ width: rem(12), height: rem(12) }} />
+                </ThemeIcon>
+                <Text size="sm" c="dimmed" tt="capitalize">
+                  {user.user_role.toLowerCase()}
+                </Text>
+              </Group>
+            </Stack>
+          </Group>
+        </Paper>
+
+        {/* Settings Section */}
+        <Paper
+          shadow="xs"
+          radius="md"
+          style={(theme) => ({
+            backgroundColor:
+              colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
+            border: `1px solid ${
+              colorScheme === "dark"
+                ? theme.colors.dark[4]
+                : theme.colors.gray[2]
+            }`,
+          })}
+        >
+          <Stack gap={0}>
+            <Text p="md" fw={500}>
+              Account Settings
+            </Text>
+            <Divider />
+
+            <Group
+              p="md"
+              justify="space-between"
+              wrap="nowrap"
+              style={(theme) => ({
+                "&:hover": {
+                  backgroundColor:
+                    colorScheme === "dark"
+                      ? theme.colors.dark[5]
+                      : theme.colors.gray[0],
+                },
+              })}
             >
-              Change Profile Picture
-            </Button>
-            {/* User Details */}
-            <Title order={2}>{user.user_full_name}</Title>
-            <Paper p="md" radius="md" withBorder>
-              <Stack>
-                <Group>
-                  <Text size="md" c="dimmed">
-                    <Text component="span" fw={700}>
-                      Email:
-                    </Text>{" "}
-                    {user.user_email}
-                  </Text>
-                </Group>
-                <Group>
-                  <Text size="md" c="dimmed">
-                    <Text component="span" fw={700}>
-                      Role:
-                    </Text>{" "}
-                    {user.user_role}
-                  </Text>
-                </Group>
+              <Stack gap={1}>
+                <Text size="sm" fw={500}>
+                  Change Password
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Update your password to keep your account secure
+                </Text>
               </Stack>
-            </Paper>
-
-            {/* Action Buttons */}
-            <Button
-              leftSection={<IconUser size={18} />}
-              onClick={() => setIsEditingName(true)}
-              fullWidth
-              variant="light"
-            >
-              Change Name
-            </Button>
-
-            <Button
-              leftSection={<IconLock size={18} />}
-              onClick={() => setIsChangingPassword(true)}
-              fullWidth
-              variant="light"
-              color="red"
-            >
-              Change Password
-            </Button>
+              <Button
+                variant="light"
+                size="xs"
+                leftSection={<IconLock size={14} />}
+                onClick={() => setIsChangingPassword(true)}
+              >
+                Update
+              </Button>
+            </Group>
           </Stack>
-        </Card>
+        </Paper>
+      </Stack>
 
-        {/* Update Profile Picture Modal */}
-        <Modal
-          opened={isUploadingAvatar}
-          onClose={() => setIsUploadingAvatar(false)}
-          title="Update Profile Picture"
-          centered
-        >
-          <Stack>
-            <FileInput
-              label="Upload New Profile Picture"
-              accept="image/*"
-              onChange={(file) => setSelectedFile(file)}
-            />
-            <Button
-              onClick={handleAvatarUpload}
-              loading={loading}
-              fullWidth
-              mt="md"
-            >
-              Upload
-            </Button>
-          </Stack>
-        </Modal>
+      {/* Update Name Modal */}
+      <Modal
+        opened={isEditingName}
+        onClose={() => setIsEditingName(false)}
+        title="Update Name"
+        centered
+        size="sm"
+      >
+        <Stack>
+          <TextInput
+            label="New Name"
+            placeholder="Enter new name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            disabled={loading}
+          />
+          <Button onClick={handleUpdateName} loading={loading} fullWidth>
+            Save Changes
+          </Button>
+        </Stack>
+      </Modal>
 
-        {/* Change Name Modal */}
-        <Modal
-          opened={isEditingName}
-          onClose={() => setIsEditingName(false)}
-          title="Update Name"
-          centered
-        >
-          <Stack>
-            <TextInput
-              label="New Name"
-              placeholder="Enter new name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              disabled={loading}
-            />
-            <Button
-              onClick={handleUpdateName}
-              loading={loading}
-              fullWidth
-              mt="md"
-            >
-              Save Changes
-            </Button>
-          </Stack>
-        </Modal>
-
-        {/* Change Password Modal */}
-        <Modal
-          opened={isChangingPassword}
-          onClose={() => setIsChangingPassword(false)}
-          title="Change Password"
-          centered
-        >
-          <Stack>
-            <TextInput
-              type="password"
-              label="Old Password"
-              placeholder="Enter old password"
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-              disabled={loading}
-            />
-            <TextInput
-              type="password"
-              label="New Password"
-              placeholder="Enter new password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              disabled={loading}
-            />
-            <TextInput
-              type="password"
-              label="Confirm New Password"
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={loading}
-            />
-            {error && <Text c="red">{error}</Text>}
-            <Button
-              onClick={handleChangePassword}
-              loading={loading}
-              fullWidth
-              mt="md"
-              color="red"
-            >
-              Update Password
-            </Button>
-          </Stack>
-        </Modal>
-      </Container>
-    </>
+      {/* Change Password Modal */}
+      <Modal
+        opened={isChangingPassword}
+        onClose={() => setIsChangingPassword(false)}
+        title="Change Passwords"
+        centered
+        size="sm"
+      >
+        <Stack>
+          <TextInput
+            type="password"
+            label="Current Password"
+            placeholder="Enter current password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            disabled={loading}
+          />
+          <TextInput
+            type="password"
+            label="New Password"
+            placeholder="Enter new password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            disabled={loading}
+          />
+          <TextInput
+            type="password"
+            label="Confirm Password"
+            placeholder="Confirm new password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
+          />
+          {error && (
+            <Text size="sm" c="red">
+              {error}
+            </Text>
+          )}
+          <Button onClick={handleChangePassword} loading={loading} fullWidth>
+            Update Password
+          </Button>
+        </Stack>
+      </Modal>
+    </Box>
   );
 };
 

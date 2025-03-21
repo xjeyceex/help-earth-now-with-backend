@@ -56,7 +56,8 @@ const Navbar = () => {
         }`,
       }}
     >
-      <Flex justify="flex-end" align="center" h={rem(50)}>
+      <Flex justify="space-between" align="center" h={rem(50)}>
+        <Text>TODO: Sidebar Menu</Text>
         <Group gap="md">
           <ModeToggle />
           {user ? (

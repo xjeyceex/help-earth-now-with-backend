@@ -1,4 +1,5 @@
 "use client";
+
 import { getAllMyTickets } from "@/actions/get";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
 import { useUserStore } from "@/stores/userStore";
@@ -84,7 +85,7 @@ const TicketList = () => {
 
     // Check if user is included in `shared_users`
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser === user?.user_id,
+      (sharedUser) => sharedUser === user?.user_id
     );
 
     // Check if the user is the creator of the ticket
