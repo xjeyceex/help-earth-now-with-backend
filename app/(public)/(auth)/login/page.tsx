@@ -1,6 +1,7 @@
 "use client";
 
 import { userLogin } from "@/actions/post";
+import { createClient } from "@/utils/supabase/client";
 import {
   Alert,
   Anchor,
@@ -15,7 +16,7 @@ import {
   Title,
   rem,
 } from "@mantine/core";
-import { IconAt, IconLock } from "@tabler/icons-react";
+import { IconAt, IconBrandGoogle, IconLock } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
@@ -26,6 +27,7 @@ const LoginPage = () => {
     password?: string;
     form?: string;
   }>({});
+  const [isGoogleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = (formData: FormData) => {
     startTransition(async () => {
@@ -36,6 +38,24 @@ const LoginPage = () => {
         setErrors({});
       }
     });
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`, // Redirect after login
+      },
+    });
+
+    if (error) {
+      console.error("Google sign-in error:", error.message);
+      setErrors({ form: "Failed to sign in with Google. Please try again." });
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -114,6 +134,20 @@ const LoginPage = () => {
                   h={48}
                 >
                   Sign in to your account
+                </Button>
+
+                <Button
+                  fullWidth
+                  size="md"
+                  radius="md"
+                  variant="default"
+                  onClick={handleGoogleSignIn}
+                  leftSection={<IconBrandGoogle size={18} />}
+                  disabled={isGoogleLoading}
+                  loading={isGoogleLoading}
+                  h={48}
+                >
+                  Sign in with Google
                 </Button>
 
                 <Text ta="center" mt="md">

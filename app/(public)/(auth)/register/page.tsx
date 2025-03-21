@@ -16,7 +16,14 @@ import {
   rem,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconAt, IconCheck, IconLock, IconUser } from "@tabler/icons-react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import {
+  IconAt,
+  IconBrandGoogle,
+  IconCheck,
+  IconLock,
+  IconUser,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -24,6 +31,7 @@ import { FormEvent, useState } from "react";
 const RegisterPage = () => {
   const [errors, setErrors] = useState<string | null>(null);
   const router = useRouter();
+  const supabase = createClientComponentClient();
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,6 +51,23 @@ const RegisterPage = () => {
       icon: <IconCheck size={16} />,
     });
     router.push("/login");
+  };
+
+  const handleGoogleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`, // Redirect to auth callback page
+      },
+    });
+
+    if (error) {
+      notifications.show({
+        title: "Error",
+        message: error.message,
+        color: "red",
+      });
+    }
   };
 
   return (
@@ -108,6 +133,22 @@ const RegisterPage = () => {
 
                 <Button fullWidth size="md" radius="md" type="submit" h={48}>
                   Create your account
+                </Button>
+
+                <Button
+                  fullWidth
+                  size="md"
+                  radius="md"
+                  variant="outline"
+                  leftSection={
+                    <IconBrandGoogle
+                      style={{ width: rem(18), height: rem(18) }}
+                    />
+                  }
+                  onClick={handleGoogleSignIn}
+                  h={48}
+                >
+                  Sign up with Google
                 </Button>
 
                 <Text ta="center" mt="md">
