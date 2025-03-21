@@ -6,7 +6,7 @@ import {
   getComments,
   getTicketDetails,
 } from "@/actions/get";
-import { shareTicket, startCanvass } from "@/actions/post";
+import { addComment, shareTicket, startCanvass } from "@/actions/post";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
@@ -33,6 +33,7 @@ import {
   MultiSelect,
   Stack,
   Text,
+  Textarea,
   ThemeIcon,
   Title,
 } from "@mantine/core";
@@ -71,6 +72,27 @@ const TicketDetailsPage = () => {
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
     []
   );
+  const [canvassStartOpen, setCanvassStartOpen] = useState(false);
+  const [newComment, setNewComment] = useState<string>("");
+
+  const handleConfirm = async () => {
+    if (!user) {
+      console.error("User not logged in.");
+      return;
+    }
+
+    try {
+      if (newComment.trim()) {
+        await addComment(ticket_id, newComment, user.user_id);
+        setNewComment("");
+      }
+
+      handleCanvassAction("WORK IN PROGRESS");
+      setCanvassStartOpen(false);
+    } catch (error) {
+      console.error("Error adding comment or starting canvass:", error);
+    }
+  };
 
   const handleShareTicket = async () => {
     if (!selectedUsers.length || !ticket_id) return;
@@ -327,6 +349,39 @@ const TicketDetailsPage = () => {
                         </Stack>
                       </Box>
 
+                      <Modal
+                        opened={canvassStartOpen}
+                        onClose={() => setCanvassStartOpen(false)}
+                        title="Confirm Action"
+                        centered
+                      >
+                        <Text size="sm" mb="sm">
+                          Are you sure you want to start canvassing?
+                        </Text>
+
+                        <Textarea
+                          value={newComment}
+                          onChange={(event) =>
+                            setNewComment(event.target.value)
+                          }
+                          placeholder="Optional comment..."
+                          autosize
+                          minRows={3}
+                        />
+
+                        <Group mt="md" justify="flex-end">
+                          <Button
+                            variant="default"
+                            onClick={() => setCanvassStartOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button color="blue" onClick={handleConfirm}>
+                            Confirm
+                          </Button>
+                        </Group>
+                      </Modal>
+
                       {(isAdmin ||
                         ticket?.ticket_created_by === user?.user_id) && (
                         <>
@@ -581,9 +636,7 @@ const TicketDetailsPage = () => {
                             (e.currentTarget.style.backgroundColor =
                               "transparent")
                           }
-                          onClick={() =>
-                            handleCanvassAction("WORK IN PROGRESS")
-                          }
+                          onClick={() => setCanvassStartOpen(true)} // Open the modal first
                         >
                           <IconClipboardCheck size={18} />
                           <Text size="sm" fw={600}>
