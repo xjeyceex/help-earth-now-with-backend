@@ -339,16 +339,12 @@ const TicketDetailsPage = () => {
                               })}
                             </Text>
                           </Stack>
-
-                          {/* Item Name */}
                           <Stack gap="sm">
                             <Text size="md" fw={600} ta="left">
                               Item Name:
                             </Text>
                             <Text size="sm">{ticket.ticket_item_name}</Text>
                           </Stack>
-
-                          {/* Item Description */}
                           <Stack gap="sm">
                             <Text size="md" fw={600} ta="left">
                               Item Description:
@@ -357,8 +353,6 @@ const TicketDetailsPage = () => {
                               {ticket.ticket_item_description}
                             </Text>
                           </Stack>
-
-                          {/* Quantity */}
                           <Stack gap="sm">
                             <Text size="md" fw={600} ta="left">
                               Quantity:
@@ -393,9 +387,39 @@ const TicketDetailsPage = () => {
                               />
                             </Text>
                           </Stack>
+                          <Stack gap="sm">
+                            <Text size="md" fw={600} ta="left">
+                              Reviewers:
+                            </Text>
+                            {ticket.reviewers.length > 0 ? (
+                              ticket.reviewers.map((reviewer) => (
+                                <Group key={reviewer.reviewer_id} gap="xs">
+                                  <Text size="sm">
+                                    {reviewer.reviewer_name}
+                                  </Text>
+                                  <Badge
+                                    color={
+                                      reviewer.approval_status === "APPROVED"
+                                        ? "green"
+                                        : reviewer.approval_status ===
+                                          "REJECTED"
+                                        ? "red"
+                                        : "gray"
+                                    }
+                                    size="xs"
+                                  >
+                                    {reviewer.approval_status ?? "PENDING"}
+                                  </Badge>
+                                </Group>
+                              ))
+                            ) : (
+                              <Text size="sm" c="dimmed">
+                                No reviewers assigned
+                              </Text>
+                            )}
+                          </Stack>
                         </Stack>
                       </Box>
-
                       <Modal
                         opened={canvassApprovalOpen}
                         onClose={() => setCanvassApprovalOpen(false)}
@@ -430,7 +454,6 @@ const TicketDetailsPage = () => {
                           </Button>
                         </Group>
                       </Modal>
-
                       <Modal
                         opened={canvassStartOpen}
                         onClose={() => setCanvassStartOpen(false)}
