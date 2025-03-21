@@ -16,6 +16,7 @@ import {
   Menu,
   Modal,
   Paper,
+  Skeleton,
   Text,
 } from "@mantine/core";
 import { IconDotsVertical, IconEdit, IconTrash } from "@tabler/icons-react";
@@ -40,18 +41,18 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   const [newComment, setNewComment] = useState<string>("");
 
   const [editingComment, setEditingComment] = useState<CommentType | null>(
-    null,
+    null
   );
   const [editContent, setEditContent] = useState<string>("");
 
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
-    {},
+    {}
   );
   const [isFocused, setIsFocus] = useState(false);
 
   const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
   const [deletingComment, setDeletingComment] = useState<CommentType | null>(
-    null,
+    null
   );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
@@ -100,19 +101,19 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
               prev.map((comment) =>
                 comment.comment_id === payload.new.comment_id
                   ? { ...comment, ...payload.new }
-                  : comment,
-              ),
+                  : comment
+              )
             );
           }
 
           if (payload.eventType === "DELETE") {
             setComments((prev) =>
               prev.filter(
-                (comment) => comment.comment_id !== payload.old?.comment_id,
-              ),
+                (comment) => comment.comment_id !== payload.old?.comment_id
+              )
             );
           }
-        },
+        }
       )
       .subscribe((status, err) => {
         if (err) {
@@ -165,8 +166,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
         await deleteComment(deletingComment.comment_id);
         setComments((prevComments) =>
           prevComments.filter(
-            (comment) => comment.comment_id !== deletingComment.comment_id,
-          ),
+            (comment) => comment.comment_id !== deletingComment.comment_id
+          )
         );
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -193,8 +194,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                 comment_content: editContent,
                 comment_is_edited: true,
               }
-            : comment,
-        ),
+            : comment
+        )
       );
       setEditingComment(null);
       setEditContent("");
@@ -250,25 +251,30 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                 }}
               >
                 {loadingStates[comment.comment_id] ? (
-                  <Container
-                    style={{ display: "flex", justifyContent: "center" }}
-                  >
-                    <Loader size="sm" />
-                  </Container>
+                  <Box style={{ flex: 1 }} pl="xs">
+                    <Group gap="xs" align="center">
+                      <Skeleton height={16} width={120} radius="sm" />
+                      <Skeleton height={14} width={160} radius="sm" />
+                    </Group>
+
+                    <Skeleton height={50} mt={6} radius="sm" />
+                  </Box>
                 ) : (
                   <Box style={{ flex: 1 }} pl="xs">
-                    <Group gap="xs" align="flex-start">
-                      <Text size="sm" fw="500" style={{ marginRight: 10 }}>
+                    <Group gap="0" align="center">
+                      <Text size="sm" fw={500} style={{ marginRight: 10 }}>
                         {comment.comment_user_full_name}
                       </Text>
                       <Text size="xs" c="dimmed">
                         {new Date(
-                          comment.comment_date_created,
+                          comment.comment_date_created
                         ).toLocaleString()}
                       </Text>
-                      <Text size="xs" c="dimmed">
-                        {comment.comment_is_edited && "(Edited)"}
-                      </Text>
+                      {comment.comment_is_edited && (
+                        <Text size="xs" c="dimmed" pl="xs">
+                          (Edited)
+                        </Text>
+                      )}
                     </Group>
 
                     <Text size="md">
