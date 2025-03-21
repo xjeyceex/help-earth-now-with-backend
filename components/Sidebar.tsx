@@ -2,7 +2,9 @@
 
 import { useUserStore } from "@/stores/userStore";
 import {
+  Anchor,
   Box,
+  Group,
   NavLink,
   Paper,
   rem,
@@ -19,6 +21,7 @@ import {
   IconTicket,
   IconUser,
 } from "@tabler/icons-react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -94,9 +97,40 @@ const Sidebar = () => {
     >
       <Stack h="100%" justify="space-between">
         <Stack gap="xl">
+          {/* Logoooooooooo */}
+          <Group justify="start" pt="md" pl="sm">
+            <Anchor
+              href="/"
+              component={Link}
+              underline="never"
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: theme.spacing.xs,
+                color:
+                  theme.colors[theme.primaryColor][
+                    colorScheme === "dark" ? 4 : 6
+                  ],
+                transition: "color 0.2s ease",
+              }}
+            >
+              <Text
+                component="span"
+                fw={900}
+                fz={rem(22)}
+                style={{
+                  letterSpacing: "-0.5px",
+                  textTransform: "uppercase",
+                }}
+              >
+                CanvassingApp
+              </Text>
+            </Anchor>
+          </Group>
+
           {/* Navigation Linksssssssssssssss */}
           <Stack gap={6}>
-            <Text size="sm" fw={500} c="dimmed" pb={4} pl="xs">
+            <Text size="sm" fw={600} c="dimmed" pb={4} pl="xs">
               MAIN MENU
             </Text>
             {links.map((link) => (
