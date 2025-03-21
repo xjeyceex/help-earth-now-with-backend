@@ -1,10 +1,7 @@
 "use client";
 
-import {
-  changePassword,
-  updateDisplayName,
-  updateProfilePicture,
-} from "@/actions/post";
+import { updateDisplayName, updateProfilePicture } from "@/actions/post";
+import { changePassword } from "@/actions/update";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
 import { useUserStore } from "@/stores/userStore";
 import {
@@ -54,7 +51,7 @@ const ProfilePage = () => {
   }
 
   const handleAvatarUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -121,7 +118,7 @@ const ProfilePage = () => {
     }
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       setError(
-        "Password must contain at least one uppercase letter and one number.",
+        "Password must contain at least one uppercase letter and one number."
       );
       return;
     }
