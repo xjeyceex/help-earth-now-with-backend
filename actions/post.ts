@@ -223,7 +223,6 @@ export const createTicket = async (
         approval_ticket_id: ticket.ticket_id,
         approval_reviewed_by: reviewerId,
         approval_review_status: "PENDING",
-        approval_review_comments: null,
         approval_review_date: new Date(),
       }))
     );

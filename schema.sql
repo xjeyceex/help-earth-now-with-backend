@@ -1,6 +1,6 @@
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
-    'FOR CANVASS', 'WORK IN PROGRESS', 'FOR REVIEW', 
+    'FOR CANVASS', 'WORK IN PROGRESS', 
     'IN REVIEW', 'FOR APPROVAL', 'DONE', 'CANCELED', 'FOR REVIEW OF SUBMISSIONS'
 );
 
@@ -144,7 +144,6 @@ CREATE TABLE public.approval_table (
     approval_ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
     approval_reviewed_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     approval_review_status approval_status_enum NOT NULL, 
-    approval_review_comments TEXT,
     approval_review_date TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
