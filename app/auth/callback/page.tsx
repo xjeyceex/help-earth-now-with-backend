@@ -27,12 +27,58 @@ const AuthCallback = () => {
       }
 
       const supabaseUser = data.session.user;
+      const email = supabaseUser.email;
 
+      // 🔍 Check if the user already exists in the database
+      const { data: existingUser, error: userError } = await supabase
+        .from("user_table")
+        .select("user_id")
+        .eq("user_email", email)
+        .single();
+
+      if (userError && userError.code !== "PGRST116") {
+        // Ignore 'not found' error
+        console.error("Database error:", userError.message);
+        notifications.show({
+          title: "Error",
+          message: "Something went wrong. Please try again.",
+          color: "red",
+        });
+        return;
+      }
+
+      if (!existingUser) {
+        // 🆕 If user does not exist, register them
+        const { error: insertError } = await supabase
+          .from("user_table")
+          .insert([
+            {
+              user_id: supabaseUser.id,
+              user_full_name:
+                supabaseUser.user_metadata?.full_name || "Unnamed User",
+              user_email: email,
+              user_avatar: supabaseUser.user_metadata?.avatar_url || "",
+              user_role: "PURCHASER",
+            },
+          ]);
+
+        if (insertError) {
+          console.error("User registration error:", insertError.message);
+          notifications.show({
+            title: "Error",
+            message: "Failed to register user.",
+            color: "red",
+          });
+          return;
+        }
+      }
+
+      // ✅ Sign in user (existing or newly registered)
       const user: UserType = {
         user_id: supabaseUser.id,
-        user_role: "user",
+        user_role: "PURCHASER",
         user_full_name: supabaseUser.user_metadata?.full_name || "Unnamed User",
-        user_email: supabaseUser.email || "",
+        user_email: email ?? "",
         user_avatar: supabaseUser.user_metadata?.avatar_url || "",
       };
 
@@ -44,7 +90,7 @@ const AuthCallback = () => {
         color: "green",
       });
 
-      router.push("/dashboard"); // Redirect after setting user
+      router.push("/dashboard"); // Redirect after login
     };
 
     fetchUser();
