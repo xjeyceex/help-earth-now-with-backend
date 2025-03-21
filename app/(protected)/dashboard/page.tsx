@@ -280,7 +280,7 @@ const DashboardPage = () => {
           ) : (
             <Box>
               {tickets.slice(0, 5).map((ticket, index) => (
-                <Box // Changed from Paper to Box
+                <Box
                   key={ticket.ticket_id}
                   p="md"
                   style={(theme) => ({
