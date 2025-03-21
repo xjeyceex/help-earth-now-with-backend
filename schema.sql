@@ -1,6 +1,6 @@
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
-    'FOR CANVASS', 'WORK IN PROGRESS', 'FOR REVIEW', 
+    'FOR CANVASS', 'WORK IN PROGRESS', 
     'IN REVIEW', 'FOR APPROVAL', 'DONE', 'CANCELED', 'FOR REVIEW OF SUBMISSIONS'
 );
 
@@ -144,7 +144,6 @@ CREATE TABLE public.approval_table (
     approval_ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
     approval_reviewed_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     approval_review_status approval_status_enum NOT NULL, 
-    approval_review_comments TEXT,
     approval_review_date TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
@@ -258,6 +257,7 @@ RETURNS TABLE (
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_created_by UUID,
+  ticket_date_created TIMESTAMP, -- Added this field
   shared_users JSON,
   reviewers JSON
 )
@@ -268,6 +268,7 @@ AS $$
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
+    t.ticket_date_created, -- Added this field
 
     -- Combine all shared users into an array
     COALESCE(
@@ -287,7 +288,7 @@ AS $$
     ) AS reviewers
 
   FROM
-    ticket_table t
+    (SELECT * FROM ticket_table ORDER BY ticket_date_created DESC) t -- Sorting before aggregation
 
   LEFT JOIN
     ticket_shared_with_table ts ON ts.ticket_id = t.ticket_id
@@ -314,7 +315,10 @@ AS $$
     t.ticket_id,
     t.ticket_status,
     t.ticket_item_description,
-    t.ticket_created_by
+    t.ticket_created_by,
+    t.ticket_date_created -- Ensuring this is grouped properly
+  ORDER BY
+    t.ticket_date_created DESC -- Ensuring the final output is sorted
 $$;
 
 --view for realtime comment
