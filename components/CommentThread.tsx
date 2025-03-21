@@ -244,6 +244,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
               <Avatar src={comment.comment_user_avatar} radius="xl" size="md" />
               <Paper
                 bg="transparent"
+                pb="sm"
                 style={{
                   boxShadow: "none",
                   backgroundColor: "black",
