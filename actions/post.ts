@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -148,7 +148,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string
+  userId: string,
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -184,7 +184,7 @@ export const createTicket = async (
         approval_reviewed_by: reviewerId,
         approval_review_status: "PENDING",
         approval_review_date: new Date(),
-      }))
+      })),
     );
 
   if (reviewersError) {
@@ -204,7 +204,7 @@ export const createTicket = async (
           "You've been assigned as a reviewer for this ticket",
         notification_read: false,
         notification_url: `/tickets/${ticket.ticket_id}`,
-      }))
+      })),
     );
 
   if (notificationError) {
@@ -245,7 +245,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/"
+    "avatars/",
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -387,8 +387,8 @@ export const createCanvass = async ({
     // Upload all quotations
     const quotationResults = await Promise.all(
       quotations.map((quotation, index) =>
-        uploadFile(quotation, `quotation_${index + 1}`)
-      )
+        uploadFile(quotation, `quotation_${index + 1}`),
+      ),
     );
 
     // Store canvass form data using the first quotation as the primary one
@@ -408,7 +408,7 @@ export const createCanvass = async ({
 
     if (canvassFormError) {
       throw new Error(
-        `Failed to insert canvass form: ${canvassFormError.message}`
+        `Failed to insert canvass form: ${canvassFormError.message}`,
       );
     }
 
@@ -437,7 +437,7 @@ export const createCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`
+        `Failed to insert attachments: ${attachmentsError.message}`,
       );
     }
 
@@ -462,7 +462,7 @@ export const createCanvass = async ({
 export const addComment = async (
   ticket_id: string,
   content: string,
-  user_id: string
+  user_id: string,
 ) => {
   const supabase = await createClient();
 
@@ -479,7 +479,7 @@ export const addComment = async (
         p_ticket_id: ticket_id,
         p_content: content,
         p_user_id: user_id,
-      }
+      },
     );
 
     if (error) throw error;
@@ -493,7 +493,7 @@ export const addComment = async (
 export const startCanvass = async (
   ticket_id: string,
   user_id: string,
-  status: string
+  status: string,
 ) => {
   const supabase = await createClient();
 
