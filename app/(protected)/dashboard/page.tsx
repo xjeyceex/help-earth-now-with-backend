@@ -247,6 +247,7 @@ const DashboardPage = () => {
               {isAdmin && "Recent Tickets"}
               {user?.user_role === "PURCHASER" && "Your Open Tickets"}
               {user?.user_role === "REVIEWER" && "Tickets to Review"}
+              {user?.user_role === "MANAGER" && "Tickets to Review"}
             </Title>
           </Stack>
           <Button
