@@ -16,6 +16,7 @@ import { z } from "zod";
 
 import { createCanvass, startCanvass } from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
+import { TicketDetailsType } from "@/utils/types";
 import { CanvassFormSchema } from "@/utils/zod/schema";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
@@ -24,12 +25,17 @@ import DropzoneFileInput from "./ui/DropzoneFileInput";
 
 type CanvassFormProps = {
   ticketId: string;
+  setTicket: React.Dispatch<React.SetStateAction<TicketDetailsType | null>>;
   updateCanvassDetails: () => void;
 };
 
 type CanvassFormValues = z.infer<typeof CanvassFormSchema>;
 
-const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
+const CanvassForm = ({
+  ticketId,
+  updateCanvassDetails,
+  setTicket,
+}: CanvassFormProps) => {
   const [isPending, startTransition] = useTransition();
   const { user } = useUserStore();
 
@@ -100,8 +106,13 @@ const CanvassForm = ({ ticketId, updateCanvassDetails }: CanvassFormProps) => {
           });
           form.reset();
 
-          updateCanvassDetails();
           handleCanvassAction("FOR REVIEW OF SUBMISSIONS");
+          setTicket((prev) =>
+            prev
+              ? { ...prev, ticket_status: "FOR REVIEW OF SUBMISSIONS" }
+              : null
+          );
+          updateCanvassDetails();
         }
       });
     }

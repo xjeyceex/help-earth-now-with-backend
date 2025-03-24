@@ -6,7 +6,8 @@ import {
   getComments,
   getTicketDetails,
 } from "@/actions/get";
-import { shareTicket, startCanvass } from "@/actions/post";
+import { addComment, shareTicket, startCanvass } from "@/actions/post";
+import { updateApprovalStatus } from "@/actions/update";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
@@ -31,8 +32,10 @@ import {
   Loader,
   Modal,
   MultiSelect,
+  Skeleton,
   Stack,
   Text,
+  Textarea,
   ThemeIcon,
   Title,
 } from "@mantine/core";
@@ -41,6 +44,7 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconClipboardCheck,
+  IconClipboardX,
   IconFile,
   IconFileText,
   IconPlus,
@@ -59,7 +63,7 @@ const TicketDetailsPage = () => {
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
-    null,
+    null
   );
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
@@ -69,20 +73,120 @@ const TicketDetailsPage = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
+    []
   );
+  const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+  const [canvassStartOpen, setCanvassStartOpen] = useState(false);
+  const [canvassApprovalOpen, setCanvassApprovalOpen] = useState(false);
+  const [newComment, setNewComment] = useState<string>("");
+  const [statusLoading, setStatusLoading] = useState(false);
+
+  const handleApprovalConfirm = async () => {
+    if (!user) {
+      console.error("User not logged in.");
+      return;
+    }
+
+    setStatusLoading(true);
+
+    // Define the correct `approval_status` values
+    const newApprovalStatus =
+      approvalStatus === "IN REVIEW" ? "APPROVED" : "REJECTED";
+
+    // Optimistic update
+    setTicket((prev) =>
+      prev
+        ? {
+            ...prev,
+            ticket_status: approvalStatus || prev.ticket_status, // Ensure it's always a string
+            reviewers: prev.reviewers.map((reviewer) =>
+              reviewer.reviewer_id === user.user_id
+                ? { ...reviewer, approval_status: newApprovalStatus }
+                : reviewer
+            ),
+          }
+        : null
+    );
+
+    try {
+      if (newComment.trim()) {
+        await addComment(ticket_id, newComment, user.user_id);
+        setNewComment("");
+      }
+
+      // Insert approval record
+      await updateApprovalStatus({
+        approval_ticket_id: ticket_id,
+        approval_review_status: newApprovalStatus, // Save APPROVED or REJECTED
+        approval_reviewed_by: user.user_id,
+      });
+
+      handleCanvassAction(approvalStatus ?? "IN REVIEW");
+      setCanvassApprovalOpen(false);
+      setApprovalStatus(null);
+    } catch (error) {
+      console.error("Error adding comment or starting canvass:", error);
+
+      // Revert UI if API call fails
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              ticket_status: "FOR REVIEW OF SUBMISSIONS",
+              reviewers: prev.reviewers.map((reviewer) =>
+                reviewer.reviewer_id === user.user_id
+                  ? { ...reviewer, approval_status: "PENDING" } // Reset to a safe fallback
+                  : reviewer
+              ),
+            }
+          : null
+      );
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  const handleStartConfirm = async () => {
+    if (!user) {
+      console.error("User not logged in.");
+      return;
+    }
+    setStatusLoading(true);
+    try {
+      if (newComment.trim()) {
+        await addComment(ticket_id, newComment, user.user_id);
+        setNewComment("");
+      }
+
+      setTicket((prev) =>
+        prev ? { ...prev, ticket_status: "WORK IN PROGRESS" } : null
+      );
+
+      await handleCanvassAction("WORK IN PROGRESS");
+
+      setCanvassStartOpen(false);
+    } catch (error) {
+      console.error("Error adding comment or starting canvass:", error);
+
+      setTicket((prev) =>
+        prev ? { ...prev, ticket_status: "FOR CANVASS" } : null
+      );
+    } finally {
+      setStatusLoading(false);
+    }
+  };
 
   const handleShareTicket = async () => {
     if (!selectedUsers.length || !ticket_id) return;
 
     // Share the ticket with each selected user
     await Promise.all(
-      selectedUsers.map((userId) => shareTicket(ticket_id, userId)),
+      selectedUsers.map((userId) => shareTicket(ticket_id, userId))
     );
 
     // Filter out the selected users from the dropdown
     setAllUsers((prev) =>
-      prev.filter((user) => !selectedUsers.includes(user.value)),
+      prev.filter((user) => !selectedUsers.includes(user.value))
     );
 
     setIsSharing(false);
@@ -96,7 +200,6 @@ const TicketDetailsPage = () => {
     setIsProcessing(true);
     try {
       await startCanvass(ticket_id, user.user_id, status); // Pass the status argument
-      fetchTicketDetails();
     } catch (error) {
       console.error("Error starting canvass:", error);
     } finally {
@@ -131,7 +234,6 @@ const TicketDetailsPage = () => {
     try {
       const data = await getCanvassDetails({ ticketId: ticket_id });
       setCanvassDetails(data);
-      fetchTicketDetails();
     } finally {
       setCanvasLoading(false);
     }
@@ -170,16 +272,17 @@ const TicketDetailsPage = () => {
   }
 
   const isAdmin = user?.user_role === "ADMIN";
-  const isAssigned = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+  const isSharedToMe = ticket.shared_users?.some(
+    (u) => u.user_id === user?.user_id
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
+
   // ✅ Check if the user is the creator of the ticket
   const isCreator = ticket.ticket_created_by === user?.user_id;
 
-  if (!isAdmin && !isAssigned && !isReviewer && !isCreator) {
+  if (!isAdmin && !isSharedToMe && !isReviewer && !isCreator) {
     return (
       <Container size="sm" py="xl">
         <Title>Unauthorized Access</Title>
@@ -227,7 +330,7 @@ const TicketDetailsPage = () => {
                           hour: "numeric",
                           minute: "numeric",
                           hour12: true,
-                        },
+                        }
                       )}
                     </Text>
                   </Group>
@@ -262,7 +365,7 @@ const TicketDetailsPage = () => {
                             </Text>
                             <Text size="sm">
                               {new Date(
-                                ticket.ticket_rf_date_received,
+                                ticket.ticket_rf_date_received
                               ).toLocaleString("en-US", {
                                 day: "2-digit",
                                 month: "short",
@@ -270,16 +373,12 @@ const TicketDetailsPage = () => {
                               })}
                             </Text>
                           </Stack>
-
-                          {/* Item Name */}
                           <Stack gap="sm">
                             <Text size="md" fw={600} ta="left">
                               Item Name:
                             </Text>
                             <Text size="sm">{ticket.ticket_item_name}</Text>
                           </Stack>
-
-                          {/* Item Description */}
                           <Stack gap="sm">
                             <Text size="md" fw={600} ta="left">
                               Item Description:
@@ -288,8 +387,6 @@ const TicketDetailsPage = () => {
                               {ticket.ticket_item_description}
                             </Text>
                           </Stack>
-
-                          {/* Quantity */}
                           <Stack gap="sm">
                             <Text size="md" fw={600} ta="left">
                               Quantity:
@@ -304,7 +401,7 @@ const TicketDetailsPage = () => {
                               <span
                                 dangerouslySetInnerHTML={{
                                   __html: DOMPurify.sanitize(
-                                    ticket.ticket_specifications,
+                                    ticket.ticket_specifications
                                   ),
                                 }}
                               />
@@ -318,14 +415,111 @@ const TicketDetailsPage = () => {
                               <span
                                 dangerouslySetInnerHTML={{
                                   __html: DOMPurify.sanitize(
-                                    ticket.ticket_notes,
+                                    ticket.ticket_notes
                                   ),
                                 }}
                               />
                             </Text>
                           </Stack>
+                          {statusLoading ? (
+                            <Skeleton height={24} width={120} radius="sm" />
+                          ) : (
+                            <Stack gap="sm">
+                              <Text size="md" fw={600} ta="left">
+                                Reviewers:
+                              </Text>
+                              {ticket.reviewers.length > 0 ? (
+                                ticket.reviewers.map((reviewer) => (
+                                  <Group key={reviewer.reviewer_id} gap="xs">
+                                    <Text size="sm">
+                                      {reviewer.reviewer_name}
+                                    </Text>
+                                    <Badge
+                                      color={
+                                        reviewer.approval_status === "APPROVED"
+                                          ? "green"
+                                          : reviewer.approval_status ===
+                                            "REJECTED"
+                                          ? "red"
+                                          : "gray"
+                                      }
+                                      size="xs"
+                                    >
+                                      {reviewer.approval_status}
+                                    </Badge>
+                                  </Group>
+                                ))
+                              ) : (
+                                <Text size="sm" c="dimmed">
+                                  No reviewers assigned
+                                </Text>
+                              )}
+                            </Stack>
+                          )}
                         </Stack>
                       </Box>
+                      <Modal
+                        opened={canvassApprovalOpen}
+                        onClose={() => setCanvassApprovalOpen(false)}
+                        title={`Confirm ${
+                          approvalStatus === "IN REVIEW"
+                            ? "Approval"
+                            : "Decline"
+                        }`}
+                        centered
+                      >
+                        <Textarea
+                          value={newComment}
+                          onChange={(event) =>
+                            setNewComment(event.target.value)
+                          }
+                          placeholder="Optional comment..."
+                          autosize
+                          minRows={3}
+                        />
+
+                        <Group mt="md" justify="flex-end">
+                          <Button
+                            variant="default"
+                            onClick={() => setCanvassApprovalOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button color="blue" onClick={handleApprovalConfirm}>
+                            {approvalStatus === "IN REVIEW"
+                              ? "Approve"
+                              : "Decline"}
+                          </Button>
+                        </Group>
+                      </Modal>
+                      <Modal
+                        opened={canvassStartOpen}
+                        onClose={() => setCanvassStartOpen(false)}
+                        title="Confirm Action"
+                        centered
+                      >
+                        <Textarea
+                          value={newComment}
+                          onChange={(event) =>
+                            setNewComment(event.target.value)
+                          }
+                          placeholder="Optional comment..."
+                          autosize
+                          minRows={3}
+                        />
+
+                        <Group mt="md" justify="flex-end">
+                          <Button
+                            variant="default"
+                            onClick={() => setCanvassStartOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button color="blue" onClick={handleStartConfirm}>
+                            Start Canvass
+                          </Button>
+                        </Group>
+                      </Modal>
 
                       {(isAdmin ||
                         ticket?.ticket_created_by === user?.user_id) && (
@@ -411,7 +605,7 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>RF Date Received:</strong>{" "}
                                             {new Date(
-                                              canvass.canvass_form_rf_date_received,
+                                              canvass.canvass_form_rf_date_received
                                             ).toLocaleDateString("en-US", {
                                               day: "2-digit",
                                               month: "short",
@@ -433,7 +627,7 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>Total Amount:</strong> ₱
                                             {canvass.canvass_form_total_amount.toFixed(
-                                              2,
+                                              2
                                             )}
                                           </Text>
                                           {canvass.canvass_form_payment_terms && (
@@ -452,7 +646,7 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>Date Submitted:</strong>{" "}
                                             {new Date(
-                                              canvass.canvass_form_date_submitted,
+                                              canvass.canvass_form_date_submitted
                                             ).toLocaleDateString()}
                                           </Text>
 
@@ -461,7 +655,7 @@ const TicketDetailsPage = () => {
                                               <Text fw={600}>Attachments:</Text>
                                               {canvass.attachments.map(
                                                 (
-                                                  attachment: CanvassAttachment,
+                                                  attachment: CanvassAttachment
                                                 ) => (
                                                   <Link
                                                     key={
@@ -486,16 +680,16 @@ const TicketDetailsPage = () => {
                                                       "Document"}{" "}
                                                     (
                                                     {new Date(
-                                                      attachment.canvass_attachment_created_at,
+                                                      attachment.canvass_attachment_created_at
                                                     ).toLocaleDateString()}
                                                     )
                                                   </Link>
-                                                ),
+                                                )
                                               )}
                                             </div>
                                           )}
                                         </Stack>
-                                      ),
+                                      )
                                     )}
                                   </>
                                 ) : user?.user_id ===
@@ -503,6 +697,7 @@ const TicketDetailsPage = () => {
                                   <CanvassForm
                                     ticketId={ticket?.ticket_id}
                                     updateCanvassDetails={fetchCanvassDetails}
+                                    setTicket={setTicket}
                                   />
                                 ) : (
                                   <Text p="md" c="dimmed">
@@ -533,26 +728,31 @@ const TicketDetailsPage = () => {
                       Ticket Status:
                     </Text>
                   </Group>
-                  <Badge
-                    color={
-                      ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
-                        ? "yellow"
-                        : ticket?.ticket_status === "APPROVED"
-                          ? "green"
+
+                  {statusLoading ? (
+                    <Skeleton height={24} width={120} radius="sm" />
+                  ) : (
+                    <Badge
+                      color={
+                        ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
+                          ? "yellow"
+                          : ticket?.ticket_status === "IN REVIEW"
+                          ? "blue"
                           : ticket?.ticket_status === "WORK IN PROGRESS"
-                            ? "blue"
-                            : ticket?.ticket_status === "COMPLETED"
-                              ? "teal"
-                              : ticket?.ticket_status === "REJECTED"
-                                ? "red"
-                                : "gray"
-                    }
-                    size="md"
-                    variant="filled"
-                    radius="sm"
-                  >
-                    {ticket?.ticket_status}
-                  </Badge>
+                          ? "blue"
+                          : ticket?.ticket_status === "DONE"
+                          ? "green"
+                          : ticket?.ticket_status === "DECLINED"
+                          ? "red"
+                          : "gray"
+                      }
+                      size="md"
+                      variant="filled"
+                      radius="sm"
+                    >
+                      {ticket?.ticket_status}
+                    </Badge>
+                  )}
                 </Stack>
 
                 {/* Actions */}
@@ -564,7 +764,7 @@ const TicketDetailsPage = () => {
                       </Text>
                     </Group>
                     <Stack gap="md">
-                      {ticket?.ticket_status === "FOR CANVASS" && (
+                      {ticket?.ticket_status === "FOR CANVASS" && isCreator && (
                         <Group
                           gap="sm"
                           align="center"
@@ -581,9 +781,7 @@ const TicketDetailsPage = () => {
                             (e.currentTarget.style.backgroundColor =
                               "transparent")
                           }
-                          onClick={() =>
-                            handleCanvassAction("WORK IN PROGRESS")
-                          }
+                          onClick={() => setCanvassStartOpen(true)} // Open the modal first
                         >
                           <IconClipboardCheck size={18} />
                           <Text size="sm" fw={600}>
@@ -591,6 +789,65 @@ const TicketDetailsPage = () => {
                           </Text>
                         </Group>
                       )}
+
+                      {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
+                        isReviewer && (
+                          <>
+                            <Group
+                              gap="sm"
+                              align="center"
+                              wrap="nowrap"
+                              style={{
+                                cursor: "pointer",
+                                transition: "transform 0.2s ease",
+                                borderRadius: "4px",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = "gray")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                              onClick={() => {
+                                setApprovalStatus("IN REVIEW"); // Store approval status
+                                setCanvassApprovalOpen(true); // Open modal
+                              }}
+                            >
+                              <IconClipboardCheck size={18} />
+                              <Text size="sm" fw={600}>
+                                Approve
+                              </Text>
+                            </Group>
+
+                            <Group
+                              gap="sm"
+                              align="center"
+                              wrap="nowrap"
+                              style={{
+                                cursor: "pointer",
+                                transition: "transform 0.2s ease",
+                                borderRadius: "4px",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = "gray")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                              onClick={() => {
+                                setApprovalStatus("DECLINED"); // Store approval status
+                                setCanvassApprovalOpen(true); // Open modal
+                              }}
+                            >
+                              <IconClipboardX size={18} />
+                              <Text size="sm" fw={600}>
+                                Decline
+                              </Text>
+                            </Group>
+                          </>
+                        )}
 
                       <Group
                         gap="sm"
@@ -639,39 +896,50 @@ const TicketDetailsPage = () => {
                       Shared With:
                     </Text>
                   </Group>
-                  {ticket.shared_users.length > 0 ? (
-                    <Stack gap="sm">
-                      {ticket.shared_users.map((u) => (
-                        <Group
-                          key={u.user_id}
-                          gap="xs"
-                          align="center"
-                          wrap="nowrap"
-                        >
-                          <Avatar src={u.user_avatar} radius="xl" size="sm" />
-                          <Text size="sm">{u.user_full_name}</Text>
-                        </Group>
-                      ))}
-                    </Stack>
-                  ) : (
-                    <Text c="dimmed" size="sm" ta="left">
-                      Not shared with anyone yet.
-                    </Text>
-                  )}
+
+                  <Stack gap="sm">
+                    {/* Display ticket creator at the top */}
+                    <Group gap="xs" align="center" wrap="nowrap">
+                      <Avatar
+                        src={ticket.ticket_created_by_avatar}
+                        radius="xl"
+                        size="sm"
+                      />
+                      <Text size="sm">{ticket.ticket_created_by_name}</Text>{" "}
+                      <Text size="xs" p="0" c="dimmed">
+                        (Creator)
+                      </Text>
+                    </Group>
+
+                    {/* Display shared users */}
+                    {ticket.shared_users.map((u) => (
+                      <Group
+                        key={u.user_id}
+                        gap="xs"
+                        align="center"
+                        wrap="nowrap"
+                      >
+                        <Avatar src={u.user_avatar} radius="xl" size="sm" />
+                        <Text size="sm">{u.user_full_name}</Text>
+                      </Group>
+                    ))}
+                  </Stack>
                 </Stack>
 
                 {/* Share Button */}
-                <Button
-                  mt="sm"
-                  size="xs"
-                  variant="light"
-                  leftSection={<IconPlus size={18} />}
-                  onClick={() => setIsSharing(true)}
-                >
-                  <Text size="sm" fw={600}>
-                    Share Ticket
-                  </Text>
-                </Button>
+                {isCreator && (
+                  <Button
+                    mt="sm"
+                    size="xs"
+                    variant="light"
+                    leftSection={<IconPlus size={18} />}
+                    onClick={() => setIsSharing(true)}
+                  >
+                    <Text size="sm" fw={600}>
+                      Share Ticket
+                    </Text>
+                  </Button>
+                )}
               </Stack>
             </Box>
           </Flex>
