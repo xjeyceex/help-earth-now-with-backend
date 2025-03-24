@@ -38,7 +38,7 @@ FOR SELECT
 USING (TRUE);
 
 CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING');
-CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'PURCHASER', 'REVIEWER');
+CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'PURCHASER', 'REVIEWER', 'MANAGER');
 
 -- USER TABLE (Manages User Roles)
 DROP TABLE IF EXISTS user_table CASCADE;
@@ -379,95 +379,95 @@ as $$
 $$;
 
 --function for getting specific ticket
-drop function if exists get_ticket_details(uuid);
-create or replace function get_ticket_details(ticket_uuid uuid)
-returns table (
-  ticket_id uuid,
-  ticket_item_name text, 
-  ticket_item_description text,
-  ticket_status text,
-  ticket_created_by uuid,
-  ticket_created_by_name text, 
-  ticket_created_by_avatar text, 
-  ticket_quantity integer,
-  ticket_specifications text,
-  approval_status text,
-  ticket_date_created timestamp,
-  ticket_last_updated timestamp,
-  ticket_notes text,
-  ticket_rf_date_received timestamp, 
-  shared_users json,
-  reviewers json
-)
-language sql
-as $$
+DROP FUNCTION IF EXISTS get_ticket_details(uuid); 
 
-  select 
-    t.ticket_id,
-    t.ticket_item_name, 
-    t.ticket_item_description,
-    t.ticket_status,
-    t.ticket_created_by,
+CREATE OR REPLACE FUNCTION get_ticket_details(ticket_uuid UUID) 
+RETURNS TABLE (   
+  ticket_id UUID,   
+  ticket_item_name TEXT,    
+  ticket_item_description TEXT,   
+  ticket_status TEXT,   
+  ticket_created_by UUID,   
+  ticket_created_by_name TEXT,    
+  ticket_created_by_avatar TEXT,    
+  ticket_quantity INTEGER,   
+  ticket_specifications TEXT,   
+  approval_status TEXT,   
+  ticket_date_created TIMESTAMP,   
+  ticket_last_updated TIMESTAMP,   
+  ticket_notes TEXT,   
+  ticket_rf_date_received TIMESTAMP,    
+  shared_users JSON,   
+  reviewers JSON 
+) 
+LANGUAGE SQL 
+AS $$    
+SELECT     
+  t.ticket_id,    
+  t.ticket_item_name,     
+  t.ticket_item_description,    
+  t.ticket_status,    
+  t.ticket_created_by,     
+  u.user_full_name AS ticket_created_by_name,    
+  u.user_avatar AS ticket_created_by_avatar,       
+  t.ticket_quantity,    
+  t.ticket_specifications,     
 
-    u.user_full_name as ticket_created_by_name,
-    u.user_avatar as ticket_created_by_avatar,  
+  -- Get the most recent approval status (or fallback to 'PENDING')
+  COALESCE(      
+    (        
+      SELECT a.approval_review_status        
+      FROM approval_table a        
+      WHERE a.approval_ticket_id = t.ticket_id        
+      ORDER BY a.approval_review_date DESC  -- Ensures latest status
+      LIMIT 1      
+    ), 
+    'PENDING'    
+  ) AS approval_status,     
 
-    t.ticket_quantity,
-    t.ticket_specifications,
+  t.ticket_date_created,    
+  t.ticket_last_updated,    
+  t.ticket_notes,    
+  t.ticket_rf_date_received,     
 
-    coalesce(
-      (
-        select a.approval_review_status
-        from approval_table a
-        where a.approval_ticket_id = t.ticket_id
-        limit 1
-      ), 'PENDING'
-    ) as approval_status,
+  -- Shared Users JSON
+  (
+    SELECT COALESCE(        
+      JSON_AGG(          
+        JSON_BUILD_OBJECT(            
+          'user_id', u2.user_id,            
+          'user_full_name', u2.user_full_name,            
+          'user_email', u2.user_email,            
+          'user_avatar', u2.user_avatar           
+        )        
+      ), '[]'      
+    )      
+    FROM ticket_shared_with_table ts      
+    LEFT JOIN user_table u2 ON u2.user_id = ts.shared_user_id      
+    WHERE ts.ticket_id = t.ticket_id    
+  )::JSON AS shared_users,     
 
-    t.ticket_date_created,
-    t.ticket_last_updated,
-    t.ticket_notes,
-    t.ticket_rf_date_received,
+  -- Reviewers JSON
+  (      
+    SELECT COALESCE(        
+      JSON_AGG(          
+        JSON_BUILD_OBJECT(            
+          'reviewer_id', a.approval_reviewed_by,            
+          'reviewer_name', u3.user_full_name,            
+          'reviewer_avatar', u3.user_avatar,             
+          'approval_status', a.approval_review_status          
+        )        
+      ), '[]'      
+    )      
+    FROM approval_table a      
+    LEFT JOIN user_table u3 ON u3.user_id = a.approval_reviewed_by      
+    WHERE a.approval_ticket_id = t.ticket_id    
+  )::JSON AS reviewers   
 
-    (
-      select coalesce(
-        json_agg(
-          json_build_object(
-            'user_id', u2.user_id,
-            'user_full_name', u2.user_full_name,
-            'user_email', u2.user_email,
-            'user_avatar', u2.user_avatar 
-          )
-        ), '[]'
-      )
-      from ticket_shared_with_table ts
-      left join user_table u2 on u2.user_id = ts.shared_user_id
-      where ts.ticket_id = t.ticket_id
-    )::json as shared_users,
-
-    (
-      select coalesce(
-        json_agg(
-          json_build_object(
-            'reviewer_id', a.approval_reviewed_by,
-            'reviewer_name', u3.user_full_name,
-            'reviewer_avatar', u3.user_avatar, 
-            'approval_status', a.approval_review_status
-          )
-        ), '[]'
-      )
-      from approval_table a
-      left join user_table u3 on u3.user_id = a.approval_reviewed_by
-      where a.approval_ticket_id = t.ticket_id
-    )::json as reviewers
-
-  from 
-    ticket_table t
-
-  left join user_table u on u.user_id = t.ticket_created_by
-
-  where t.ticket_id = ticket_uuid
-
+FROM     
+  ticket_table t   
+LEFT JOIN user_table u ON u.user_id = t.ticket_created_by   
+WHERE t.ticket_id = ticket_uuid;  
 $$;
 
 -- share ticket function

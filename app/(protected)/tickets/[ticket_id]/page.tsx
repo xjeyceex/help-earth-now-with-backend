@@ -632,7 +632,7 @@ const TicketDetailsPage = () => {
                                           </Text>
                                           {canvass.canvass_form_payment_terms && (
                                             <Text>
-                                              <strong>Terms:</strong>{" "}
+                                              <strong>Payment Terms:</strong>{" "}
                                               {
                                                 canvass.canvass_form_payment_terms
                                               }
