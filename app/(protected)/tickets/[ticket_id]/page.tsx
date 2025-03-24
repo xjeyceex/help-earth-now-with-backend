@@ -755,7 +755,8 @@ const TicketDetailsPage = () => {
                       )}
 
                       {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
-                        isReviewer && (
+                        isReviewer &&
+                        user?.user_role !== "MANAGER" && (
                           <>
                             <Group
                               gap="sm"
