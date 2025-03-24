@@ -63,7 +63,7 @@ const TicketDetailsPage = () => {
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
-    null
+    null,
   );
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
@@ -73,7 +73,7 @@ const TicketDetailsPage = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    []
+    [],
   );
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
   const [canvassStartOpen, setCanvassStartOpen] = useState(false);
@@ -102,10 +102,10 @@ const TicketDetailsPage = () => {
             reviewers: prev.reviewers.map((reviewer) =>
               reviewer.reviewer_id === user.user_id
                 ? { ...reviewer, approval_status: newApprovalStatus }
-                : reviewer
+                : reviewer,
             ),
           }
-        : null
+        : null,
     );
 
     try {
@@ -136,10 +136,10 @@ const TicketDetailsPage = () => {
               reviewers: prev.reviewers.map((reviewer) =>
                 reviewer.reviewer_id === user.user_id
                   ? { ...reviewer, approval_status: "PENDING" } // Reset to a safe fallback
-                  : reviewer
+                  : reviewer,
               ),
             }
-          : null
+          : null,
       );
     } finally {
       setStatusLoading(false);
@@ -159,7 +159,7 @@ const TicketDetailsPage = () => {
       }
 
       setTicket((prev) =>
-        prev ? { ...prev, ticket_status: "WORK IN PROGRESS" } : null
+        prev ? { ...prev, ticket_status: "WORK IN PROGRESS" } : null,
       );
 
       await handleCanvassAction("WORK IN PROGRESS");
@@ -169,7 +169,7 @@ const TicketDetailsPage = () => {
       console.error("Error adding comment or starting canvass:", error);
 
       setTicket((prev) =>
-        prev ? { ...prev, ticket_status: "FOR CANVASS" } : null
+        prev ? { ...prev, ticket_status: "FOR CANVASS" } : null,
       );
     } finally {
       setStatusLoading(false);
@@ -181,12 +181,12 @@ const TicketDetailsPage = () => {
 
     // Share the ticket with each selected user
     await Promise.all(
-      selectedUsers.map((userId) => shareTicket(ticket_id, userId))
+      selectedUsers.map((userId) => shareTicket(ticket_id, userId)),
     );
 
     // Filter out the selected users from the dropdown
     setAllUsers((prev) =>
-      prev.filter((user) => !selectedUsers.includes(user.value))
+      prev.filter((user) => !selectedUsers.includes(user.value)),
     );
 
     setIsSharing(false);
@@ -273,10 +273,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isSharedToMe = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id
+    (u) => u.user_id === user?.user_id,
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id
+    (r) => r.reviewer_id === user?.user_id,
   );
 
   // ✅ Check if the user is the creator of the ticket
@@ -330,7 +330,7 @@ const TicketDetailsPage = () => {
                           hour: "numeric",
                           minute: "numeric",
                           hour12: true,
-                        }
+                        },
                       )}
                     </Text>
                   </Group>
@@ -365,7 +365,7 @@ const TicketDetailsPage = () => {
                             </Text>
                             <Text size="sm">
                               {new Date(
-                                ticket.ticket_rf_date_received
+                                ticket.ticket_rf_date_received,
                               ).toLocaleString("en-US", {
                                 day: "2-digit",
                                 month: "short",
@@ -401,7 +401,7 @@ const TicketDetailsPage = () => {
                               <span
                                 dangerouslySetInnerHTML={{
                                   __html: DOMPurify.sanitize(
-                                    ticket.ticket_specifications
+                                    ticket.ticket_specifications,
                                   ),
                                 }}
                               />
@@ -415,7 +415,7 @@ const TicketDetailsPage = () => {
                               <span
                                 dangerouslySetInnerHTML={{
                                   __html: DOMPurify.sanitize(
-                                    ticket.ticket_notes
+                                    ticket.ticket_notes,
                                   ),
                                 }}
                               />
@@ -439,9 +439,9 @@ const TicketDetailsPage = () => {
                                         reviewer.approval_status === "APPROVED"
                                           ? "green"
                                           : reviewer.approval_status ===
-                                            "REJECTED"
-                                          ? "red"
-                                          : "gray"
+                                              "REJECTED"
+                                            ? "red"
+                                            : "gray"
                                       }
                                       size="xs"
                                     >
@@ -605,7 +605,7 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>RF Date Received:</strong>{" "}
                                             {new Date(
-                                              canvass.canvass_form_rf_date_received
+                                              canvass.canvass_form_rf_date_received,
                                             ).toLocaleDateString("en-US", {
                                               day: "2-digit",
                                               month: "short",
@@ -627,7 +627,7 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>Total Amount:</strong> ₱
                                             {canvass.canvass_form_total_amount.toFixed(
-                                              2
+                                              2,
                                             )}
                                           </Text>
                                           {canvass.canvass_form_payment_terms && (
@@ -646,7 +646,7 @@ const TicketDetailsPage = () => {
                                           <Text>
                                             <strong>Date Submitted:</strong>{" "}
                                             {new Date(
-                                              canvass.canvass_form_date_submitted
+                                              canvass.canvass_form_date_submitted,
                                             ).toLocaleDateString()}
                                           </Text>
 
@@ -655,7 +655,7 @@ const TicketDetailsPage = () => {
                                               <Text fw={600}>Attachments:</Text>
                                               {canvass.attachments.map(
                                                 (
-                                                  attachment: CanvassAttachment
+                                                  attachment: CanvassAttachment,
                                                 ) => (
                                                   <Link
                                                     key={
@@ -680,16 +680,16 @@ const TicketDetailsPage = () => {
                                                       "Document"}{" "}
                                                     (
                                                     {new Date(
-                                                      attachment.canvass_attachment_created_at
+                                                      attachment.canvass_attachment_created_at,
                                                     ).toLocaleDateString()}
                                                     )
                                                   </Link>
-                                                )
+                                                ),
                                               )}
                                             </div>
                                           )}
                                         </Stack>
-                                      )
+                                      ),
                                     )}
                                   </>
                                 ) : user?.user_id ===
@@ -737,14 +737,14 @@ const TicketDetailsPage = () => {
                         ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
                           ? "yellow"
                           : ticket?.ticket_status === "IN REVIEW"
-                          ? "blue"
-                          : ticket?.ticket_status === "WORK IN PROGRESS"
-                          ? "blue"
-                          : ticket?.ticket_status === "DONE"
-                          ? "green"
-                          : ticket?.ticket_status === "DECLINED"
-                          ? "red"
-                          : "gray"
+                            ? "blue"
+                            : ticket?.ticket_status === "WORK IN PROGRESS"
+                              ? "blue"
+                              : ticket?.ticket_status === "DONE"
+                                ? "green"
+                                : ticket?.ticket_status === "DECLINED"
+                                  ? "red"
+                                  : "gray"
                       }
                       size="md"
                       variant="filled"

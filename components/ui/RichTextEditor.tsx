@@ -53,7 +53,7 @@ export const RichTextEditor = forwardRef<
   }));
 
   return (
-    <MantineRichTextEditor editor={editor} mih={150}>
+    <MantineRichTextEditor editor={editor} mih={200}>
       <MantineRichTextEditor.Toolbar sticky stickyOffset={60}>
         <MantineRichTextEditor.ControlsGroup>
           <MantineRichTextEditor.Bold />
@@ -99,7 +99,7 @@ export const RichTextEditor = forwardRef<
         </MantineRichTextEditor.ControlsGroup>
       </MantineRichTextEditor.Toolbar>
 
-      <MantineRichTextEditor.Content />
+      <MantineRichTextEditor.Content mah={200} style={{ overflow: "auto" }} />
     </MantineRichTextEditor>
   );
 });

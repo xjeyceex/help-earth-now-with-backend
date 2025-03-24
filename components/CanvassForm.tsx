@@ -110,7 +110,7 @@ const CanvassForm = ({
           setTicket((prev) =>
             prev
               ? { ...prev, ticket_status: "FOR REVIEW OF SUBMISSIONS" }
-              : null
+              : null,
           );
           updateCanvassDetails();
         }
