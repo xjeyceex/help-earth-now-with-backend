@@ -90,14 +90,14 @@ const TicketDetailsPage = () => {
     setStatusLoading(true);
 
     const newApprovalStatus =
-      approvalStatus === "DONE" ? "APPROVED" : "REJECTED";
+      approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
 
     // Optimistic UI update
     setTicket((prev) =>
       prev
         ? {
             ...prev,
-            ticket_status: approvalStatus || prev.ticket_status,
+            ticket_status: "IN REVIEW",
             reviewers: prev.reviewers.map((reviewer) =>
               reviewer.reviewer_id === user.user_id
                 ? { ...reviewer, approval_status: newApprovalStatus }
@@ -120,7 +120,7 @@ const TicketDetailsPage = () => {
         approval_reviewed_by: user.user_id,
       });
 
-      handleCanvassAction(approvalStatus ?? "DONE");
+      handleCanvassAction("IN REVIEW");
       setCanvassApprovalOpen(false);
       setApprovalStatus(null);
     } catch (error) {
@@ -429,7 +429,7 @@ const TicketDetailsPage = () => {
                         opened={canvassApprovalOpen}
                         onClose={() => setCanvassApprovalOpen(false)}
                         title={`Confirm ${
-                          approvalStatus === "DONE" ? "Approval" : "Decline"
+                          approvalStatus === "APPROVED" ? "Approval" : "Decline"
                         }`}
                         centered
                       >
@@ -451,7 +451,9 @@ const TicketDetailsPage = () => {
                             Cancel
                           </Button>
                           <Button color="blue" onClick={handleApprovalConfirm}>
-                            {approvalStatus === "DONE" ? "Approve" : "Decline"}
+                            {approvalStatus === "APPROVED"
+                              ? "Approve"
+                              : "Decline"}
                           </Button>
                         </Group>
                       </Modal>
@@ -775,7 +777,7 @@ const TicketDetailsPage = () => {
                                   "transparent")
                               }
                               onClick={() => {
-                                setApprovalStatus("IN REVIEW"); // Store approval status
+                                setApprovalStatus("APPROVED"); // Store approval status
                                 setCanvassApprovalOpen(true); // Open modal
                               }}
                             >

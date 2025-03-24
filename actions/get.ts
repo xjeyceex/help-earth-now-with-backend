@@ -76,6 +76,27 @@ export const getTicketDetails = async (ticket_id: string) => {
   return data;
 };
 
+export const checkReviewerResponse = async (
+  ticket_id: string,
+  user_id: string
+) => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("approval_table")
+    .select("approval_review_status")
+    .eq("approval_ticket_id", ticket_id)
+    .eq("approval_reviewed_by", user_id)
+    .single();
+
+  if (error) {
+    console.error("Supabase Error:", error.message);
+    return null; // Return null if there's an error or no record found
+  }
+
+  return data.approval_review_status; // Directly return the status
+};
+
 export const getAllMyTickets = async ({
   user_id,
 }: {
@@ -136,17 +157,17 @@ export const getAllUsers = async (ticket_id: string) => {
     console.error(
       "Error fetching related users:",
       sharedUsersResponse.error?.message,
-      reviewersResponse.error?.message,
+      reviewersResponse.error?.message
     );
     return { error: true, message: "Failed to fetch related users." };
   }
 
   const ticketCreatorId = ticketResponse.data.ticket_created_by;
   const sharedUserIds = sharedUsersResponse.data.map(
-    (u: SharedUser) => u.shared_user_id,
+    (u: SharedUser) => u.shared_user_id
   );
   const reviewerIds = reviewersResponse.data.map(
-    (r: Reviewer) => r.approval_reviewed_by,
+    (r: Reviewer) => r.approval_reviewed_by
   );
 
   // Collect all users to exclude
@@ -216,7 +237,7 @@ export const getCanvassDetails = async ({
         canvass_attachment_url,
         canvass_attachment_created_at
       )
-    `,
+    `
     )
     .eq("canvass_form_ticket_id", ticketId);
 
@@ -265,13 +286,13 @@ export const getCurrentUserNotification = async () => {
 };
 
 export const getComments = async (
-  ticket_id: string,
+  ticket_id: string
 ): Promise<CommentType[]> => {
   const supabase = await createClient();
 
   const { data: comments, error: commentsError } = await supabase.rpc(
     "get_comments_with_avatars",
-    { ticket_id },
+    { ticket_id }
   );
 
   if (commentsError) {
