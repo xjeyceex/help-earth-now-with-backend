@@ -37,7 +37,7 @@ ON storage.objects
 FOR SELECT
 USING (TRUE);
 
-CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING');
+CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING', 'AWAITING ACTION');
 CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'PURCHASER', 'REVIEWER', 'MANAGER');
 
 -- USER TABLE (Manages User Roles)
