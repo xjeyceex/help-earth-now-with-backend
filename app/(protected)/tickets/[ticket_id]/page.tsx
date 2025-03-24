@@ -92,12 +92,14 @@ const TicketDetailsPage = () => {
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
 
+    const newTicketStatus = isManager ? "DONE" : "IN REVIEW"; // If manager, set to "DONE"
+
     // Optimistic UI update
     setTicket((prev) =>
       prev
         ? {
             ...prev,
-            ticket_status: "IN REVIEW",
+            ticket_status: newTicketStatus, // Set ticket status accordingly
             reviewers: prev.reviewers.map((reviewer) =>
               reviewer.reviewer_id === user.user_id
                 ? { ...reviewer, approval_status: newApprovalStatus }
@@ -120,7 +122,7 @@ const TicketDetailsPage = () => {
         approval_reviewed_by: user.user_id,
       });
 
-      handleCanvassAction("IN REVIEW");
+      handleCanvassAction(newTicketStatus); // Use updated ticket status
       setCanvassApprovalOpen(false);
       setApprovalStatus(null);
     } catch (error) {
@@ -131,9 +133,7 @@ const TicketDetailsPage = () => {
         prev
           ? {
               ...prev,
-              ticket_status: isManager
-                ? "IN REVIEW"
-                : "FOR REVIEW OF SUBMISSIONS",
+              ticket_status: isManager ? "DONE" : "FOR REVIEW OF SUBMISSIONS",
               reviewers: prev.reviewers.map((reviewer) =>
                 reviewer.reviewer_id === user.user_id
                   ? { ...reviewer, approval_status: "PENDING" } // Reset on failure
