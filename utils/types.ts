@@ -43,6 +43,12 @@ export type TicketDetailsType = {
     user_full_name: string;
     user_email: string;
   }[];
+  managers: {
+    user_id: string;
+    user_avatar: string;
+    user_full_name: string;
+    user_email: string;
+  }[];
 };
 
 export type DashboardTicketType = {
