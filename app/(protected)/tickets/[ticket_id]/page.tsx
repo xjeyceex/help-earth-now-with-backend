@@ -359,7 +359,7 @@ const TicketDetailsPage = () => {
                 <Collapse in={isFormVisible}>
                   {isFormVisible && (
                     <>
-                      <Box p="md">
+                      <Box pt="md" px="md">
                         <Stack align="start" px="md" gap="md">
                           <Stack gap="sm">
                             <Text size="md" fw={600} ta="left">
