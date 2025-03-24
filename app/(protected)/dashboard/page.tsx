@@ -59,6 +59,8 @@ const DashboardPage = () => {
       return tickets.filter(
         (ticket) =>
           ticket.ticket_status === "FOR CANVASS" ||
+          ticket.ticket_status === "IN REVIEW" ||
+          ticket.ticket_status === "FOR REVIEW OF SUBMISSIONS" ||
           ticket.ticket_status === "WORK IN PROGRESS"
       ).length;
     }
