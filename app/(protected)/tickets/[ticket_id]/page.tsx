@@ -89,16 +89,15 @@ const TicketDetailsPage = () => {
 
     setStatusLoading(true);
 
-    // Define the correct `approval_status` values
     const newApprovalStatus =
-      approvalStatus === "IN REVIEW" ? "APPROVED" : "REJECTED";
+      approvalStatus === "DONE" ? "APPROVED" : "REJECTED";
 
-    // Optimistic update
+    // Optimistic UI update
     setTicket((prev) =>
       prev
         ? {
             ...prev,
-            ticket_status: approvalStatus || prev.ticket_status, // Ensure it's always a string
+            ticket_status: approvalStatus || prev.ticket_status,
             reviewers: prev.reviewers.map((reviewer) =>
               reviewer.reviewer_id === user.user_id
                 ? { ...reviewer, approval_status: newApprovalStatus }
@@ -114,28 +113,30 @@ const TicketDetailsPage = () => {
         setNewComment("");
       }
 
-      // Insert approval record
+      // Update approval status in DB
       await updateApprovalStatus({
         approval_ticket_id: ticket_id,
-        approval_review_status: newApprovalStatus, // Save APPROVED or REJECTED
+        approval_review_status: newApprovalStatus,
         approval_reviewed_by: user.user_id,
       });
 
-      handleCanvassAction(approvalStatus ?? "IN REVIEW");
+      handleCanvassAction(approvalStatus ?? "DONE");
       setCanvassApprovalOpen(false);
       setApprovalStatus(null);
     } catch (error) {
-      console.error("Error adding comment or starting canvass:", error);
+      console.error("Error adding comment or updating approval status:", error);
 
       // Revert UI if API call fails
       setTicket((prev) =>
         prev
           ? {
               ...prev,
-              ticket_status: "FOR REVIEW OF SUBMISSIONS",
+              ticket_status: isManager
+                ? "IN REVIEW"
+                : "FOR REVIEW OF SUBMISSIONS",
               reviewers: prev.reviewers.map((reviewer) =>
                 reviewer.reviewer_id === user.user_id
-                  ? { ...reviewer, approval_status: "PENDING" } // Reset to a safe fallback
+                  ? { ...reviewer, approval_status: "PENDING" } // Reset on failure
                   : reviewer
               ),
             }
@@ -278,6 +279,7 @@ const TicketDetailsPage = () => {
   const isReviewer = ticket.reviewers?.some(
     (r) => r.reviewer_id === user?.user_id
   );
+  const isManager = user?.user_role === "MANAGER";
 
   // ✅ Check if the user is the creator of the ticket
   const isCreator = ticket.ticket_created_by === user?.user_id;
@@ -427,9 +429,7 @@ const TicketDetailsPage = () => {
                         opened={canvassApprovalOpen}
                         onClose={() => setCanvassApprovalOpen(false)}
                         title={`Confirm ${
-                          approvalStatus === "IN REVIEW"
-                            ? "Approval"
-                            : "Decline"
+                          approvalStatus === "DONE" ? "Approval" : "Decline"
                         }`}
                         centered
                       >
@@ -451,12 +451,11 @@ const TicketDetailsPage = () => {
                             Cancel
                           </Button>
                           <Button color="blue" onClick={handleApprovalConfirm}>
-                            {approvalStatus === "IN REVIEW"
-                              ? "Approve"
-                              : "Decline"}
+                            {approvalStatus === "DONE" ? "Approve" : "Decline"}
                           </Button>
                         </Group>
                       </Modal>
+
                       <Modal
                         opened={canvassStartOpen}
                         onClose={() => setCanvassStartOpen(false)}
@@ -813,6 +812,47 @@ const TicketDetailsPage = () => {
                             </Group>
                           </>
                         )}
+
+                      {ticket?.ticket_status === "IN REVIEW" && isManager && (
+                        <>
+                          {[
+                            {
+                              status: "DONE",
+                              label: "Approve",
+                              Icon: IconClipboardCheck,
+                            },
+                            {
+                              status: "DECLINED",
+                              label: "Decline",
+                              Icon: IconClipboardX,
+                            },
+                          ].map(({ status, label, Icon }) => (
+                            <Group
+                              key={status}
+                              gap="sm"
+                              align="center"
+                              wrap="nowrap"
+                              style={(theme) => ({
+                                cursor: "pointer",
+                                transition: "transform 0.2s ease",
+                                borderRadius: "4px",
+                                "&:hover": {
+                                  backgroundColor: theme.colors.gray[1], // Use Mantine's theme for better consistency
+                                },
+                              })}
+                              onClick={() => {
+                                setApprovalStatus(status);
+                                setCanvassApprovalOpen(true);
+                              }}
+                            >
+                              <Icon size={18} />
+                              <Text size="sm" fw={600}>
+                                {label}
+                              </Text>
+                            </Group>
+                          ))}
+                        </>
+                      )}
 
                       <Group
                         gap="sm"
