@@ -53,19 +53,18 @@ const DashboardPage = () => {
 
   function countUserTicketsByStatus(
     tickets: DashboardTicketType[],
-    statusType: "OPEN" | "COMPLETED",
+    statusType: "OPEN" | "COMPLETED"
   ) {
     if (statusType === "OPEN") {
       return tickets.filter(
         (ticket) =>
           ticket.ticket_status === "FOR CANVASS" ||
-          ticket.ticket_status === "WORK IN PROGRESS",
+          ticket.ticket_status === "WORK IN PROGRESS"
       ).length;
     }
 
     if (statusType === "COMPLETED") {
-      return tickets.filter((ticket) => ticket.ticket_status === "COMPLETED")
-        .length;
+      return tickets.filter((ticket) => ticket.ticket_status === "DONE").length;
     }
 
     return 0;
@@ -75,7 +74,7 @@ const DashboardPage = () => {
     try {
       setLoading(true);
       const data = await getDashboardTickets(
-        isAdmin ? undefined : user?.user_id,
+        isAdmin ? undefined : user?.user_id
       );
       setTickets(data ?? []);
     } catch (error) {
