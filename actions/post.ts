@@ -153,6 +153,7 @@ export const createTicket = async (
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
 
+  // ✅ Insert the ticket first
   const { data: ticket, error: ticketError } = await supabase
     .from("ticket_table")
     .insert({
@@ -175,10 +176,33 @@ export const createTicket = async (
     };
   }
 
+  // ✅ Fetch all MANAGERS from user_table
+  const { data: managers, error: managerError } = await supabase
+    .from("user_table")
+    .select("user_id")
+    .eq("user_role", "MANAGER");
+
+  if (managerError) {
+    console.error("Error fetching managers:", managerError.message);
+    return {
+      success: false,
+      message: "Failed to fetch managers",
+    };
+  }
+
+  // ✅ Merge manually selected reviewers with managers
+  const allReviewers = [
+    ...new Set([
+      ...validatedData.ticketReviewer,
+      ...managers.map((m) => m.user_id),
+    ]),
+  ];
+
+  // ✅ Insert all reviewers into approval_table
   const { error: reviewersError } = await supabase
     .from("approval_table")
     .insert(
-      validatedData.ticketReviewer.map((reviewerId) => ({
+      allReviewers.map((reviewerId) => ({
         approval_ticket_id: ticket.ticket_id,
         approval_reviewed_by: reviewerId,
         approval_review_status: "PENDING",
@@ -193,10 +217,11 @@ export const createTicket = async (
     };
   }
 
+  // ✅ Notify only NON-MANAGER reviewers
   const { data: reviewerRoles, error: roleError } = await supabase
     .from("user_table")
     .select("user_id, user_role")
-    .in("user_id", validatedData.ticketReviewer);
+    .in("user_id", allReviewers);
 
   if (roleError) {
     console.error("Error fetching user roles:", roleError.message);
