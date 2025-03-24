@@ -914,6 +914,11 @@ const TicketDetailsPage = () => {
                               )
                               .map((reviewer) => (
                                 <Group key={reviewer.reviewer_id} gap="xs">
+                                  <Avatar
+                                    src={reviewer.reviewer_avatar}
+                                    radius="xl"
+                                    size="sm"
+                                  />
                                   <Text size="sm">
                                     {reviewer.reviewer_name}
                                   </Text>
@@ -949,6 +954,11 @@ const TicketDetailsPage = () => {
                               )
                               .map((manager) => (
                                 <Group key={manager.reviewer_id} gap="xs">
+                                  <Avatar
+                                    src={manager.reviewer_avatar}
+                                    radius="xl"
+                                    size="sm"
+                                  />
                                   <Text size="sm">{manager.reviewer_name}</Text>
                                   <Badge
                                     color={
