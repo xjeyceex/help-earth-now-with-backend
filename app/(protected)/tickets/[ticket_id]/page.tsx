@@ -820,7 +820,7 @@ const TicketDetailsPage = () => {
                         <>
                           {[
                             {
-                              status: "DONE",
+                              status: "APPROVED",
                               label: "Approve",
                               Icon: IconClipboardCheck,
                             },
