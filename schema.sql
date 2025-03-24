@@ -447,7 +447,7 @@ SELECT
     WHERE ts.ticket_id = t.ticket_id    
   )::JSON AS shared_users,     
 
-  -- Reviewers JSON
+  -- Reviewers JSON (now includes user_role)
   (      
     SELECT COALESCE(        
       JSON_AGG(          
@@ -455,6 +455,7 @@ SELECT
           'reviewer_id', a.approval_reviewed_by,            
           'reviewer_name', u3.user_full_name,            
           'reviewer_avatar', u3.user_avatar,             
+          'reviewer_role', u3.user_role,  -- Added user_role here
           'approval_status', a.approval_review_status          
         )        
       ), '[]'      

@@ -30,7 +30,9 @@ export type TicketDetailsType = {
   ticket_notes: string;
   ticket_created_by_name: string;
   reviewers: {
+    reviewer_avatar: string;
     reviewer_id: string;
+    reviewer_role: string;
     reviewer_name: string;
     approval_status: string;
   }[];
