@@ -971,10 +971,6 @@ const TicketDetailsPage = () => {
             <TicketStatusAndActions
               ticket={ticket}
               statusLoading={statusLoading}
-              isCreator={isCreator}
-              isReviewer={isReviewer}
-              isManager={isManager}
-              user={user}
               isDisabled={isDisabled}
               isSharingLoading={isSharingLoading}
               setCanvassStartOpen={setCanvassStartOpen}

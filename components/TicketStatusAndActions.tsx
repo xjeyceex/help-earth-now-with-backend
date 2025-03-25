@@ -1,6 +1,7 @@
 "use client";
 
-import { TicketDetailsType, UserType } from "@/utils/types";
+import { useUserStore } from "@/stores/userStore";
+import { TicketDetailsType } from "@/utils/types";
 import {
   Avatar,
   Badge,
@@ -24,9 +25,6 @@ import {
 type Props = {
   ticket: TicketDetailsType;
   statusLoading: boolean;
-  isCreator: boolean;
-  isReviewer: boolean;
-  isManager: boolean;
   isDisabled: boolean;
   isSharingLoading: boolean;
   setCanvassStartOpen: (open: boolean) => void;
@@ -34,15 +32,11 @@ type Props = {
   setCanvassApprovalOpen: (open: boolean) => void;
   handleCanvassAction: (action: string) => void;
   setIsSharing: (open: boolean) => void;
-  user: UserType;
 };
 
 const TicketStatusAndActions = ({
   ticket,
   statusLoading,
-  isCreator,
-  isReviewer,
-  isManager,
   isDisabled,
   isSharingLoading,
   setCanvassStartOpen,
@@ -50,8 +44,15 @@ const TicketStatusAndActions = ({
   setCanvassApprovalOpen,
   handleCanvassAction,
   setIsSharing,
-  user,
 }: Props) => {
+  const { user } = useUserStore();
+
+  const isReviewer = ticket.reviewers?.some(
+    (r) => r.reviewer_id === user?.user_id
+  );
+  const isManager = user?.user_role === "MANAGER";
+  const isCreator = ticket.ticket_created_by === user?.user_id;
+
   return (
     <Box w="30%" p="md">
       <Stack align="start" px="md">
