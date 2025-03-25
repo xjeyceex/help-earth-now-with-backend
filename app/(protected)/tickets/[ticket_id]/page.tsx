@@ -140,18 +140,19 @@ const TicketDetailsPage = () => {
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
 
-    // Check if all reviewers (except current one) have approved
+    // Update reviewer status
     const updatedReviewers = ticket?.reviewers.map((reviewer) =>
       reviewer.reviewer_id === user.user_id
         ? { ...reviewer, approval_status: newApprovalStatus }
         : reviewer
     );
 
-    const allApproved = updatedReviewers?.every(
-      (reviewer) => reviewer.approval_status === "APPROVED"
-    );
+    // Exclude manager from approval check
+    const allApproved = updatedReviewers
+      ?.filter((reviewer) => reviewer.reviewer_role !== "MANAGER")
+      .every((reviewer) => reviewer.approval_status === "APPROVED");
 
-    // Only move to "IN REVIEW" if all reviewers approved
+    // Only move to "IN REVIEW" if all non-manager reviewers approved
     const newTicketStatus = isManager
       ? "DONE"
       : allApproved
