@@ -11,11 +11,11 @@ import { revertApprovalStatus, updateApprovalStatus } from "@/actions/update";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
-import { useCommentsStore } from "@/stores/commentStore";
 import { useUserStore } from "@/stores/userStore";
 import {
   CanvassAttachment,
   CanvassDetail,
+  CommentType,
   TicketDetailsType,
 } from "@/utils/types";
 import {
@@ -60,8 +60,9 @@ import { useEffect, useState } from "react";
 const TicketDetailsPage = () => {
   const { ticket_id } = useParams() as { ticket_id: string };
   const { user } = useUserStore();
-  const { setComments } = useCommentsStore();
+  // const { setComments } = useCommentsStore();
 
+  const [comments, setComments] = useState<CommentType[]>([]);
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
     null
@@ -858,7 +859,13 @@ const TicketDetailsPage = () => {
                 {" "}
                 Activity
               </Text>
-              <CommentThread ticket_id={ticket_id} />
+              {/* Comment thread realtime backup */}
+              {/* <CommentThread ticket_id={ticket_id}/> */}
+              <CommentThread
+                ticket_id={ticket_id}
+                comments={comments}
+                setComments={setComments}
+              />
             </Box>
             <Box w="30%" p="md">
               <Stack align="start" px="md">

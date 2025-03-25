@@ -1,9 +1,7 @@
 import { deleteComment } from "@/actions/delete";
 import { addComment } from "@/actions/post";
 import { editComment } from "@/actions/update";
-import { useCommentsStore } from "@/stores/commentStore";
 import { useUserStore } from "@/stores/userStore";
-import { createClient } from "@/utils/supabase/client";
 import { CommentType } from "@/utils/types";
 import {
   ActionIcon,
@@ -31,100 +29,37 @@ import {
 
 type CommentThreadProps = {
   ticket_id: string;
+  comments: CommentType[];
+  setComments: React.Dispatch<React.SetStateAction<CommentType[]>>;
 };
 
-const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
+const CommentThread: React.FC<CommentThreadProps> = ({
+  ticket_id,
+  comments,
+  setComments,
+}) => {
   const { user } = useUserStore();
   const commentEditorRef = useRef<RichTextEditorRef>(null);
 
-  const { comments, setComments } = useCommentsStore();
   const [newComment, setNewComment] = useState<string>("");
 
   const [editingComment, setEditingComment] = useState<CommentType | null>(
-    null,
+    null
   );
   const [editContent, setEditContent] = useState<string>("");
 
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
-    {},
+    {}
   );
   const [isFocused, setIsFocus] = useState(false);
 
   const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
   const [deletingComment, setDeletingComment] = useState<CommentType | null>(
-    null,
+    null
   );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
   const cleanComment = newComment.trim();
-
-  useEffect(() => {
-    if (!user || !ticket_id) return;
-
-    const channelName = `comment_changes_${ticket_id}`;
-    const client = createClient();
-    const channel = client.channel(channelName);
-
-    channel
-      .on<CommentType>(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "comment_table",
-          filter: `comment_ticket_id=eq.${ticket_id}`,
-        },
-        async (payload) => {
-          if (!payload || !("eventType" in payload)) {
-            console.warn("Received unexpected payload:", payload);
-            return;
-          }
-
-          if (payload.eventType === "INSERT") {
-            const { data: newComment, error } = await createClient()
-              .from("comment_with_avatar_view")
-              .select("*")
-              .eq("comment_id", payload.new.comment_id)
-              .single();
-
-            if (error) {
-              console.error("Error fetching new comment:", error.message);
-              return;
-            }
-
-            // Append new comment at the end instead of the beginning
-            setComments((prev) => [...prev, newComment]);
-          }
-
-          if (payload.eventType === "UPDATE") {
-            setComments((prev) =>
-              prev.map((comment) =>
-                comment.comment_id === payload.new.comment_id
-                  ? { ...comment, ...payload.new }
-                  : comment,
-              ),
-            );
-          }
-
-          if (payload.eventType === "DELETE") {
-            setComments((prev) =>
-              prev.filter(
-                (comment) => comment.comment_id !== payload.old?.comment_id,
-              ),
-            );
-          }
-        },
-      )
-      .subscribe((status, err) => {
-        if (err) {
-          console.error("Subscription error:", err);
-        }
-      });
-
-    return () => {
-      client.removeChannel(channel);
-    };
-  }, [user, ticket_id, setComments]);
 
   useEffect(() => {
     if (isFocused) {
@@ -149,8 +84,23 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     setIsAddingComment(true);
 
     try {
-      await addComment(ticket_id, newComment, user.user_id);
-
+      const commentId = await addComment(ticket_id, newComment, user.user_id);
+      setComments([
+        ...comments,
+        {
+          comment_id: commentId,
+          comment_ticket_id: ticket_id,
+          comment_user_id: user.user_id,
+          comment_content: newComment,
+          comment_date_created: new Date().toISOString(),
+          comment_is_edited: false,
+          comment_type: "COMMENT",
+          comment_user_full_name: user.user_full_name,
+          comment_user_avatar: user?.user_avatar,
+          comment_last_updated: new Date().toISOString(),
+          replies: [],
+        },
+      ]);
       setNewComment("");
       commentEditorRef.current?.reset();
     } catch (error) {
@@ -166,8 +116,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
         await deleteComment(deletingComment.comment_id);
         setComments((prevComments) =>
           prevComments.filter(
-            (comment) => comment.comment_id !== deletingComment.comment_id,
-          ),
+            (comment) => comment.comment_id !== deletingComment.comment_id
+          )
         );
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -194,8 +144,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                 comment_content: editContent,
                 comment_is_edited: true,
               }
-            : comment,
-        ),
+            : comment
+        )
       );
       setEditingComment(null);
       setEditContent("");
@@ -268,7 +218,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
                       </Text>
                       <Text size="xs" c="dimmed">
                         {new Date(
-                          comment.comment_date_created,
+                          comment.comment_date_created
                         ).toLocaleString()}
                       </Text>
                       {comment.comment_is_edited && (
