@@ -142,7 +142,7 @@ const TicketDetailsPage = () => {
 
     if (!ticket) return;
 
-    // Update only the reviewer's status
+    // Optimistically update only my approval status
     const updatedReviewers = ticket.reviewers.map((reviewer) =>
       reviewer.reviewer_id === user.user_id
         ? { ...reviewer, approval_status: newApprovalStatus }
@@ -159,20 +159,17 @@ const TicketDetailsPage = () => {
         (reviewer) => reviewer.approval_status === "APPROVED"
       );
 
-    const newTicketStatus =
-      allApproved && nonManagerReviewers.length > 0
-        ? "IN REVIEW"
-        : "FOR REVIEW OF SUBMISSIONS";
+    // Only update the ticket status if all reviewers are approved
+    const newTicketStatus = allApproved ? "IN REVIEW" : ticket.ticket_status;
 
-    // Optimistic UI update - Ensure the new state is different
     setTicket((prev) =>
-      prev && prev.ticket_status !== newTicketStatus
+      prev
         ? {
             ...prev,
-            ticket_status: newTicketStatus,
-            reviewers: updatedReviewers,
+            ticket_status: newTicketStatus, // Update status only if all are approved
+            reviewers: updatedReviewers, // Always update my approval status
           }
-        : prev
+        : null
     );
 
     try {
@@ -193,15 +190,14 @@ const TicketDetailsPage = () => {
     } catch (error) {
       console.error("Error updating approval:", error);
 
-      // Revert on failure
+      // Revert my approval status if API call fails
       setTicket((prev) =>
         prev
           ? {
               ...prev,
-              ticket_status: "FOR REVIEW OF SUBMISSIONS",
               reviewers: prev.reviewers.map((reviewer) =>
                 reviewer.reviewer_id === user.user_id
-                  ? { ...reviewer, approval_status: "PENDING" }
+                  ? { ...reviewer, approval_status: "PENDING" } // Reset my approval
                   : reviewer
               ),
             }
