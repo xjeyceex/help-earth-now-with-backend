@@ -87,7 +87,7 @@ const TicketDetailsPage = () => {
   )?.approval_status;
 
   const isDisabled =
-    userApprovalStatus === "APPROVED" || userApprovalStatus === "DECLINED";
+    userApprovalStatus === "APPROVED" || userApprovalStatus === "REJECTED";
 
   const fetchTicketDetails = async () => {
     if (!ticket_id) return;
