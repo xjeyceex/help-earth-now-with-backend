@@ -129,7 +129,7 @@ const TicketDetailsPage = () => {
     }
   };
 
-  const handleApprovalConfirm = async () => {
+  const handleReviewerApproval = async () => {
     if (!user) {
       console.error("User not logged in.");
       return;
@@ -140,24 +140,106 @@ const TicketDetailsPage = () => {
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
 
-    // Update reviewer status
-    const updatedReviewers = ticket?.reviewers.map((reviewer) =>
+    if (!ticket) return;
+
+    // Update only the reviewer's status
+    const updatedReviewers = ticket.reviewers.map((reviewer) =>
       reviewer.reviewer_id === user.user_id
         ? { ...reviewer, approval_status: newApprovalStatus }
         : reviewer
     );
 
-    // Exclude manager from approval check
-    const allApproved = updatedReviewers
+    // Check if all non-managers have approved
+    const nonManagerReviewers = updatedReviewers.filter(
+      (reviewer) => reviewer.reviewer_role !== "MANAGER"
+    );
+    const allApproved =
+      nonManagerReviewers.length > 0 &&
+      nonManagerReviewers.every(
+        (reviewer) => reviewer.approval_status === "APPROVED"
+      );
+
+    const newTicketStatus =
+      allApproved && nonManagerReviewers.length > 0
+        ? "IN REVIEW"
+        : "FOR REVIEW OF SUBMISSIONS";
+
+    // Optimistic UI update - Ensure the new state is different
+    setTicket((prev) =>
+      prev && prev.ticket_status !== newTicketStatus
+        ? {
+            ...prev,
+            ticket_status: newTicketStatus,
+            reviewers: updatedReviewers,
+          }
+        : prev
+    );
+
+    try {
+      if (newComment.trim()) {
+        await addComment(ticket.ticket_id, newComment, user.user_id);
+        setNewComment("");
+      }
+
+      await updateApprovalStatus({
+        approval_ticket_id: ticket.ticket_id,
+        approval_review_status: newApprovalStatus,
+        approval_reviewed_by: user.user_id,
+      });
+
+      handleCanvassAction(newTicketStatus);
+      setCanvassApprovalOpen(false);
+      setApprovalStatus(null);
+    } catch (error) {
+      console.error("Error updating approval:", error);
+
+      // Revert on failure
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              ticket_status: "FOR REVIEW OF SUBMISSIONS",
+              reviewers: prev.reviewers.map((reviewer) =>
+                reviewer.reviewer_id === user.user_id
+                  ? { ...reviewer, approval_status: "PENDING" }
+                  : reviewer
+              ),
+            }
+          : null
+      );
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  const handleManagerApproval = async () => {
+    if (!user || !isManager) {
+      console.error("Only managers can finalize.");
+      return;
+    }
+
+    setStatusLoading(true);
+
+    // Ensure all non-managers have approved
+    const allApproved = ticket?.reviewers
       ?.filter((reviewer) => reviewer.reviewer_role !== "MANAGER")
       .every((reviewer) => reviewer.approval_status === "APPROVED");
 
-    // Only move to "IN REVIEW" if all non-manager reviewers approved
-    const newTicketStatus = isManager
-      ? "DONE"
-      : allApproved
-      ? "IN REVIEW"
-      : "FOR REVIEW OF SUBMISSIONS";
+    if (!allApproved) {
+      console.error("All reviewers must approve before manager finalizes.");
+      setStatusLoading(false);
+      return;
+    }
+
+    // Update manager's approval status
+    const updatedReviewers = ticket?.reviewers.map((reviewer) =>
+      reviewer.reviewer_id === user.user_id
+        ? { ...reviewer, approval_status: "APPROVED" }
+        : reviewer
+    );
+
+    // Move ticket to DONE
+    const newTicketStatus = "DONE";
 
     // Optimistic UI update
     setTicket((prev) =>
@@ -176,28 +258,27 @@ const TicketDetailsPage = () => {
         setNewComment("");
       }
 
-      // Update approval status in DB
       await updateApprovalStatus({
         approval_ticket_id: ticket_id,
-        approval_review_status: newApprovalStatus,
+        approval_review_status: "APPROVED",
         approval_reviewed_by: user.user_id,
       });
 
-      handleCanvassAction(newTicketStatus); // Use updated ticket status
+      handleCanvassAction(newTicketStatus);
       setCanvassApprovalOpen(false);
       setApprovalStatus(null);
     } catch (error) {
-      console.error("Error adding comment or updating approval status:", error);
+      console.error("Error finalizing approval:", error);
 
-      // Revert UI if API call fails
+      // Revert UI if API fails
       setTicket((prev) =>
         prev
           ? {
               ...prev,
-              ticket_status: isManager ? "DONE" : "FOR REVIEW OF SUBMISSIONS",
+              ticket_status: "IN REVIEW",
               reviewers: prev.reviewers.map((reviewer) =>
                 reviewer.reviewer_id === user.user_id
-                  ? { ...reviewer, approval_status: "PENDING" } // Reset on failure
+                  ? { ...reviewer, approval_status: "PENDING" }
                   : reviewer
               ),
             }
@@ -448,9 +529,15 @@ const TicketDetailsPage = () => {
                       <Modal
                         opened={canvassApprovalOpen}
                         onClose={() => setCanvassApprovalOpen(false)}
-                        title={`Confirm ${
-                          approvalStatus === "APPROVED" ? "Approval" : "Decline"
-                        }`}
+                        title={
+                          isManager
+                            ? "Finalize Ticket"
+                            : `Confirm ${
+                                approvalStatus === "APPROVED"
+                                  ? "Approval"
+                                  : "Decline"
+                              }`
+                        }
                         centered
                       >
                         <Textarea
@@ -470,11 +557,24 @@ const TicketDetailsPage = () => {
                           >
                             Cancel
                           </Button>
-                          <Button color="blue" onClick={handleApprovalConfirm}>
-                            {approvalStatus === "APPROVED"
-                              ? "Approve"
-                              : "Decline"}
-                          </Button>
+
+                          {isManager ? (
+                            <Button
+                              color="green"
+                              onClick={handleManagerApproval}
+                            >
+                              Finalize
+                            </Button>
+                          ) : (
+                            <Button
+                              color="blue"
+                              onClick={handleReviewerApproval}
+                            >
+                              {approvalStatus === "APPROVED"
+                                ? "Approve"
+                                : "Decline"}
+                            </Button>
+                          )}
                         </Group>
                       </Modal>
 
