@@ -81,6 +81,54 @@ const TicketDetailsPage = () => {
   const [newComment, setNewComment] = useState<string>("");
   const [statusLoading, setStatusLoading] = useState(false);
 
+  const userApprovalStatus = ticket?.reviewers.find(
+    (reviewer) => reviewer.reviewer_id === user?.user_id
+  )?.approval_status;
+
+  const isDisabled =
+    userApprovalStatus === "APPROVED" || userApprovalStatus === "DECLINED";
+
+  const fetchTicketDetails = async () => {
+    if (!ticket_id) return;
+    const tickets = await getTicketDetails(ticket_id);
+    if (Array.isArray(tickets) && tickets.length > 0) {
+      setTicket(tickets[0]);
+    }
+    setLoading(false);
+  };
+
+  const fetchUsers = async () => {
+    const users = await getAllUsers(ticket_id);
+
+    if ("error" in users) {
+      console.error(users.message);
+      return;
+    }
+
+    setAllUsers(users);
+  };
+
+  const fetchCanvassDetails = async () => {
+    if (!ticket_id) return;
+
+    setCanvasLoading(true);
+    try {
+      const data = await getCanvassDetails({ ticketId: ticket_id });
+      setCanvassDetails(data);
+    } finally {
+      setCanvasLoading(false);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const fetchedComments = await getComments(ticket_id);
+      setComments(fetchedComments);
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    }
+  };
+
   const handleApprovalConfirm = async () => {
     if (!user) {
       console.error("User not logged in.");
@@ -92,19 +140,31 @@ const TicketDetailsPage = () => {
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
 
-    const newTicketStatus = isManager ? "DONE" : "IN REVIEW"; // If manager, set to "DONE"
+    // Check if all reviewers (except current one) have approved
+    const updatedReviewers = ticket?.reviewers.map((reviewer) =>
+      reviewer.reviewer_id === user.user_id
+        ? { ...reviewer, approval_status: newApprovalStatus }
+        : reviewer
+    );
+
+    const allApproved = updatedReviewers?.every(
+      (reviewer) => reviewer.approval_status === "APPROVED"
+    );
+
+    // Only move to "IN REVIEW" if all reviewers approved
+    const newTicketStatus = isManager
+      ? "DONE"
+      : allApproved
+      ? "IN REVIEW"
+      : "FOR REVIEW OF SUBMISSIONS";
 
     // Optimistic UI update
     setTicket((prev) =>
       prev
         ? {
             ...prev,
-            ticket_status: newTicketStatus, // Set ticket status accordingly
-            reviewers: prev.reviewers.map((reviewer) =>
-              reviewer.reviewer_id === user.user_id
-                ? { ...reviewer, approval_status: newApprovalStatus }
-                : reviewer
-            ),
+            ticket_status: newTicketStatus,
+            reviewers: updatedReviewers ?? [],
           }
         : null
     );
@@ -205,47 +265,6 @@ const TicketDetailsPage = () => {
       console.error("Error starting canvass:", error);
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const fetchTicketDetails = async () => {
-    if (!ticket_id) return;
-    const tickets = await getTicketDetails(ticket_id);
-    if (Array.isArray(tickets) && tickets.length > 0) {
-      setTicket(tickets[0]);
-    }
-    setLoading(false);
-  };
-
-  const fetchUsers = async () => {
-    const users = await getAllUsers(ticket_id);
-
-    if ("error" in users) {
-      console.error(users.message);
-      return;
-    }
-
-    setAllUsers(users);
-  };
-
-  const fetchCanvassDetails = async () => {
-    if (!ticket_id) return;
-
-    setCanvasLoading(true);
-    try {
-      const data = await getCanvassDetails({ ticketId: ticket_id });
-      setCanvassDetails(data);
-    } finally {
-      setCanvasLoading(false);
-    }
-  };
-
-  const fetchComments = async () => {
-    try {
-      const fetchedComments = await getComments(ticket_id);
-      setComments(fetchedComments);
-    } catch (error) {
-      console.error("Unexpected error:", error);
     }
   };
 
@@ -765,18 +784,23 @@ const TicketDetailsPage = () => {
                               align="center"
                               wrap="nowrap"
                               style={{
-                                cursor: "pointer",
+                                cursor: isDisabled ? "not-allowed" : "pointer",
+                                opacity: isDisabled ? 0.5 : 1, // Dim the buttons if disabled
                                 transition: "transform 0.2s ease",
                                 borderRadius: "4px",
                               }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor = "gray")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  "transparent")
-                              }
+                              onMouseEnter={(e) => {
+                                if (!isDisabled)
+                                  e.currentTarget.style.backgroundColor =
+                                    "gray";
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isDisabled)
+                                  e.currentTarget.style.backgroundColor =
+                                    "transparent";
+                              }}
                               onClick={() => {
+                                if (isDisabled) return;
                                 setApprovalStatus("APPROVED"); // Store approval status
                                 setCanvassApprovalOpen(true); // Open modal
                               }}
@@ -792,18 +816,23 @@ const TicketDetailsPage = () => {
                               align="center"
                               wrap="nowrap"
                               style={{
-                                cursor: "pointer",
+                                cursor: isDisabled ? "not-allowed" : "pointer",
+                                opacity: isDisabled ? 0.5 : 1,
                                 transition: "transform 0.2s ease",
                                 borderRadius: "4px",
                               }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor = "gray")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  "transparent")
-                              }
+                              onMouseEnter={(e) => {
+                                if (!isDisabled)
+                                  e.currentTarget.style.backgroundColor =
+                                    "gray";
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isDisabled)
+                                  e.currentTarget.style.backgroundColor =
+                                    "transparent";
+                              }}
                               onClick={() => {
+                                if (isDisabled) return;
                                 setApprovalStatus("DECLINED"); // Store approval status
                                 setCanvassApprovalOpen(true); // Open modal
                               }}
