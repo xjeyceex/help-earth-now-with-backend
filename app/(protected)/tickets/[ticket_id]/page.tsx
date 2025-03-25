@@ -1187,24 +1187,35 @@ const TicketDetailsPage = () => {
                         radius="xl"
                         size="sm"
                       />
-                      <Text size="sm">{ticket.ticket_created_by_name}</Text>{" "}
+                      <Text size="sm">{ticket.ticket_created_by_name}</Text>
                       <Text size="xs" p="0" c="dimmed">
                         (Creator)
                       </Text>
                     </Group>
 
-                    {/* Display shared users */}
-                    {ticket.shared_users.map((u) => (
-                      <Group
-                        key={u.user_id}
-                        gap="xs"
-                        align="center"
-                        wrap="nowrap"
-                      >
-                        <Avatar src={u.user_avatar} radius="xl" size="sm" />
-                        <Text size="sm">{u.user_full_name}</Text>
-                      </Group>
-                    ))}
+                    {/* Show loading state while sharing */}
+                    {isSharing ? (
+                      <Stack gap="sm">
+                        <Skeleton height={20} width={150} />
+                        <Skeleton height={20} width={200} />
+                      </Stack>
+                    ) : ticket.shared_users.length > 0 ? (
+                      ticket.shared_users.map((u) => (
+                        <Group
+                          key={u.user_id}
+                          gap="xs"
+                          align="center"
+                          wrap="nowrap"
+                        >
+                          <Avatar src={u.user_avatar} radius="xl" size="sm" />
+                          <Text size="sm">{u.user_full_name}</Text>
+                        </Group>
+                      ))
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        No shared users yet.
+                      </Text>
+                    )}
                   </Stack>
                 </Stack>
 
