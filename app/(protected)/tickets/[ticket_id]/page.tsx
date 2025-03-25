@@ -960,17 +960,175 @@ const TicketDetailsPage = () => {
                 </Stack>
 
                 {/* Actions */}
-                {ticket?.ticket_status !== "CANCELED" && (
-                  <>
-                    <Group gap="xs" align="center" wrap="nowrap">
-                      <Text size="sm" fw={600} ta="left">
-                        Actions:
-                      </Text>
-                    </Group>
-                    <Stack gap="md">
-                      {ticket?.ticket_status === "FOR CANVASS" && isCreator && (
+                {ticket?.ticket_status !== "CANCELED" &&
+                  ticket?.ticket_status !== "DONE" &&
+                  ticket?.ticket_status !== "DECLINED" && (
+                    <>
+                      <Group gap="xs" align="center" wrap="nowrap">
+                        <Text size="sm" fw={600} ta="left">
+                          Actions:
+                        </Text>
+                      </Group>
+                      <Stack gap="md">
+                        {ticket?.ticket_status === "FOR CANVASS" &&
+                          isCreator && (
+                            <Group
+                              gap="sm"
+                              align="center"
+                              wrap="nowrap"
+                              style={{
+                                cursor: "pointer",
+                                transition: "transform 0.2s ease",
+                                borderRadius: "4px",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = "gray")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                              onClick={() => setCanvassStartOpen(true)} // Open the modal first
+                            >
+                              <IconClipboardCheck size={18} />
+                              <Text size="sm" fw={600}>
+                                Start Canvass
+                              </Text>
+                            </Group>
+                          )}
+
+                        {ticket?.ticket_status ===
+                          "FOR REVIEW OF SUBMISSIONS" &&
+                          isReviewer &&
+                          user?.user_role !== "MANAGER" && (
+                            <>
+                              <Group
+                                gap="sm"
+                                align="center"
+                                wrap="nowrap"
+                                style={{
+                                  cursor: isDisabled
+                                    ? "not-allowed"
+                                    : "pointer",
+                                  opacity: isDisabled ? 0.5 : 1, // Dim the buttons if disabled
+                                  transition: "transform 0.2s ease",
+                                  borderRadius: "4px",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isDisabled)
+                                    e.currentTarget.style.backgroundColor =
+                                      "gray";
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isDisabled)
+                                    e.currentTarget.style.backgroundColor =
+                                      "transparent";
+                                }}
+                                onClick={() => {
+                                  if (isDisabled) return;
+                                  setApprovalStatus("APPROVED"); // Store approval status
+                                  setCanvassApprovalOpen(true); // Open modal
+                                }}
+                              >
+                                <IconClipboardCheck size={18} />
+                                <Text size="sm" fw={600}>
+                                  Approve
+                                </Text>
+                              </Group>
+
+                              <Group
+                                gap="sm"
+                                align="center"
+                                wrap="nowrap"
+                                style={{
+                                  cursor: isDisabled
+                                    ? "not-allowed"
+                                    : "pointer",
+                                  opacity: isDisabled ? 0.5 : 1,
+                                  transition: "transform 0.2s ease",
+                                  borderRadius: "4px",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isDisabled)
+                                    e.currentTarget.style.backgroundColor =
+                                      "gray";
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isDisabled)
+                                    e.currentTarget.style.backgroundColor =
+                                      "transparent";
+                                }}
+                                onClick={() => {
+                                  if (isDisabled) return;
+                                  setApprovalStatus("DECLINED"); // Store approval status
+                                  setCanvassApprovalOpen(true); // Open modal
+                                }}
+                              >
+                                <IconClipboardX size={18} />
+                                <Text size="sm" fw={600}>
+                                  Decline
+                                </Text>
+                              </Group>
+                            </>
+                          )}
+
+                        {ticket?.ticket_status === "IN REVIEW" && isManager && (
+                          <>
+                            {[
+                              {
+                                status: "APPROVED",
+                                label: "Approve",
+                                Icon: IconClipboardCheck,
+                              },
+                              {
+                                status: "DECLINED",
+                                label: "Decline",
+                                Icon: IconClipboardX,
+                              },
+                              {
+                                status: "NEEDS_REVISION",
+                                label: "Needs Revision",
+                                Icon: IconEdit,
+                              },
+                            ].map(({ status, label, Icon }) => (
+                              <Group
+                                key={status}
+                                gap="sm"
+                                align="center"
+                                wrap="nowrap"
+                                style={(theme) => ({
+                                  cursor: "pointer",
+                                  transition: "transform 0.2s ease",
+                                  borderRadius: "4px",
+                                  "&:hover": {
+                                    backgroundColor: theme.colors.gray[1],
+                                  },
+                                })}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.backgroundColor =
+                                    "gray")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.backgroundColor =
+                                    "transparent")
+                                }
+                                onClick={() => {
+                                  setApprovalStatus(status);
+                                  setCanvassApprovalOpen(true);
+                                }}
+                              >
+                                <Icon size={18} />
+                                <Text size="sm" fw={600}>
+                                  {label}
+                                </Text>
+                              </Group>
+                            ))}
+                          </>
+                        )}
+
                         <Group
                           gap="sm"
+                          pr="xs"
                           align="center"
                           wrap="nowrap"
                           style={{
@@ -985,165 +1143,16 @@ const TicketDetailsPage = () => {
                             (e.currentTarget.style.backgroundColor =
                               "transparent")
                           }
-                          onClick={() => setCanvassStartOpen(true)} // Open the modal first
+                          onClick={() => handleCanvassAction("CANCELED")}
                         >
-                          <IconClipboardCheck size={18} />
+                          <IconX size={18} />
                           <Text size="sm" fw={600}>
-                            Start Canvass
+                            Cancel Request
                           </Text>
                         </Group>
-                      )}
-
-                      {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
-                        isReviewer &&
-                        user?.user_role !== "MANAGER" && (
-                          <>
-                            <Group
-                              gap="sm"
-                              align="center"
-                              wrap="nowrap"
-                              style={{
-                                cursor: isDisabled ? "not-allowed" : "pointer",
-                                opacity: isDisabled ? 0.5 : 1, // Dim the buttons if disabled
-                                transition: "transform 0.2s ease",
-                                borderRadius: "4px",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!isDisabled)
-                                  e.currentTarget.style.backgroundColor =
-                                    "gray";
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!isDisabled)
-                                  e.currentTarget.style.backgroundColor =
-                                    "transparent";
-                              }}
-                              onClick={() => {
-                                if (isDisabled) return;
-                                setApprovalStatus("APPROVED"); // Store approval status
-                                setCanvassApprovalOpen(true); // Open modal
-                              }}
-                            >
-                              <IconClipboardCheck size={18} />
-                              <Text size="sm" fw={600}>
-                                Approve
-                              </Text>
-                            </Group>
-
-                            <Group
-                              gap="sm"
-                              align="center"
-                              wrap="nowrap"
-                              style={{
-                                cursor: isDisabled ? "not-allowed" : "pointer",
-                                opacity: isDisabled ? 0.5 : 1,
-                                transition: "transform 0.2s ease",
-                                borderRadius: "4px",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!isDisabled)
-                                  e.currentTarget.style.backgroundColor =
-                                    "gray";
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!isDisabled)
-                                  e.currentTarget.style.backgroundColor =
-                                    "transparent";
-                              }}
-                              onClick={() => {
-                                if (isDisabled) return;
-                                setApprovalStatus("DECLINED"); // Store approval status
-                                setCanvassApprovalOpen(true); // Open modal
-                              }}
-                            >
-                              <IconClipboardX size={18} />
-                              <Text size="sm" fw={600}>
-                                Decline
-                              </Text>
-                            </Group>
-                          </>
-                        )}
-
-                      {ticket?.ticket_status === "IN REVIEW" && isManager && (
-                        <>
-                          {[
-                            {
-                              status: "APPROVED",
-                              label: "Approve",
-                              Icon: IconClipboardCheck,
-                            },
-                            {
-                              status: "DECLINED",
-                              label: "Decline",
-                              Icon: IconClipboardX,
-                            },
-                            {
-                              status: "NEEDS_REVISION",
-                              label: "Needs Revision",
-                              Icon: IconEdit,
-                            },
-                          ].map(({ status, label, Icon }) => (
-                            <Group
-                              key={status}
-                              gap="sm"
-                              align="center"
-                              wrap="nowrap"
-                              style={(theme) => ({
-                                cursor: "pointer",
-                                transition: "transform 0.2s ease",
-                                borderRadius: "4px",
-                                "&:hover": {
-                                  backgroundColor: theme.colors.gray[1],
-                                },
-                              })}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor = "gray")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  "transparent")
-                              }
-                              onClick={() => {
-                                setApprovalStatus(status);
-                                setCanvassApprovalOpen(true);
-                              }}
-                            >
-                              <Icon size={18} />
-                              <Text size="sm" fw={600}>
-                                {label}
-                              </Text>
-                            </Group>
-                          ))}
-                        </>
-                      )}
-
-                      <Group
-                        gap="sm"
-                        pr="xs"
-                        align="center"
-                        wrap="nowrap"
-                        style={{
-                          cursor: "pointer",
-                          transition: "transform 0.2s ease",
-                          borderRadius: "4px",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "gray")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
-                        onClick={() => handleCanvassAction("CANCELED")}
-                      >
-                        <IconX size={18} />
-                        <Text size="sm" fw={600}>
-                          Cancel Request
-                        </Text>
-                      </Group>
-                    </Stack>
-                  </>
-                )}
+                      </Stack>
+                    </>
+                  )}
 
                 <Stack gap="sm">
                   <Text size="sm" fw={600}>
