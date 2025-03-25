@@ -29,6 +29,7 @@ import {
 
 type CommentThreadProps = {
   ticket_id: string;
+  ticket_status: string;
   comments: CommentType[];
   setComments: React.Dispatch<React.SetStateAction<CommentType[]>>;
 };
@@ -36,6 +37,7 @@ type CommentThreadProps = {
 const CommentThread: React.FC<CommentThreadProps> = ({
   ticket_id,
   comments,
+  ticket_status,
   setComments,
 }) => {
   const { user } = useUserStore();
@@ -274,55 +276,61 @@ const CommentThread: React.FC<CommentThreadProps> = ({
       )}
 
       {/* COMMENT INPUT */}
-      <Group align="flex-start" gap="xs" mt="md">
-        <Avatar src={user?.user_avatar} radius="xl" size="md" />
+      {!(
+        ticket_status === "DONE" ||
+        ticket_status === "CANCELED" ||
+        ticket_status === "DECLINED"
+      ) && (
+        <Group align="flex-start" gap="xs" mt="md">
+          <Avatar src={user?.user_avatar} radius="xl" size="md" />
 
-        <Paper p="md" shadow="xs" style={{ flex: 1 }}>
-          <form onSubmit={handleAddComment}>
-            {isFocused ? (
-              <>
-                <RichTextEditor
-                  ref={commentEditorRef}
-                  value={newComment}
-                  onChange={(value) => setNewComment(value)}
-                  onFocus={() => setIsFocus(true)}
-                />
-                <Button
-                  type="submit"
-                  fullWidth
-                  disabled={
-                    isAddingComment ||
-                    cleanComment === "<p></p>" ||
-                    cleanComment === ""
-                  }
-                  style={{ marginTop: "10px" }}
+          <Paper p="md" shadow="xs" style={{ flex: 1 }}>
+            <form onSubmit={handleAddComment}>
+              {isFocused ? (
+                <>
+                  <RichTextEditor
+                    ref={commentEditorRef}
+                    value={newComment}
+                    onChange={(value) => setNewComment(value)}
+                    onFocus={() => setIsFocus(true)}
+                  />
+                  <Button
+                    type="submit"
+                    fullWidth
+                    disabled={
+                      isAddingComment ||
+                      cleanComment === "<p></p>" ||
+                      cleanComment === ""
+                    }
+                    style={{ marginTop: "10px" }}
+                  >
+                    {isAddingComment ? <Loader size="xs" /> : "Add Comment"}
+                  </Button>
+                </>
+              ) : (
+                <Paper
+                  bg="transparent"
+                  onClick={() => setIsFocus(true)}
+                  style={{
+                    boxShadow: "none",
+                    flex: 1,
+                  }}
                 >
-                  {isAddingComment ? <Loader size="xs" /> : "Add Comment"}
-                </Button>
-              </>
-            ) : (
-              <Paper
-                bg="transparent"
-                onClick={() => setIsFocus(true)}
-                style={{
-                  boxShadow: "none",
-                  flex: 1,
-                }}
-              >
-                {cleanComment ? (
-                  <Text size="sm" c="dimmed">
-                    {cleanComment}
-                  </Text>
-                ) : (
-                  <Text size="sm" c="dimmed">
-                    Add a comment...
-                  </Text>
-                )}
-              </Paper>
-            )}
-          </form>
-        </Paper>
-      </Group>
+                  {cleanComment ? (
+                    <Text size="sm" c="dimmed">
+                      {cleanComment}
+                    </Text>
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      Add a comment...
+                    </Text>
+                  )}
+                </Paper>
+              )}
+            </form>
+          </Paper>
+        </Group>
+      )}
 
       <Modal
         opened={!!editingComment}

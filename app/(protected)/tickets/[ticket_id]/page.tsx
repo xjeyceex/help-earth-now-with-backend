@@ -921,6 +921,7 @@ const TicketDetailsPage = () => {
                 ticket_id={ticket_id}
                 comments={comments}
                 setComments={setComments}
+                ticket_status={ticket.ticket_status}
               />
             </Box>
             <Box w="30%" p="md">
