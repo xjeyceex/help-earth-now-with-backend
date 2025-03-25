@@ -617,6 +617,7 @@ const TicketDetailsPage = () => {
 
                           {isManager ? (
                             <Button
+                              loading={statusLoading}
                               color={
                                 approvalStatus === "APPROVED"
                                   ? "green"
@@ -662,6 +663,7 @@ const TicketDetailsPage = () => {
                             </Button>
                           ) : (
                             <Button
+                              loading={statusLoading}
                               color={
                                 approvalStatus === "APPROVED" ? "blue" : "red"
                               }
@@ -701,6 +703,7 @@ const TicketDetailsPage = () => {
 
                           <Button
                             color="blue"
+                            loading={statusLoading}
                             onClick={async () => {
                               setStatusLoading(true);
                               await handleStartConfirm();
