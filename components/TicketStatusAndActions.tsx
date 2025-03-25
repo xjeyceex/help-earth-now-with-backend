@@ -1,5 +1,7 @@
 "use client";
 
+import { getAllUsers } from "@/actions/get";
+import { shareTicket } from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
 import { TicketDetailsType } from "@/utils/types";
 import {
@@ -8,6 +10,8 @@ import {
   Box,
   Button,
   Group,
+  Modal,
+  MultiSelect,
   Skeleton,
   Stack,
   Text,
@@ -21,37 +25,84 @@ import {
   IconShoppingCartFilled,
   IconX,
 } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 
 type Props = {
   ticket: TicketDetailsType;
   statusLoading: boolean;
   isDisabled: boolean;
-  isSharingLoading: boolean;
   setCanvassStartOpen: (open: boolean) => void;
   setApprovalStatus: (status: string) => void;
   setCanvassApprovalOpen: (open: boolean) => void;
   handleCanvassAction: (action: string) => void;
-  setIsSharing: (open: boolean) => void;
+  fetchTicketDetails: () => Promise<void>;
 };
 
 const TicketStatusAndActions = ({
   ticket,
   statusLoading,
   isDisabled,
-  isSharingLoading,
   setCanvassStartOpen,
+  fetchTicketDetails,
   setApprovalStatus,
   setCanvassApprovalOpen,
   handleCanvassAction,
-  setIsSharing,
 }: Props) => {
   const { user } = useUserStore();
+
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isSharingLoading, setIsSharingLoading] = useState(false);
+
+  const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
+    []
+  );
+
+  const fetchUsers = async () => {
+    const users = await getAllUsers(ticket.ticket_id);
+
+    if ("error" in users) {
+      console.error(users.message);
+      return;
+    }
+
+    setAllUsers(users);
+  };
+  const isAdmin = user?.user_role === "ADMIN";
 
   const isReviewer = ticket.reviewers?.some(
     (r) => r.reviewer_id === user?.user_id
   );
   const isManager = user?.user_role === "MANAGER";
   const isCreator = ticket.ticket_created_by === user?.user_id;
+
+  const handleShareTicket = async () => {
+    if (!selectedUsers.length || !ticket.ticket_id) return;
+
+    setIsSharingLoading(true);
+
+    try {
+      await Promise.all(
+        selectedUsers.map((userId) => shareTicket(ticket.ticket_id, userId))
+      );
+
+      await fetchTicketDetails();
+
+      setSelectedUsers([]);
+      setAllUsers((prev) =>
+        prev.filter((user) => !selectedUsers.includes(user.value))
+      );
+    } catch (error) {
+      console.error("Error sharing ticket:", error);
+    } finally {
+      setIsSharingLoading(false);
+      setIsSharing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   return (
     <Box w="30%" p="md">
@@ -409,6 +460,33 @@ const TicketStatusAndActions = ({
           </Button>
         )}
       </Stack>
+      {(isAdmin || ticket?.ticket_created_by === user?.user_id) && (
+        <>
+          <Modal
+            opened={isSharing}
+            onClose={() => setIsSharing(false)}
+            title="Share Ticket"
+            centered
+          >
+            <MultiSelect
+              data={allUsers}
+              value={selectedUsers}
+              onChange={setSelectedUsers}
+              placeholder="Select users to share with"
+              searchable
+              clearable
+            />
+            <Button
+              onClick={handleShareTicket}
+              mt="md"
+              loading={isSharingLoading}
+              disabled={isSharingLoading}
+            >
+              {isSharingLoading ? "Sharing..." : "Share"}
+            </Button>
+          </Modal>
+        </>
+      )}
     </Box>
   );
 };

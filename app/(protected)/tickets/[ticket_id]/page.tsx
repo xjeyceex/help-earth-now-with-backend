@@ -1,12 +1,11 @@
 "use client";
 
 import {
-  getAllUsers,
   getCanvassDetails,
   getComments,
   getTicketDetails,
 } from "@/actions/get";
-import { addComment, shareTicket, startCanvass } from "@/actions/post";
+import { addComment, startCanvass } from "@/actions/post";
 import { revertApprovalStatus, updateApprovalStatus } from "@/actions/update";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
@@ -31,7 +30,6 @@ import {
   Group,
   Loader,
   Modal,
-  MultiSelect,
   Stack,
   Text,
   Textarea,
@@ -63,13 +61,8 @@ const TicketDetailsPage = () => {
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
   const [loading, setLoading] = useState(true);
   const [canvasLoading, setCanvasLoading] = useState(true);
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [isSharing, setIsSharing] = useState(false);
-  const [isSharingLoading, setIsSharingLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    []
-  );
+
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
   const [canvassStartOpen, setCanvassStartOpen] = useState(false);
   const [canvassApprovalOpen, setCanvassApprovalOpen] = useState(false);
@@ -90,17 +83,6 @@ const TicketDetailsPage = () => {
       setTicket(tickets[0]);
     }
     setLoading(false);
-  };
-
-  const fetchUsers = async () => {
-    const users = await getAllUsers(ticket_id);
-
-    if ("error" in users) {
-      console.error(users.message);
-      return;
-    }
-
-    setAllUsers(users);
   };
 
   const fetchCanvassDetails = async () => {
@@ -421,30 +403,6 @@ const TicketDetailsPage = () => {
     }
   };
 
-  const handleShareTicket = async () => {
-    if (!selectedUsers.length || !ticket_id) return;
-
-    setIsSharingLoading(true);
-
-    try {
-      await Promise.all(
-        selectedUsers.map((userId) => shareTicket(ticket_id, userId))
-      );
-
-      await fetchTicketDetails();
-
-      setSelectedUsers([]);
-      setAllUsers((prev) =>
-        prev.filter((user) => !selectedUsers.includes(user.value))
-      );
-    } catch (error) {
-      console.error("Error sharing ticket:", error);
-    } finally {
-      setIsSharingLoading(false);
-      setIsSharing(false);
-    }
-  };
-
   const handleCanvassAction = async (status: string) => {
     if (!user || isProcessing) return;
 
@@ -461,7 +419,6 @@ const TicketDetailsPage = () => {
   useEffect(() => {
     fetchTicketDetails();
     fetchComments();
-    fetchUsers();
     fetchCanvassDetails();
   }, []);
 
@@ -756,36 +713,6 @@ const TicketDetailsPage = () => {
                           </Button>
                         </Group>
                       </Modal>
-
-                      {(isAdmin ||
-                        ticket?.ticket_created_by === user?.user_id) && (
-                        <>
-                          <Modal
-                            opened={isSharing}
-                            onClose={() => setIsSharing(false)}
-                            title="Share Ticket"
-                            centered
-                          >
-                            <MultiSelect
-                              data={allUsers}
-                              value={selectedUsers}
-                              onChange={setSelectedUsers}
-                              placeholder="Select users to share with"
-                              searchable
-                              clearable
-                            />
-                            <Button
-                              onClick={handleShareTicket}
-                              mt="md"
-                              loading={isSharingLoading}
-                              disabled={isSharingLoading}
-                            >
-                              {isSharingLoading ? "Sharing..." : "Share"}
-                            </Button>
-                          </Modal>
-                        </>
-                      )}
-
                       <br />
 
                       {ticket?.ticket_status !== "FOR CANVASS" && (
@@ -972,12 +899,11 @@ const TicketDetailsPage = () => {
               ticket={ticket}
               statusLoading={statusLoading}
               isDisabled={isDisabled}
-              isSharingLoading={isSharingLoading}
+              fetchTicketDetails={fetchTicketDetails}
               setCanvassStartOpen={setCanvassStartOpen}
               setApprovalStatus={setApprovalStatus}
               setCanvassApprovalOpen={setCanvassApprovalOpen}
               handleCanvassAction={handleCanvassAction}
-              setIsSharing={setIsSharing}
             />
           </Flex>
         </Card>
