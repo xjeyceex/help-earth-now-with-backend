@@ -49,7 +49,7 @@ export const markAllUserNotificationsAsRead = async () => {
 
 export const editComment = async (
   comment_id: string,
-  newContent: string,
+  newContent: string
 ): Promise<void> => {
   const supabase = await createClient();
 
@@ -71,7 +71,7 @@ export const editComment = async (
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -132,6 +132,25 @@ export const updateApprovalStatus = async ({
   if (error) {
     console.error("Error updating approval status:", error.message);
     return { success: false, message: "Failed to update approval status." };
+  }
+
+  return { success: true };
+};
+
+export const revertApprovalStatus = async (approval_ticket_id: string) => {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("approval_table")
+    .update({
+      approval_review_status: "PENDING",
+      approval_review_date: new Date(),
+    })
+    .eq("approval_ticket_id", approval_ticket_id);
+
+  if (error) {
+    console.error("Error reverting approval status:", error.message);
+    return { success: false, message: "Failed to revert approval status." };
   }
 
   return { success: true };

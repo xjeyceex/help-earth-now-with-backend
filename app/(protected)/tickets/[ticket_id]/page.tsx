@@ -7,7 +7,7 @@ import {
   getTicketDetails,
 } from "@/actions/get";
 import { addComment, shareTicket, startCanvass } from "@/actions/post";
-import { updateApprovalStatus } from "@/actions/update";
+import { revertApprovalStatus, updateApprovalStatus } from "@/actions/update";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
@@ -45,6 +45,7 @@ import {
   IconChevronUp,
   IconClipboardCheck,
   IconClipboardX,
+  IconEdit,
   IconFile,
   IconFileText,
   IconPlus,
@@ -955,6 +956,11 @@ const TicketDetailsPage = () => {
                               label: "Decline",
                               Icon: IconClipboardX,
                             },
+                            {
+                              status: "NEEDS_REVISION",
+                              label: "Needs Revision",
+                              Icon: IconEdit, // Choose an appropriate icon
+                            },
                           ].map(({ status, label, Icon }) => (
                             <Group
                               key={status}
@@ -966,12 +972,33 @@ const TicketDetailsPage = () => {
                                 transition: "transform 0.2s ease",
                                 borderRadius: "4px",
                                 "&:hover": {
-                                  backgroundColor: theme.colors.gray[1], // Use Mantine's theme for better consistency
+                                  backgroundColor: theme.colors.gray[1],
                                 },
                               })}
-                              onClick={() => {
-                                setApprovalStatus(status);
-                                setCanvassApprovalOpen(true);
+                              onClick={async () => {
+                                if (status === "NEEDS_REVISION") {
+                                  await revertApprovalStatus(ticket.ticket_id);
+
+                                  setTicket((prev) =>
+                                    prev
+                                      ? {
+                                          ...prev,
+                                          ticket_status: "WORK IN PROGRESS",
+                                          reviewers: prev.reviewers.map(
+                                            (reviewer) => ({
+                                              ...reviewer,
+                                              approval_status: "PENDING",
+                                            })
+                                          ),
+                                        }
+                                      : prev
+                                  );
+
+                                  handleCanvassAction("WORK IN PROGRESS");
+                                } else {
+                                  setApprovalStatus(status);
+                                  setCanvassApprovalOpen(true);
+                                }
                               }}
                             >
                               <Icon size={18} />
