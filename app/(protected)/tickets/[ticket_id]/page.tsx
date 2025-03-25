@@ -72,6 +72,7 @@ const TicketDetailsPage = () => {
   const [canvasLoading, setCanvasLoading] = useState(true);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
+  const [isSharingLoading, setIsSharingLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
     []
@@ -313,19 +314,25 @@ const TicketDetailsPage = () => {
   const handleShareTicket = async () => {
     if (!selectedUsers.length || !ticket_id) return;
 
-    // Share the ticket with each selected user
-    await Promise.all(
-      selectedUsers.map((userId) => shareTicket(ticket_id, userId))
-    );
+    setIsSharingLoading(true);
 
-    // Filter out the selected users from the dropdown
-    setAllUsers((prev) =>
-      prev.filter((user) => !selectedUsers.includes(user.value))
-    );
+    try {
+      await Promise.all(
+        selectedUsers.map((userId) => shareTicket(ticket_id, userId))
+      );
 
-    setIsSharing(false);
-    fetchTicketDetails();
-    setSelectedUsers([]);
+      await fetchTicketDetails();
+
+      setSelectedUsers([]);
+      setAllUsers((prev) =>
+        prev.filter((user) => !selectedUsers.includes(user.value))
+      );
+    } catch (error) {
+      console.error("Error sharing ticket:", error);
+    } finally {
+      setIsSharingLoading(false);
+      setIsSharing(false);
+    }
   };
 
   const handleCanvassAction = async (status: string) => {
@@ -666,8 +673,13 @@ const TicketDetailsPage = () => {
                               searchable
                               clearable
                             />
-                            <Button onClick={handleShareTicket} mt="md">
-                              Share
+                            <Button
+                              onClick={handleShareTicket}
+                              mt="md"
+                              loading={isSharingLoading}
+                              disabled={isSharingLoading}
+                            >
+                              {isSharingLoading ? "Sharing..." : "Share"}
                             </Button>
                           </Modal>
                         </>
@@ -1194,7 +1206,7 @@ const TicketDetailsPage = () => {
                     </Group>
 
                     {/* Show loading state while sharing */}
-                    {isSharing ? (
+                    {isSharingLoading ? (
                       <Stack gap="sm">
                         <Skeleton height={20} width={150} />
                         <Skeleton height={20} width={200} />
