@@ -217,26 +217,20 @@ const TicketDetailsPage = () => {
 
     setStatusLoading(true);
 
-    // Ensure all non-managers have approved
-    const allApproved = ticket?.reviewers
-      ?.filter((reviewer) => reviewer.reviewer_role !== "MANAGER")
-      .every((reviewer) => reviewer.approval_status === "APPROVED");
+    if (!ticket) return;
 
-    if (!allApproved) {
-      console.error("All reviewers must approve before manager finalizes.");
-      setStatusLoading(false);
-      return;
-    }
+    // Determine new ticket status based on manager's decision
+    const newApprovalStatus =
+      approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
+    const newTicketStatus =
+      newApprovalStatus === "APPROVED" ? "DONE" : "DECLINED";
 
-    // Update manager's approval status
+    // Update only the manager's approval status
     const updatedReviewers = ticket?.reviewers.map((reviewer) =>
       reviewer.reviewer_id === user.user_id
-        ? { ...reviewer, approval_status: "APPROVED" }
+        ? { ...reviewer, approval_status: newApprovalStatus }
         : reviewer
     );
-
-    // Move ticket to DONE
-    const newTicketStatus = "DONE";
 
     // Optimistic UI update
     setTicket((prev) =>
@@ -251,13 +245,13 @@ const TicketDetailsPage = () => {
 
     try {
       if (newComment.trim()) {
-        await addComment(ticket_id, newComment, user.user_id);
+        await addComment(ticket.ticket_id, newComment, user.user_id);
         setNewComment("");
       }
 
       await updateApprovalStatus({
-        approval_ticket_id: ticket_id,
-        approval_review_status: "APPROVED",
+        approval_ticket_id: ticket.ticket_id,
+        approval_review_status: newApprovalStatus,
         approval_reviewed_by: user.user_id,
       });
 
@@ -557,14 +551,20 @@ const TicketDetailsPage = () => {
 
                           {isManager ? (
                             <Button
-                              color="green"
+                              color={
+                                approvalStatus === "APPROVED" ? "green" : "red"
+                              }
                               onClick={handleManagerApproval}
                             >
-                              Finalize
+                              {approvalStatus === "APPROVED"
+                                ? "Approve"
+                                : "Decline"}
                             </Button>
                           ) : (
                             <Button
-                              color="blue"
+                              color={
+                                approvalStatus === "APPROVED" ? "blue" : "red"
+                              }
                               onClick={handleReviewerApproval}
                             >
                               {approvalStatus === "APPROVED"
@@ -578,7 +578,11 @@ const TicketDetailsPage = () => {
                       <Modal
                         opened={canvassStartOpen}
                         onClose={() => setCanvassStartOpen(false)}
-                        title="Confirm Action"
+                        title={
+                          approvalStatus === "NEEDS_REVISION"
+                            ? "Request Revision"
+                            : "Confirm Action"
+                        }
                         centered
                       >
                         <Textarea
@@ -598,8 +602,46 @@ const TicketDetailsPage = () => {
                           >
                             Cancel
                           </Button>
-                          <Button color="blue" onClick={handleStartConfirm}>
-                            Start Canvass
+
+                          <Button
+                            color={
+                              approvalStatus === "NEEDS_REVISION"
+                                ? "yellow"
+                                : "blue"
+                            }
+                            onClick={async () => {
+                              setStatusLoading(true);
+
+                              if (approvalStatus === "NEEDS_REVISION") {
+                                await revertApprovalStatus(ticket.ticket_id);
+
+                                setTicket((prev) =>
+                                  prev
+                                    ? {
+                                        ...prev,
+                                        ticket_status: "WORK IN PROGRESS",
+                                        reviewers: prev.reviewers.map(
+                                          (reviewer) => ({
+                                            ...reviewer,
+                                            approval_status: "PENDING",
+                                          })
+                                        ),
+                                      }
+                                    : prev
+                                );
+
+                                handleCanvassAction("WORK IN PROGRESS");
+                              } else {
+                                await handleStartConfirm();
+                              }
+
+                              setStatusLoading(false);
+                              setCanvassStartOpen(false);
+                            }}
+                          >
+                            {approvalStatus === "NEEDS_REVISION"
+                              ? "Request Revision"
+                              : "Start Canvass"}
                           </Button>
                         </Group>
                       </Modal>
@@ -959,7 +1001,7 @@ const TicketDetailsPage = () => {
                             {
                               status: "NEEDS_REVISION",
                               label: "Needs Revision",
-                              Icon: IconEdit, // Choose an appropriate icon
+                              Icon: IconEdit,
                             },
                           ].map(({ status, label, Icon }) => (
                             <Group
@@ -975,30 +1017,18 @@ const TicketDetailsPage = () => {
                                   backgroundColor: theme.colors.gray[1],
                                 },
                               })}
-                              onClick={async () => {
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = "gray")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                              onClick={() => {
+                                setApprovalStatus(status);
                                 if (status === "NEEDS_REVISION") {
-                                  setStatusLoading(true);
-                                  await revertApprovalStatus(ticket.ticket_id);
-
-                                  setTicket((prev) =>
-                                    prev
-                                      ? {
-                                          ...prev,
-                                          ticket_status: "WORK IN PROGRESS",
-                                          reviewers: prev.reviewers.map(
-                                            (reviewer) => ({
-                                              ...reviewer,
-                                              approval_status: "PENDING",
-                                            })
-                                          ),
-                                        }
-                                      : prev
-                                  );
-
-                                  handleCanvassAction("WORK IN PROGRESS");
-                                  setStatusLoading(false);
+                                  setCanvassStartOpen(true); // Open the modal instead of executing immediately
                                 } else {
-                                  setApprovalStatus(status);
                                   setCanvassApprovalOpen(true);
                                 }
                               }}
