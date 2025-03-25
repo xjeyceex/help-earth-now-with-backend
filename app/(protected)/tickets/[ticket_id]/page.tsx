@@ -177,7 +177,27 @@ const TicketDetailsPage = () => {
 
     try {
       if (newComment.trim()) {
-        await addComment(ticket.ticket_id, newComment, user.user_id);
+        const commentId = await addComment(
+          ticket.ticket_id,
+          newComment,
+          user.user_id
+        );
+        setComments([
+          ...comments,
+          {
+            comment_id: commentId,
+            comment_ticket_id: ticket_id,
+            comment_user_id: user.user_id,
+            comment_content: newComment,
+            comment_date_created: new Date().toISOString(),
+            comment_is_edited: false,
+            comment_type: "COMMENT",
+            comment_user_full_name: user.user_full_name,
+            comment_user_avatar: user?.user_avatar,
+            comment_last_updated: new Date().toISOString(),
+            replies: [],
+          },
+        ]);
         setNewComment("");
       }
 
@@ -247,7 +267,27 @@ const TicketDetailsPage = () => {
 
     try {
       if (newComment.trim()) {
-        await addComment(ticket.ticket_id, newComment, user.user_id);
+        const commentId = await addComment(
+          ticket.ticket_id,
+          newComment,
+          user.user_id
+        );
+        setComments([
+          ...comments,
+          {
+            comment_id: commentId,
+            comment_ticket_id: ticket_id,
+            comment_user_id: user.user_id,
+            comment_content: newComment,
+            comment_date_created: new Date().toISOString(),
+            comment_is_edited: false,
+            comment_type: "COMMENT",
+            comment_user_full_name: user.user_full_name,
+            comment_user_avatar: user?.user_avatar,
+            comment_last_updated: new Date().toISOString(),
+            replies: [],
+          },
+        ]);
         setNewComment("");
       }
 
@@ -290,7 +330,23 @@ const TicketDetailsPage = () => {
     setStatusLoading(true);
     try {
       if (newComment.trim()) {
-        await addComment(ticket_id, newComment, user.user_id);
+        const commentId = await addComment(ticket_id, newComment, user.user_id);
+        setComments([
+          ...comments,
+          {
+            comment_id: commentId,
+            comment_ticket_id: ticket_id,
+            comment_user_id: user.user_id,
+            comment_content: newComment,
+            comment_date_created: new Date().toISOString(),
+            comment_is_edited: false,
+            comment_type: "COMMENT",
+            comment_user_full_name: user.user_full_name,
+            comment_user_avatar: user?.user_avatar,
+            comment_last_updated: new Date().toISOString(),
+            replies: [],
+          },
+        ]);
         setNewComment("");
       }
 
