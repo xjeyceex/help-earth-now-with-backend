@@ -977,6 +977,7 @@ const TicketDetailsPage = () => {
                               })}
                               onClick={async () => {
                                 if (status === "NEEDS_REVISION") {
+                                  setStatusLoading(true);
                                   await revertApprovalStatus(ticket.ticket_id);
 
                                   setTicket((prev) =>
@@ -995,6 +996,7 @@ const TicketDetailsPage = () => {
                                   );
 
                                   handleCanvassAction("WORK IN PROGRESS");
+                                  setStatusLoading(false);
                                 } else {
                                   setApprovalStatus(status);
                                   setCanvassApprovalOpen(true);
