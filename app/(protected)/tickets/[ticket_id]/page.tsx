@@ -368,6 +368,67 @@ const TicketDetailsPage = () => {
     }
   };
 
+  const handleRevision = async () => {
+    if (!user || !ticket) {
+      console.error("User not logged in or ticket is undefined.");
+      return;
+    }
+
+    setStatusLoading(true);
+
+    try {
+      if (newComment.trim()) {
+        // Add comment before reverting approval status
+        const commentId = await addComment(
+          ticket.ticket_id,
+          newComment,
+          user.user_id
+        );
+        setComments((prevComments) => [
+          ...prevComments,
+          {
+            comment_id: commentId,
+            comment_ticket_id: ticket.ticket_id,
+            comment_user_id: user.user_id,
+            comment_content: newComment,
+            comment_date_created: new Date().toISOString(),
+            comment_is_edited: false,
+            comment_type: "COMMENT",
+            comment_user_full_name: user.user_full_name,
+            comment_user_avatar: user?.user_avatar,
+            comment_last_updated: new Date().toISOString(),
+            replies: [],
+          },
+        ]);
+        setNewComment(""); // Clear input after posting
+      }
+
+      // Revert approval status
+      await revertApprovalStatus(ticket.ticket_id);
+
+      // Optimistically update UI
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              ticket_status: "WORK IN PROGRESS",
+              reviewers: prev.reviewers.map((reviewer) => ({
+                ...reviewer,
+                approval_status: "PENDING",
+              })),
+            }
+          : prev
+      );
+
+      handleCanvassAction("WORK IN PROGRESS");
+    } catch (error) {
+      console.error("Error requesting revision:", error);
+    } finally {
+      setStatusLoading(false);
+      setCanvassApprovalOpen(false);
+    }
+  };
+
   const handleShareTicket = async () => {
     if (!selectedUsers.length || !ticket_id) return;
 
@@ -624,8 +685,8 @@ const TicketDetailsPage = () => {
                               onClick={async () => {
                                 setStatusLoading(true);
                                 await handleManagerApproval();
-                                setStatusLoading(false);
                                 setCanvassApprovalOpen(false);
+                                setStatusLoading(false);
                               }}
                             >
                               {approvalStatus === "APPROVED"
@@ -644,26 +705,13 @@ const TicketDetailsPage = () => {
                               }
                               onClick={async () => {
                                 setStatusLoading(true);
+
                                 if (approvalStatus === "NEEDS_REVISION") {
-                                  await revertApprovalStatus(ticket.ticket_id);
-                                  setTicket((prev) =>
-                                    prev
-                                      ? {
-                                          ...prev,
-                                          ticket_status: "WORK IN PROGRESS",
-                                          reviewers: prev.reviewers.map(
-                                            (reviewer) => ({
-                                              ...reviewer,
-                                              approval_status: "PENDING",
-                                            })
-                                          ),
-                                        }
-                                      : prev
-                                  );
-                                  handleCanvassAction("WORK IN PROGRESS");
+                                  await handleRevision();
                                 } else {
                                   await handleReviewerApproval();
                                 }
+
                                 setStatusLoading(false);
                                 setCanvassApprovalOpen(false);
                               }}
