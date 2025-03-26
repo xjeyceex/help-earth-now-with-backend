@@ -47,6 +47,22 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [isPasswordExist, setIsPasswordExist] = useState(false);
 
+  useEffect(() => {
+    if (!user || !user.user_id) return;
+
+    const checkPasswordExists = async () => {
+      const result = await checkIfUserPasswordExists(user.user_id);
+
+      if (result) {
+        setIsPasswordExist(true);
+      } else {
+        setIsPasswordExist(false);
+      }
+    };
+
+    checkPasswordExists();
+  }, [user?.user_id]);
+
   if (!user) {
     return <LoadingStateProtected />;
   }
@@ -104,22 +120,6 @@ const ProfilePage = () => {
       setIsEditingName(false);
     }
   };
-
-  useEffect(() => {
-    if (!user || !user.user_id) return;
-
-    const checkPasswordExists = async () => {
-      const result = await checkIfUserPasswordExists(user.user_id);
-
-      if (result) {
-        setIsPasswordExist(true);
-      } else {
-        setIsPasswordExist(false);
-      }
-    };
-
-    checkPasswordExists();
-  }, [user?.user_id]);
 
   return (
     <Box p={{ base: "md", sm: "xl" }}>
