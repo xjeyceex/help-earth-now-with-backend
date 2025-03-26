@@ -109,7 +109,7 @@ const TicketList = () => {
   const availableTickets = tickets.filter((ticket) => {
     const isPurchaser = user?.user_role === "PURCHASER";
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser === user?.user_id,
+      (sharedUser) => sharedUser === user?.user_id
     );
     const isTicketOwner = ticket.ticket_created_by === user?.user_id;
 
@@ -283,7 +283,7 @@ const TicketList = () => {
                     <Text size="xs" c="dimmed">
                       Created{" "}
                       {moment(ticket.ticket_date_created).format(
-                        "MMM D, YYYY [at] h:mm A",
+                        "MMM D, YYYY [at] h:mm A"
                       )}
                     </Text>
                   </Group>

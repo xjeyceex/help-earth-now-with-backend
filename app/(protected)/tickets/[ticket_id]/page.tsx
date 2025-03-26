@@ -923,11 +923,15 @@ const TicketDetailsPage = () => {
                             </Group>
 
                             <Collapse in={isCanvasVisible}>
-                              {(canvassDetails?.length ?? 0) > 0 ? (
+                              {ticket.ticket_status !== "WORK IN PROGRESS" &&
+                              (canvassDetails?.length ?? 0) > 0 ? (
                                 <>
                                   {canvassDetails?.map(
                                     (canvass: CanvassDetail) => (
-                                      <Box key={canvass.canvass_form_id}>
+                                      <Box
+                                        key={canvass.canvass_form_id}
+                                        mb="md"
+                                      >
                                         <Grid gutter="xl">
                                           <Grid.Col span={6}>
                                             <Stack gap="xl">

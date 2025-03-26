@@ -337,37 +337,44 @@ const TicketStatusAndActions = ({
                   (reviewer) => reviewer.reviewer_role === "MANAGER"
                 ) && (
                   <>
-                    <Text size="sm" fw={500} mt="md">
-                      Managers:
+                    <Text fw={500} size="md" mt="md" c="dimmed">
+                      Managers
                     </Text>
                     {ticket.reviewers
                       .filter(
                         (reviewer) => reviewer.reviewer_role === "MANAGER"
                       )
                       .map((manager) => (
-                        <Group key={manager.reviewer_id} gap="xs">
-                          <Avatar
-                            src={manager.reviewer_avatar}
-                            radius="xl"
-                            size="md"
-                          />
-                          <Stack gap={2}>
-                            <Text size="sm" fw={500}>
-                              {manager.reviewer_name}
-                            </Text>
-                            <Badge
-                              size="sm"
-                              color={
-                                manager.approval_status === "APPROVED"
-                                  ? "green"
-                                  : manager.approval_status === "REJECTED"
-                                  ? "red"
-                                  : "gray"
-                              }
-                            >
-                              {manager.approval_status}
-                            </Badge>
-                          </Stack>
+                        <Group
+                          key={manager.reviewer_id}
+                          align="center"
+                          justify="space-between"
+                        >
+                          <Flex gap="xs" align="center">
+                            <Avatar
+                              src={manager.reviewer_avatar}
+                              radius="xl"
+                              size="md"
+                            />
+                            <Stack gap={2}>
+                              <Text size="sm" fw={500}>
+                                {manager.reviewer_name}
+                              </Text>
+                            </Stack>
+                          </Flex>
+
+                          <Badge
+                            size="sm"
+                            color={
+                              manager.approval_status === "APPROVED"
+                                ? "green"
+                                : manager.approval_status === "REJECTED"
+                                ? "red"
+                                : "gray"
+                            }
+                          >
+                            {manager.approval_status}
+                          </Badge>
                         </Group>
                       ))}
                   </>
