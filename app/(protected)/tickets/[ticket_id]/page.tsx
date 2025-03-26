@@ -659,7 +659,8 @@ const TicketDetailsPage = () => {
                 <>
                   {/* Ticket Details */}
                   <Grid gutter="lg" mt={`${isFormVisible ? "lg" : 0}`}>
-                    <Grid.Col span={12}>
+                    {/* Left Column (Main Details + Notes) */}
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
                       <Stack gap="lg">
                         {/* RF Date Received */}
                         <Stack gap={4} mt="xs">
@@ -701,6 +702,25 @@ const TicketDetailsPage = () => {
                           <Text fw={500}>{ticket.ticket_quantity}</Text>
                         </Stack>
 
+                        {/* Notes (Moved Back to Left) */}
+                        {ticket.ticket_notes && (
+                          <Stack gap={4}>
+                            <Text size="md" c="dimmed" fw={500}>
+                              Notes:
+                            </Text>
+                            <Text
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(ticket.ticket_notes),
+                              }}
+                            />
+                          </Stack>
+                        )}
+                      </Stack>
+                    </Grid.Col>
+
+                    {/* Right Column (Specifications Only) */}
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                      <Stack gap="lg">
                         {/* Specifications */}
                         {ticket.ticket_specifications && (
                           <Stack gap={0}>
@@ -712,20 +732,6 @@ const TicketDetailsPage = () => {
                                 __html: DOMPurify.sanitize(
                                   ticket.ticket_specifications
                                 ),
-                              }}
-                            />
-                          </Stack>
-                        )}
-
-                        {/* Notes */}
-                        {ticket.ticket_notes && (
-                          <Stack gap={4}>
-                            <Text size="md" c="dimmed" fw={500}>
-                              Notes:
-                            </Text>
-                            <Text
-                              dangerouslySetInnerHTML={{
-                                __html: DOMPurify.sanitize(ticket.ticket_notes),
                               }}
                             />
                           </Stack>
