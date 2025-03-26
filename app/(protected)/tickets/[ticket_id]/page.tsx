@@ -7,10 +7,10 @@ import {
 } from "@/actions/get";
 import { addComment, startCanvass } from "@/actions/post";
 import { revertApprovalStatus, updateApprovalStatus } from "@/actions/update";
+import TicketStatusAndActions from "@/app/(protected)/tickets/[ticket_id]/_components/TicketStatusAndActions";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
-import TicketStatusAndActions from "@/components/TicketStatusAndActions";
 import { useUserStore } from "@/stores/userStore";
 import {
   CanvassAttachment,
