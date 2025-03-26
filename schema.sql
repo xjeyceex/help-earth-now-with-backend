@@ -165,7 +165,7 @@ CREATE TABLE notification_table (
   notification_message TEXT NOT NULL,
   notification_read BOOLEAN DEFAULT FALSE,
   notification_url TEXT NULL,
-  notification_created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+  notification_created_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
 -- Enable Supabase Realtime on this table
@@ -256,7 +256,7 @@ RETURNS TABLE (
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_created_by UUID,
-  ticket_date_created TIMESTAMP, -- Added this field
+  ticket_date_created TIMESTAMPTZ, -- Added this field
   shared_users JSON,
   reviewers JSON
 )
@@ -392,10 +392,10 @@ RETURNS TABLE (
   ticket_quantity INTEGER,   
   ticket_specifications TEXT,   
   approval_status TEXT,   
-  ticket_date_created TIMESTAMP,   
-  ticket_last_updated TIMESTAMP,   
+  ticket_date_created TIMESTAMPTZ,   
+  ticket_last_updated TIMESTAMPTZ,   
   ticket_notes TEXT,   
-  ticket_rf_date_received TIMESTAMP,    
+  ticket_rf_date_received TIMESTAMPTZ,    
   shared_users JSON,   
   reviewers JSON 
 ) 
