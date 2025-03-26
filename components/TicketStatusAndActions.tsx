@@ -31,8 +31,11 @@ type Props = {
   ticket: TicketDetailsType;
   statusLoading: boolean;
   isDisabled: boolean;
+  // setTicket: React.Dispatch<React.SetStateAction<TicketDetailsType | null>>;
   setCanvassStartOpen: (open: boolean) => void;
   setApprovalStatus: (status: string) => void;
+  setCancelRequestOpen: (open: boolean) => void;
+
   setCanvassApprovalOpen: (open: boolean) => void;
   handleCanvassAction: (action: string) => void;
   fetchTicketDetails: () => Promise<void>;
@@ -43,6 +46,8 @@ const TicketStatusAndActions = ({
   statusLoading,
   isDisabled,
   setCanvassStartOpen,
+  // setTicket,
+  setCancelRequestOpen,
   fetchTicketDetails,
   setApprovalStatus,
   setCanvassApprovalOpen,
@@ -53,7 +58,6 @@ const TicketStatusAndActions = ({
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [isSharingLoading, setIsSharingLoading] = useState(false);
-
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
     []
   );
@@ -294,7 +298,7 @@ const TicketStatusAndActions = ({
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor = "transparent")
                 }
-                onClick={() => handleCanvassAction("CANCELED")}
+                onClick={() => setCancelRequestOpen(true)} // Open the modal
               >
                 <IconX size={18} />
                 <Text size="sm" fw={600}>

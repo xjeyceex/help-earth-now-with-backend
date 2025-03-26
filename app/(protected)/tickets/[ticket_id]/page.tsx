@@ -62,6 +62,7 @@ const TicketDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [canvasLoading, setCanvasLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cancelRequestOpen, setCancelRequestOpen] = useState(false);
 
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
   const [canvassStartOpen, setCanvassStartOpen] = useState(false);
@@ -403,6 +404,67 @@ const TicketDetailsPage = () => {
     }
   };
 
+  const handleCancelRequest = async () => {
+    if (!user || !ticket) {
+      console.error("User not logged in or ticket is undefined.");
+      return;
+    }
+
+    setStatusLoading(true);
+
+    try {
+      if (newComment.trim()) {
+        // Add comment before reverting approval status
+        const commentId = await addComment(
+          ticket.ticket_id,
+          newComment,
+          user.user_id
+        );
+        setComments((prevComments) => [
+          ...prevComments,
+          {
+            comment_id: commentId,
+            comment_ticket_id: ticket.ticket_id,
+            comment_user_id: user.user_id,
+            comment_content: newComment,
+            comment_date_created: new Date().toISOString(),
+            comment_is_edited: false,
+            comment_type: "COMMENT",
+            comment_user_full_name: user.user_full_name,
+            comment_user_avatar: user?.user_avatar,
+            comment_last_updated: new Date().toISOString(),
+            replies: [],
+          },
+        ]);
+        setNewComment(""); // Clear input after posting
+      }
+
+      // Revert approval status
+      await revertApprovalStatus(ticket.ticket_id);
+
+      // Optimistically update UI
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              ticket_status: "CANCELED",
+              reviewers: prev.reviewers.map((reviewer) => ({
+                ...reviewer,
+                approval_status: "PENDING",
+              })),
+            }
+          : prev
+      );
+
+      handleCanvassAction("CANCELED");
+    } catch (error) {
+      console.error("Error requesting revision:", error);
+    } finally {
+      setStatusLoading(false);
+      setCanvassApprovalOpen(false);
+    }
+  };
+
   const handleCanvassAction = async (status: string) => {
     if (!user || isProcessing) return;
 
@@ -676,6 +738,45 @@ const TicketDetailsPage = () => {
                       </Modal>
 
                       <Modal
+                        opened={cancelRequestOpen}
+                        onClose={() => setCancelRequestOpen(false)}
+                        title="Confirm Cancellation"
+                        centered
+                      >
+                        <Textarea
+                          value={newComment}
+                          onChange={(event) =>
+                            setNewComment(event.target.value)
+                          }
+                          placeholder="Optional comment..."
+                          autosize
+                          minRows={3}
+                        />
+
+                        <Group mt="md" justify="flex-end">
+                          <Button
+                            variant="default"
+                            onClick={() => setCancelRequestOpen(false)}
+                          >
+                            No, Keep It
+                          </Button>
+
+                          <Button
+                            color="red"
+                            loading={statusLoading}
+                            onClick={async () => {
+                              setStatusLoading(true);
+                              await handleCancelRequest();
+                              setStatusLoading(false);
+                              setCancelRequestOpen(false);
+                            }}
+                          >
+                            Yes, Cancel Request
+                          </Button>
+                        </Group>
+                      </Modal>
+
+                      <Modal
                         opened={canvassStartOpen}
                         onClose={() => setCanvassStartOpen(false)}
                         title="Confirm Action"
@@ -713,6 +814,7 @@ const TicketDetailsPage = () => {
                           </Button>
                         </Group>
                       </Modal>
+
                       <br />
 
                       {ticket?.ticket_status !== "FOR CANVASS" && (
@@ -899,6 +1001,7 @@ const TicketDetailsPage = () => {
               ticket={ticket}
               statusLoading={statusLoading}
               isDisabled={isDisabled}
+              setCancelRequestOpen={setCancelRequestOpen}
               fetchTicketDetails={fetchTicketDetails}
               setCanvassStartOpen={setCanvassStartOpen}
               setApprovalStatus={setApprovalStatus}
