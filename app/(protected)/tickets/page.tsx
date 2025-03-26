@@ -61,6 +61,7 @@ type TicketStatus =
   | "CANCELED"
   | "FOR REVIEW OF SUBMISSIONS"
   | "CANCELED"
+  | "DECLINED"
   | "all";
 
 const TicketList = () => {
@@ -95,6 +96,7 @@ const TicketList = () => {
     { value: "FOR APPROVAL", label: "For Approval" },
     { value: "CANCELED", label: "Canceled" },
     { value: "DONE", label: "Done" },
+    { value: "DECLINED", label: "Declined" },
   ];
 
   const handleTabChange = (value: string | null) => {
