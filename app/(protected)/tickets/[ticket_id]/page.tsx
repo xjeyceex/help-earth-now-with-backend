@@ -658,8 +658,45 @@ const TicketDetailsPage = () => {
               {isFormVisible && (
                 <>
                   {/* Ticket Details */}
-                  <Grid gutter="lg" mt={`${isFormVisible ? "lg" : 0}`}>
-                    {/* Left Column (Main Details + Notes) */}
+                  <Grid gutter="lg" mt={isFormVisible ? "lg" : 0}>
+                    {/* Left Column (Item Name, Item Description, Specifications) */}
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                      <Stack gap="lg">
+                        {/* Item Name */}
+                        <Stack gap={4}>
+                          <Text size="md" c="dimmed" fw={500}>
+                            Item Name:
+                          </Text>
+                          <Text fw={500}>{ticket.ticket_item_name}</Text>
+                        </Stack>
+
+                        {/* Item Description */}
+                        <Stack gap={4}>
+                          <Text size="md" c="dimmed" fw={500}>
+                            Item Description:
+                          </Text>
+                          <Text fw={500}>{ticket.ticket_item_description}</Text>
+                        </Stack>
+
+                        {/* Specifications */}
+                        {ticket.ticket_specifications && (
+                          <Stack gap={0}>
+                            <Text size="md" c="dimmed" fw={500}>
+                              Specifications:
+                            </Text>
+                            <Text
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(
+                                  ticket.ticket_specifications
+                                ),
+                              }}
+                            />
+                          </Stack>
+                        )}
+                      </Stack>
+                    </Grid.Col>
+
+                    {/* Right Column (RF Date Received, Quantity, Notes) */}
                     <Grid.Col span={{ base: 12, sm: 6 }}>
                       <Stack gap="lg">
                         {/* RF Date Received */}
@@ -678,22 +715,6 @@ const TicketDetailsPage = () => {
                           </Text>
                         </Stack>
 
-                        {/* Item Name */}
-                        <Stack gap={4}>
-                          <Text size="md" c="dimmed" fw={500}>
-                            Item Name:
-                          </Text>
-                          <Text fw={500}>{ticket.ticket_item_name}</Text>
-                        </Stack>
-
-                        {/* Item Description */}
-                        <Stack gap={4}>
-                          <Text size="md" c="dimmed" fw={500}>
-                            Item Description:
-                          </Text>
-                          <Text fw={500}>{ticket.ticket_item_description}</Text>
-                        </Stack>
-
                         {/* Quantity */}
                         <Stack gap={4}>
                           <Text size="md" c="dimmed" fw={500}>
@@ -702,7 +723,7 @@ const TicketDetailsPage = () => {
                           <Text fw={500}>{ticket.ticket_quantity}</Text>
                         </Stack>
 
-                        {/* Notes (Moved Back to Left) */}
+                        {/* Notes */}
                         {ticket.ticket_notes && (
                           <Stack gap={4}>
                             <Text size="md" c="dimmed" fw={500}>
@@ -711,27 +732,6 @@ const TicketDetailsPage = () => {
                             <Text
                               dangerouslySetInnerHTML={{
                                 __html: DOMPurify.sanitize(ticket.ticket_notes),
-                              }}
-                            />
-                          </Stack>
-                        )}
-                      </Stack>
-                    </Grid.Col>
-
-                    {/* Right Column (Specifications Only) */}
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                      <Stack gap="lg">
-                        {/* Specifications */}
-                        {ticket.ticket_specifications && (
-                          <Stack gap={0}>
-                            <Text size="md" c="dimmed" fw={500}>
-                              Specifications:
-                            </Text>
-                            <Text
-                              dangerouslySetInnerHTML={{
-                                __html: DOMPurify.sanitize(
-                                  ticket.ticket_specifications
-                                ),
                               }}
                             />
                           </Stack>
