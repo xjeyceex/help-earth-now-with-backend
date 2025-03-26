@@ -1,12 +1,11 @@
 "use client";
 
 import {
-  getAllUsers,
   getCanvassDetails,
   getComments,
   getTicketDetails,
 } from "@/actions/get";
-import { addComment, shareTicket, startCanvass } from "@/actions/post";
+import { addComment, startCanvass } from "@/actions/post";
 import { updateApprovalStatus } from "@/actions/update";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
@@ -19,25 +18,29 @@ import {
   TicketDetailsType,
 } from "@/utils/types";
 import {
+  ActionIcon,
+  Alert,
   Avatar,
   Badge,
   Box,
   Button,
-  Card,
   Center,
   Collapse,
   Container,
-  Flex,
+  Divider,
+  Grid,
   Group,
   Loader,
   Modal,
-  MultiSelect,
+  Paper,
   Skeleton,
   Stack,
   Text,
   Textarea,
   ThemeIcon,
   Title,
+  Tooltip,
+  useMantineColorScheme,
 } from "@mantine/core";
 import {
   IconArrowLeft,
@@ -45,6 +48,7 @@ import {
   IconChevronUp,
   IconClipboardCheck,
   IconClipboardX,
+  IconClock,
   IconFile,
   IconFileText,
   IconPlus,
@@ -53,28 +57,27 @@ import {
 } from "@tabler/icons-react";
 import DOMPurify from "dompurify";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ShareTicketModal from "./_components/ShareTicketModal";
 
 const TicketDetailsPage = () => {
   const { ticket_id } = useParams() as { ticket_id: string };
   const { user } = useUserStore();
   const { setComments } = useCommentsStore();
+  const router = useRouter();
+  const { colorScheme } = useMantineColorScheme();
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
-    null,
+    null
   );
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
   const [loading, setLoading] = useState(true);
   const [canvasLoading, setCanvasLoading] = useState(true);
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
-  );
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
   const [canvassStartOpen, setCanvassStartOpen] = useState(false);
   const [canvassApprovalOpen, setCanvassApprovalOpen] = useState(false);
@@ -102,10 +105,10 @@ const TicketDetailsPage = () => {
             reviewers: prev.reviewers.map((reviewer) =>
               reviewer.reviewer_id === user.user_id
                 ? { ...reviewer, approval_status: newApprovalStatus }
-                : reviewer,
+                : reviewer
             ),
           }
-        : null,
+        : null
     );
 
     try {
@@ -136,10 +139,10 @@ const TicketDetailsPage = () => {
               reviewers: prev.reviewers.map((reviewer) =>
                 reviewer.reviewer_id === user.user_id
                   ? { ...reviewer, approval_status: "PENDING" } // Reset to a safe fallback
-                  : reviewer,
+                  : reviewer
               ),
             }
-          : null,
+          : null
       );
     } finally {
       setStatusLoading(false);
@@ -159,7 +162,7 @@ const TicketDetailsPage = () => {
       }
 
       setTicket((prev) =>
-        prev ? { ...prev, ticket_status: "WORK IN PROGRESS" } : null,
+        prev ? { ...prev, ticket_status: "WORK IN PROGRESS" } : null
       );
 
       await handleCanvassAction("WORK IN PROGRESS");
@@ -169,29 +172,11 @@ const TicketDetailsPage = () => {
       console.error("Error adding comment or starting canvass:", error);
 
       setTicket((prev) =>
-        prev ? { ...prev, ticket_status: "FOR CANVASS" } : null,
+        prev ? { ...prev, ticket_status: "FOR CANVASS" } : null
       );
     } finally {
       setStatusLoading(false);
     }
-  };
-
-  const handleShareTicket = async () => {
-    if (!selectedUsers.length || !ticket_id) return;
-
-    // Share the ticket with each selected user
-    await Promise.all(
-      selectedUsers.map((userId) => shareTicket(ticket_id, userId)),
-    );
-
-    // Filter out the selected users from the dropdown
-    setAllUsers((prev) =>
-      prev.filter((user) => !selectedUsers.includes(user.value)),
-    );
-
-    setIsSharing(false);
-    fetchTicketDetails();
-    setSelectedUsers([]);
   };
 
   const handleCanvassAction = async (status: string) => {
@@ -214,17 +199,6 @@ const TicketDetailsPage = () => {
       setTicket(tickets[0]);
     }
     setLoading(false);
-  };
-
-  const fetchUsers = async () => {
-    const users = await getAllUsers(ticket_id);
-
-    if ("error" in users) {
-      console.error(users.message);
-      return;
-    }
-
-    setAllUsers(users);
   };
 
   const fetchCanvassDetails = async () => {
@@ -251,7 +225,6 @@ const TicketDetailsPage = () => {
   useEffect(() => {
     fetchTicketDetails();
     fetchComments();
-    fetchUsers();
     fetchCanvassDetails();
   }, []);
 
@@ -273,10 +246,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isSharedToMe = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+    (u) => u.user_id === user?.user_id
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
 
   // ✅ Check if the user is the creator of the ticket
@@ -295,32 +268,103 @@ const TicketDetailsPage = () => {
   }
 
   return (
-    <Container size="xl" py="xl">
-      <Flex justify="flex-start" align="center" gap="lg">
-        <Link href="/tickets">
-          <Button variant="light" leftSection={<IconArrowLeft size={16} />}>
-            Go back
-          </Button>
-        </Link>
-      </Flex>
-      <Group align="start" grow w="100%">
-        <Card shadow="sm" mt="lg" radius="sm" withBorder px={30}>
-          <Title ta="left" my={20} fz="h3">
-            Ticket Details
+    <Box p={{ base: "lg", sm: "xl" }}>
+      {/* Header Section with Back Button */}
+      <Stack gap={2} mb="md">
+        <Button
+          variant="light"
+          onClick={() => router.push("/tickets")}
+          leftSection={<IconArrowLeft size={16} />}
+          radius="md"
+          w="fit-content"
+          mb="xl"
+        >
+          Back to Tickets
+        </Button>
+        <Group>
+          <Title
+            order={2}
+            styles={(theme) => ({
+              root: {
+                fontSize: "2rem",
+                fontWeight: 600,
+                color: theme.colors.dark[8],
+                borderLeft: `4px solid ${theme.colors.blue[5]}`,
+                paddingLeft: "16px",
+                position: "relative",
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  bottom: -4,
+                  left: 16,
+                  width: "40%",
+                  height: "2px",
+                  background: theme.colors.gray[3],
+                },
+              },
+            })}
+          >
+            Ticket ID:{" "}
+            <Badge
+              fz="lg"
+              fw={600}
+              p="md"
+              style={{ position: "relative", top: -4 }}
+            >
+              {ticket_id}
+            </Badge>
           </Title>
-          <Flex w="100%" gap="md">
-            <Box w="70%">
-              <Card shadow="sm" radius="sm" withBorder px={30}>
-                <Group justify="space-between">
-                  <Group>
-                    <Avatar
-                      src={ticket.ticket_created_by_avatar}
-                      radius="xl"
-                      size="md"
-                    />
-                    <Text size="sm" c="dimmed">
-                      <strong>{ticket.ticket_created_by_name}</strong> raised
-                      this on{" "}
+        </Group>
+      </Stack>
+
+      {/* Main Content Grid */}
+      <Grid gutter="xl">
+        {/* Left Column */}
+        <Grid.Col span={{ base: 12, md: 8 }}>
+          <Paper
+            radius="lg"
+            shadow="sm"
+            p="xl"
+            withBorder
+            style={(theme) => ({
+              borderColor:
+                colorScheme === "dark"
+                  ? theme.colors.dark[5]
+                  : theme.colors.gray[1],
+            })}
+          >
+            {/* Ticket Header */}
+            <Group align="center" justify="space-between" mb="xl">
+              <Group gap="lg">
+                <Box pos="relative">
+                  <Avatar
+                    src={ticket.ticket_created_by_avatar}
+                    radius="xl"
+                    size={64}
+                  />
+                  <Badge
+                    size="xs"
+                    variant="filled"
+                    color="blue"
+                    pos="absolute"
+                    bottom={-4}
+                    right={-4}
+                  >
+                    Creator
+                  </Badge>
+                </Box>
+                <Stack gap={4}>
+                  <Text size="sm" fw={600} tt="uppercase" c="dimmed">
+                    Created by
+                  </Text>
+                  <Text size="xl" fw={700}>
+                    {ticket.ticket_created_by_name}
+                  </Text>
+                  <Group gap={6}>
+                    <ThemeIcon size="xs" color="gray" variant="light">
+                      <IconClock size={12} />
+                    </ThemeIcon>
+                    <Text size="xs" c="dimmed">
                       {new Date(ticket.ticket_date_created).toLocaleString(
                         "en-US",
                         {
@@ -330,622 +374,685 @@ const TicketDetailsPage = () => {
                           hour: "numeric",
                           minute: "numeric",
                           hour12: true,
-                        },
+                        }
                       )}
                     </Text>
                   </Group>
-                  <Text
-                    size="sm"
-                    c="blue"
-                    style={{
-                      cursor: "pointer",
-                      textDecoration: "none",
-                      transition: "text-decoration 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.textDecoration = "underline")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.textDecoration = "none")
-                    }
-                    onClick={() => setIsFormVisible((prev) => !prev)}
-                  >
-                    {isFormVisible ? "Hide details" : "Show details"}
-                  </Text>
-                </Group>
+                </Stack>
+              </Group>
+              <Tooltip label={isFormVisible ? "Hide details" : "Show details"}>
+                <ActionIcon
+                  variant={isFormVisible ? "filled" : "light"}
+                  onClick={() => setIsFormVisible((prev) => !prev)}
+                  color={isFormVisible ? "blue" : "gray"}
+                  radius="xl"
+                  size={36}
+                >
+                  {isFormVisible ? (
+                    <IconChevronUp size={18} />
+                  ) : (
+                    <IconChevronDown size={18} />
+                  )}
+                </ActionIcon>
+              </Tooltip>
+            </Group>
 
-                <Collapse in={isFormVisible}>
-                  {isFormVisible && (
-                    <>
-                      <Box p="md">
-                        <Stack align="start" px="md" gap="md">
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              RF Date Received:
+            {/* Ticket Details Collapse */}
+            <Collapse in={isFormVisible} mt="xl">
+              <Stack gap="xl">
+                {/* RF Date and Item Info */}
+                <Grid gutter="xl">
+                  <Grid.Col span={12}>
+                    <Stack gap="xl">
+                      <TicketDetailsItem
+                        label="RF Date Received"
+                        value={ticket.ticket_rf_date_received}
+                      />
+                      <TicketDetailsItem
+                        label="Item Name"
+                        value={ticket.ticket_item_name}
+                      />
+                      <TicketDetailsItem
+                        label="Quantity"
+                        value={ticket.ticket_quantity}
+                      />
+
+                      {ticket.ticket_specifications && (
+                        <Stack gap={0}>
+                          <Text size="md" c="dimmed" fw={500}>
+                            Specifications
+                          </Text>
+                          <Box>
+                            <Text
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(
+                                  ticket.ticket_specifications
+                                ),
+                              }}
+                            />
+                          </Box>
+                        </Stack>
+                      )}
+
+                      {ticket.ticket_notes && (
+                        <Stack gap={4}>
+                          <Text size="md" c="dimmed" fw={500}>
+                            Notes
+                          </Text>
+                          <Box>
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(ticket.ticket_notes),
+                              }}
+                            />
+                          </Box>
+                        </Stack>
+                      )}
+
+                      {/* Reviewers */}
+                      {statusLoading ? (
+                        <Skeleton height={24} radius="md" />
+                      ) : (
+                        <Box>
+                          <Stack gap="md">
+                            <Text size="md" c="dimmed" fw={500}>
+                              Reviewers
                             </Text>
-                            <Text size="sm">
-                              {new Date(
-                                ticket.ticket_rf_date_received,
-                              ).toLocaleString("en-US", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </Text>
-                          </Stack>
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              Item Name:
-                            </Text>
-                            <Text size="sm">{ticket.ticket_item_name}</Text>
-                          </Stack>
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              Item Description:
-                            </Text>
-                            <Text size="sm">
-                              {ticket.ticket_item_description}
-                            </Text>
-                          </Stack>
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              Quantity:
-                            </Text>
-                            <Text size="sm">{ticket.ticket_quantity}</Text>
-                          </Stack>
-                          <Stack gap="0">
-                            <Text size="md" fw={600} ta="left">
-                              Specifications:
-                            </Text>
-                            <Text size="md">
-                              <span
-                                dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(
-                                    ticket.ticket_specifications,
-                                  ),
-                                }}
-                              />
-                            </Text>
-                          </Stack>
-                          <Stack gap="0">
-                            <Text size="md" fw={600} ta="left">
-                              Notes:
-                            </Text>
-                            <Text size="md">
-                              <span
-                                dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(
-                                    ticket.ticket_notes,
-                                  ),
-                                }}
-                              />
-                            </Text>
-                          </Stack>
-                          {statusLoading ? (
-                            <Skeleton height={24} width={120} radius="sm" />
-                          ) : (
-                            <Stack gap="sm">
-                              <Text size="md" fw={600} ta="left">
-                                Reviewers:
-                              </Text>
-                              {ticket.reviewers.length > 0 ? (
-                                ticket.reviewers.map((reviewer) => (
-                                  <Group key={reviewer.reviewer_id} gap="xs">
-                                    <Text size="sm">
-                                      {reviewer.reviewer_name}
-                                    </Text>
-                                    <Badge
-                                      color={
-                                        reviewer.approval_status === "APPROVED"
-                                          ? "green"
-                                          : reviewer.approval_status ===
+                            {ticket.reviewers.length > 0 ? (
+                              <Stack gap="xs">
+                                {ticket.reviewers.map((reviewer) => (
+                                  <Box key={reviewer.reviewer_id}>
+                                    <Group justify="space-between">
+                                      <Group gap="md">
+                                        <Avatar
+                                          radius="xl"
+                                          size="md"
+                                          color={
+                                            reviewer.approval_status ===
+                                            "APPROVED"
+                                              ? "green"
+                                              : reviewer.approval_status ===
+                                                "REJECTED"
+                                              ? "red"
+                                              : "gray"
+                                          }
+                                        >
+                                          {reviewer.reviewer_name.charAt(0)}
+                                        </Avatar>
+                                        <Text fw={500}>
+                                          {reviewer.reviewer_name}
+                                        </Text>
+                                      </Group>
+                                      <Badge
+                                        variant="dot"
+                                        size="lg"
+                                        color={
+                                          reviewer.approval_status ===
+                                          "APPROVED"
+                                            ? "green"
+                                            : reviewer.approval_status ===
                                               "REJECTED"
                                             ? "red"
                                             : "gray"
-                                      }
-                                      size="xs"
-                                    >
-                                      {reviewer.approval_status}
-                                    </Badge>
-                                  </Group>
-                                ))
+                                        }
+                                      >
+                                        {reviewer.approval_status}
+                                      </Badge>
+                                    </Group>
+                                  </Box>
+                                ))}
+                              </Stack>
+                            ) : (
+                              <Alert variant="light" color="gray" radius="md">
+                                <Text size="sm">No reviewers assigned yet</Text>
+                              </Alert>
+                            )}
+                          </Stack>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Grid.Col>
+                </Grid>
+
+                {/* Canvass Form Section */}
+                {ticket?.ticket_status !== "FOR CANVASS" && (
+                  <>
+                    <Divider />
+                    <Box
+                      onClick={
+                        !isCanvasVisible
+                          ? () => setIsCanvasVisible(true)
+                          : undefined
+                      }
+                    >
+                      {canvasLoading ? (
+                        <Center>
+                          <Loader size="sm" variant="dots" />
+                        </Center>
+                      ) : (
+                        <Stack gap="xl">
+                          <Group
+                            justify="space-between"
+                            onClick={
+                              isCanvasVisible
+                                ? () => setIsCanvasVisible(false)
+                                : undefined
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            <Group gap="md">
+                              <ThemeIcon
+                                size="xl"
+                                radius="md"
+                                variant="light"
+                                color="blue"
+                              >
+                                <IconFileText size={20} stroke={1.5} />
+                              </ThemeIcon>
+                              <Text fw={600}>Canvass Form</Text>
+                            </Group>
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              radius="xl"
+                            >
+                              {isCanvasVisible ? (
+                                <IconChevronUp size={20} stroke={1.5} />
                               ) : (
-                                <Text size="sm" c="dimmed">
-                                  No reviewers assigned
-                                </Text>
+                                <IconChevronDown size={20} stroke={1.5} />
                               )}
-                            </Stack>
-                          )}
+                            </ActionIcon>
+                          </Group>
+
+                          <Collapse in={isCanvasVisible}>
+                            {(canvassDetails?.length ?? 0) > 0 ? (
+                              <Stack gap="xl">
+                                {canvassDetails?.map(
+                                  (canvass: CanvassDetail) => (
+                                    <Box key={canvass.canvass_form_id}>
+                                      <Grid gutter="xl">
+                                        <Grid.Col span={6}>
+                                          <Stack gap="xl">
+                                            <TicketDetailsItem
+                                              label="RF Date Received"
+                                              value={
+                                                canvass.canvass_form_rf_date_received
+                                              }
+                                            />
+                                            <TicketDetailsItem
+                                              label="Lead Time"
+                                              value={
+                                                canvass.canvass_form_lead_time_day
+                                              }
+                                            />
+                                            <TicketDetailsItem
+                                              label="Payment Terms"
+                                              value={
+                                                canvass.canvass_form_payment_terms
+                                              }
+                                            />
+                                            <Stack gap={4}>
+                                              <Text
+                                                size="md"
+                                                c="dimmed"
+                                                fw={500}
+                                              >
+                                                Submitted By
+                                              </Text>
+                                              <Group gap="md">
+                                                <Avatar radius="xl" size="md">
+                                                  {canvass.submitted_by.user_full_name?.charAt(
+                                                    0
+                                                  )}
+                                                </Avatar>
+                                                <Stack gap={0}>
+                                                  <Text fw={500}>
+                                                    {canvass.submitted_by
+                                                      .user_full_name ||
+                                                      "Unknown"}
+                                                  </Text>
+                                                  <Text size="xs" c="dimmed">
+                                                    {new Date(
+                                                      canvass.canvass_form_date_submitted
+                                                    ).toLocaleString()}
+                                                  </Text>
+                                                </Stack>
+                                              </Group>
+                                            </Stack>
+                                          </Stack>
+                                        </Grid.Col>
+                                        <Grid.Col span={6}>
+                                          <Stack gap="xl">
+                                            <TicketDetailsItem
+                                              label="Recommended Supplier"
+                                              value={
+                                                canvass.canvass_form_recommended_supplier
+                                              }
+                                            />
+                                            <TicketDetailsItem
+                                              label="Total Amount"
+                                              value={
+                                                canvass.canvass_form_total_amount
+                                              }
+                                            />
+                                            {canvass.attachments.length > 0 && (
+                                              <Stack gap={4}>
+                                                <Text
+                                                  size="md"
+                                                  c="dimmed"
+                                                  fw={500}
+                                                >
+                                                  Attachments
+                                                </Text>
+                                                <Group gap="xs">
+                                                  {canvass.attachments.map(
+                                                    (
+                                                      attachment: CanvassAttachment
+                                                    ) => (
+                                                      <Link
+                                                        key={
+                                                          attachment.canvass_attachment_id
+                                                        }
+                                                        href={
+                                                          attachment.canvass_attachment_url ||
+                                                          "#"
+                                                        }
+                                                        target="_blank"
+                                                      >
+                                                        <Tooltip
+                                                          label={`${
+                                                            attachment.canvass_attachment_type ||
+                                                            "Document"
+                                                          } - ${new Date(
+                                                            attachment.canvass_attachment_created_at
+                                                          ).toLocaleDateString()}`}
+                                                        >
+                                                          <ActionIcon
+                                                            variant="light"
+                                                            color="blue"
+                                                            size="lg"
+                                                            radius="md"
+                                                          >
+                                                            <IconFile
+                                                              size={20}
+                                                            />
+                                                          </ActionIcon>
+                                                        </Tooltip>
+                                                      </Link>
+                                                    )
+                                                  )}
+                                                </Group>
+                                              </Stack>
+                                            )}
+                                          </Stack>
+                                        </Grid.Col>
+                                      </Grid>
+                                    </Box>
+                                  )
+                                )}
+                              </Stack>
+                            ) : user?.user_id === ticket?.ticket_created_by ? (
+                              <CanvassForm
+                                ticketId={ticket?.ticket_id}
+                                updateCanvassDetails={fetchCanvassDetails}
+                                setTicket={setTicket}
+                              />
+                            ) : (
+                              <Alert variant="light" color="gray" radius="md">
+                                <Text>Canvass form is not available yet.</Text>
+                              </Alert>
+                            )}
+                          </Collapse>
                         </Stack>
-                      </Box>
-                      <Modal
-                        opened={canvassApprovalOpen}
-                        onClose={() => setCanvassApprovalOpen(false)}
-                        title={`Confirm ${
-                          approvalStatus === "IN REVIEW"
-                            ? "Approval"
-                            : "Decline"
-                        }`}
-                        centered
+                      )}
+                    </Box>
+                  </>
+                )}
+              </Stack>
+            </Collapse>
+          </Paper>
+
+          {/* Activity Section */}
+          <Paper
+            mt="xl"
+            radius="lg"
+            shadow="sm"
+            p="xl"
+            withBorder
+            style={(theme) => ({
+              borderColor:
+                colorScheme === "dark"
+                  ? theme.colors.dark[5]
+                  : theme.colors.gray[1],
+            })}
+          >
+            <Stack gap="xl">
+              <Group justify="space-between" align="center">
+                <Title order={4}>Activity</Title>
+              </Group>
+              <Box className="comment-thread-container">
+                <CommentThread ticket_id={ticket_id} />
+              </Box>
+            </Stack>
+          </Paper>
+        </Grid.Col>
+
+        {/* Right Column - Status and Actions */}
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <Paper
+            radius="lg"
+            shadow="sm"
+            p="xl"
+            withBorder
+            style={(theme) => ({
+              borderColor:
+                colorScheme === "dark"
+                  ? theme.colors.dark[5]
+                  : theme.colors.gray[1],
+            })}
+          >
+            <Stack gap="xl">
+              {/* Status Section */}
+              <Box>
+                <Text size="md" fw={500} c="dimmed" mb="md">
+                  Status
+                </Text>
+                {statusLoading ? (
+                  <Skeleton height={40} radius="md" />
+                ) : (
+                  <Badge
+                    py="md"
+                    size="lg"
+                    radius="md"
+                    color={
+                      ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
+                        ? "yellow"
+                        : ticket?.ticket_status === "IN REVIEW"
+                        ? "blue"
+                        : ticket?.ticket_status === "WORK IN PROGRESS"
+                        ? "indigo"
+                        : ticket?.ticket_status === "DONE"
+                        ? "teal"
+                        : ticket?.ticket_status === "CANCELED"
+                        ? "red"
+                        : "gray"
+                    }
+                    fullWidth
+                  >
+                    {ticket?.ticket_status}
+                  </Badge>
+                )}
+              </Box>
+
+              {/* Actions Section */}
+              {ticket?.ticket_status !== "CANCELED" && (
+                <Box>
+                  <Text size="md" fw={500} c="dimmed" mb="md">
+                    Actions
+                  </Text>
+                  <Stack gap="sm">
+                    {ticket?.ticket_status === "FOR CANVASS" && isCreator && (
+                      <Button
+                        leftSection={<IconClipboardCheck size={18} />}
+                        radius="md"
+                        variant="light"
+                        color="blue"
+                        fullWidth
+                        onClick={() => setCanvassStartOpen(true)}
                       >
-                        <Textarea
-                          value={newComment}
-                          onChange={(event) =>
-                            setNewComment(event.target.value)
-                          }
-                          placeholder="Optional comment..."
-                          autosize
-                          minRows={3}
-                        />
+                        Start Canvass
+                      </Button>
+                    )}
 
-                        <Group mt="md" justify="flex-end">
-                          <Button
-                            variant="default"
-                            onClick={() => setCanvassApprovalOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button color="blue" onClick={handleApprovalConfirm}>
-                            {approvalStatus === "IN REVIEW"
-                              ? "Approve"
-                              : "Decline"}
-                          </Button>
-                        </Group>
-                      </Modal>
-                      <Modal
-                        opened={canvassStartOpen}
-                        onClose={() => setCanvassStartOpen(false)}
-                        title="Confirm Action"
-                        centered
-                      >
-                        <Textarea
-                          value={newComment}
-                          onChange={(event) =>
-                            setNewComment(event.target.value)
-                          }
-                          placeholder="Optional comment..."
-                          autosize
-                          minRows={3}
-                        />
-
-                        <Group mt="md" justify="flex-end">
-                          <Button
-                            variant="default"
-                            onClick={() => setCanvassStartOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button color="blue" onClick={handleStartConfirm}>
-                            Start Canvass
-                          </Button>
-                        </Group>
-                      </Modal>
-
-                      {(isAdmin ||
-                        ticket?.ticket_created_by === user?.user_id) && (
+                    {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
+                      isReviewer && (
                         <>
-                          <Modal
-                            opened={isSharing}
-                            onClose={() => setIsSharing(false)}
-                            title="Share Ticket"
-                            centered
+                          <Button
+                            leftSection={<IconClipboardCheck size={18} />}
+                            radius="md"
+                            color="teal"
+                            fullWidth
+                            onClick={() => {
+                              setApprovalStatus("IN REVIEW");
+                              setCanvassApprovalOpen(true);
+                            }}
                           >
-                            <MultiSelect
-                              data={allUsers}
-                              value={selectedUsers}
-                              onChange={setSelectedUsers}
-                              placeholder="Select users to share with"
-                              searchable
-                              clearable
-                            />
-                            <Button onClick={handleShareTicket} mt="md">
-                              Share
-                            </Button>
-                          </Modal>
+                            Approve
+                          </Button>
+                          <Button
+                            leftSection={<IconClipboardX size={18} />}
+                            radius="md"
+                            color="red"
+                            variant="light"
+                            fullWidth
+                            onClick={() => {
+                              setApprovalStatus("DECLINED");
+                              setCanvassApprovalOpen(true);
+                            }}
+                          >
+                            Decline
+                          </Button>
                         </>
                       )}
 
-                      <br />
-
-                      {ticket?.ticket_status !== "FOR CANVASS" && (
-                        <Card
-                          shadow="sm"
-                          radius="sm"
-                          withBorder
-                          px={30}
-                          style={{
-                            cursor: !isCanvasVisible ? "pointer" : "default",
-                          }} // Change cursor based on collapse state
-                          onClick={
-                            !isCanvasVisible
-                              ? () => setIsCanvasVisible(true)
-                              : undefined
-                          }
-                        >
-                          {canvasLoading ? (
-                            <Center p="md">
-                              <Loader size="sm" />
-                            </Center>
-                          ) : (
-                            <Stack p={0}>
-                              <Stack
-                                w="100%"
-                                onClick={
-                                  isCanvasVisible
-                                    ? () => setIsCanvasVisible(false)
-                                    : undefined
-                                } // Click only the header to collapse when open
-                                style={{ cursor: "pointer" }}
-                              >
-                                <Group justify="space-between">
-                                  <Group gap={6}>
-                                    <IconFileText size={18} stroke={1.5} />
-                                    <Text size="sm">Canvass Form</Text>
-                                  </Group>
-
-                                  <Text size="sm">
-                                    {isCanvasVisible ? (
-                                      <IconChevronUp size={18} />
-                                    ) : (
-                                      <IconChevronDown size={18} />
-                                    )}
-                                  </Text>
-                                </Group>
-                              </Stack>
-
-                              <Collapse in={isCanvasVisible}>
-                                {(canvassDetails?.length ?? 0) > 0 ? (
-                                  <>
-                                    {canvassDetails?.map(
-                                      (canvass: CanvassDetail) => (
-                                        <Stack
-                                          key={canvass.canvass_form_id}
-                                          px="sm"
-                                        >
-                                          <Text>
-                                            <strong>RF Date Received:</strong>{" "}
-                                            {new Date(
-                                              canvass.canvass_form_rf_date_received,
-                                            ).toLocaleDateString("en-US", {
-                                              day: "2-digit",
-                                              month: "short",
-                                              year: "numeric",
-                                            })}
-                                          </Text>
-                                          <Text>
-                                            <strong>
-                                              Recommended Supplier:
-                                            </strong>{" "}
-                                            {
-                                              canvass.canvass_form_recommended_supplier
-                                            }
-                                          </Text>
-                                          <Text>
-                                            <strong>Lead Time (days):</strong>{" "}
-                                            {canvass.canvass_form_lead_time_day}
-                                          </Text>
-                                          <Text>
-                                            <strong>Total Amount:</strong> ₱
-                                            {canvass.canvass_form_total_amount.toFixed(
-                                              2,
-                                            )}
-                                          </Text>
-                                          {canvass.canvass_form_payment_terms && (
-                                            <Text>
-                                              <strong>Payment Terms:</strong>{" "}
-                                              {
-                                                canvass.canvass_form_payment_terms
-                                              }
-                                            </Text>
-                                          )}
-                                          <Text>
-                                            <strong>Submitted By:</strong>{" "}
-                                            {canvass.submitted_by
-                                              .user_full_name || "Unknown"}
-                                          </Text>
-                                          <Text>
-                                            <strong>Date Submitted:</strong>{" "}
-                                            {new Date(
-                                              canvass.canvass_form_date_submitted,
-                                            ).toLocaleDateString()}
-                                          </Text>
-
-                                          {canvass.attachments.length > 0 && (
-                                            <div>
-                                              <Text fw={600}>Attachments:</Text>
-                                              {canvass.attachments.map(
-                                                (
-                                                  attachment: CanvassAttachment,
-                                                ) => (
-                                                  <Link
-                                                    key={
-                                                      attachment.canvass_attachment_id
-                                                    }
-                                                    href={
-                                                      attachment.canvass_attachment_url ||
-                                                      "#"
-                                                    }
-                                                    target="_blank"
-                                                    style={{
-                                                      color: "#228be6",
-                                                      textDecoration: "none",
-                                                      display: "flex",
-                                                      alignItems: "center",
-                                                      gap: "8px",
-                                                      padding: "4px 0",
-                                                    }}
-                                                  >
-                                                    <IconFile size={16} />
-                                                    {attachment.canvass_attachment_type ||
-                                                      "Document"}{" "}
-                                                    (
-                                                    {new Date(
-                                                      attachment.canvass_attachment_created_at,
-                                                    ).toLocaleDateString()}
-                                                    )
-                                                  </Link>
-                                                ),
-                                              )}
-                                            </div>
-                                          )}
-                                        </Stack>
-                                      ),
-                                    )}
-                                  </>
-                                ) : user?.user_id ===
-                                  ticket?.ticket_created_by ? (
-                                  <CanvassForm
-                                    ticketId={ticket?.ticket_id}
-                                    updateCanvassDetails={fetchCanvassDetails}
-                                    setTicket={setTicket}
-                                  />
-                                ) : (
-                                  <Text p="md" c="dimmed">
-                                    Canvass form is not available yet.
-                                  </Text>
-                                )}
-                              </Collapse>
-                            </Stack>
-                          )}
-                        </Card>
-                      )}
-                    </>
-                  )}
-                </Collapse>
-              </Card>
-
-              <Text size="md" mt="xl" fw="500">
-                {" "}
-                Activity
-              </Text>
-              <CommentThread ticket_id={ticket_id} />
-            </Box>
-            <Box w="30%" p="md">
-              <Stack align="start" px="md">
-                <Stack gap="sm">
-                  <Group gap="xs" align="center" wrap="nowrap">
-                    <Text size="sm" fw={600} ta="left">
-                      Ticket Status:
-                    </Text>
-                  </Group>
-
-                  {statusLoading ? (
-                    <Skeleton height={24} width={120} radius="sm" />
-                  ) : (
-                    <Badge
-                      color={
-                        ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
-                          ? "yellow"
-                          : ticket?.ticket_status === "IN REVIEW"
-                            ? "blue"
-                            : ticket?.ticket_status === "WORK IN PROGRESS"
-                              ? "blue"
-                              : ticket?.ticket_status === "DONE"
-                                ? "green"
-                                : ticket?.ticket_status === "DECLINED"
-                                  ? "red"
-                                  : "gray"
-                      }
-                      size="md"
-                      variant="filled"
-                      radius="sm"
+                    <Button
+                      variant="light"
+                      color="red"
+                      leftSection={<IconX size={18} />}
+                      radius="md"
+                      fullWidth
+                      onClick={() => handleCanvassAction("CANCELED")}
                     >
-                      {ticket?.ticket_status}
-                    </Badge>
+                      Cancel Request
+                    </Button>
+                  </Stack>
+                </Box>
+              )}
+
+              <Divider />
+
+              {/* Request Info Section */}
+              <Box>
+                <Text size="md" fw={500} c="dimmed" mb="md">
+                  Request Details
+                </Text>
+                <Group gap="md">
+                  <ThemeIcon size="xl" color="blue" variant="light" radius="md">
+                    <IconShoppingCartFilled size={20} />
+                  </ThemeIcon>
+                  <Stack gap={2}>
+                    <Text size="md" fw={500}>
+                      Sourcing
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                      Procurement Request
+                    </Text>
+                  </Stack>
+                </Group>
+              </Box>
+
+              <Divider />
+
+              {/* Shared with Section */}
+              <Box>
+                <Group justify="space-between" mb="md">
+                  <Text size="md" fw={500} c="dimmed">
+                    Shared with
+                  </Text>
+
+                  {isCreator && (
+                    <Tooltip label="Share ticket">
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        onClick={() => setIsSharing(true)}
+                        radius="md"
+                        size="md"
+                      >
+                        <IconPlus size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                </Group>
+
+                <Stack gap="sm">
+                  {/* Shared Users */}
+                  {ticket.shared_users.map((user) => (
+                    <Group key={user.user_id}>
+                      <Avatar src={user.user_avatar} radius="xl" size="md" />
+                      <Text size="sm" fw={500}>
+                        {user.user_full_name}
+                      </Text>
+                    </Group>
+                  ))}
+
+                  {ticket.shared_users.length === 0 && (
+                    <Text c="dimmed" size="sm">
+                      No one has been shared with yet
+                    </Text>
                   )}
                 </Stack>
+              </Box>
+            </Stack>
+          </Paper>
+        </Grid.Col>
+      </Grid>
 
-                {/* Actions */}
-                {ticket?.ticket_status !== "CANCELED" && (
-                  <>
-                    <Group gap="xs" align="center" wrap="nowrap">
-                      <Text size="sm" fw={600} ta="left">
-                        Actions:
-                      </Text>
-                    </Group>
-                    <Stack gap="md">
-                      {ticket?.ticket_status === "FOR CANVASS" && isCreator && (
-                        <Group
-                          gap="sm"
-                          align="center"
-                          wrap="nowrap"
-                          style={{
-                            cursor: "pointer",
-                            transition: "transform 0.2s ease",
-                            borderRadius: "4px",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor = "gray")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor =
-                              "transparent")
-                          }
-                          onClick={() => setCanvassStartOpen(true)} // Open the modal first
-                        >
-                          <IconClipboardCheck size={18} />
-                          <Text size="sm" fw={600}>
-                            Start Canvass
-                          </Text>
-                        </Group>
-                      )}
+      {/* Enhanced Modals */}
+      <Modal
+        opened={canvassApprovalOpen}
+        onClose={() => setCanvassApprovalOpen(false)}
+        title={
+          <Group>
+            <ThemeIcon
+              size="lg"
+              radius="md"
+              variant="gradient"
+              gradient={
+                approvalStatus === "IN REVIEW"
+                  ? { from: "teal", to: "lime" }
+                  : { from: "red", to: "pink" }
+              }
+            >
+              {approvalStatus === "IN REVIEW" ? (
+                <IconClipboardCheck size={20} />
+              ) : (
+                <IconClipboardX size={20} />
+              )}
+            </ThemeIcon>
+            <Text fw={500}>
+              Confirm {approvalStatus === "IN REVIEW" ? "Approval" : "Decline"}
+            </Text>
+          </Group>
+        }
+        centered
+        size="md"
+        radius="lg"
+      >
+        <Stack gap="xl">
+          <Textarea
+            value={newComment}
+            onChange={(event) => setNewComment(event.target.value)}
+            placeholder="Add an optional comment..."
+            label="Comment"
+            autosize
+            minRows={3}
+            radius="md"
+          />
+          <Group justify="flex-end">
+            <Button
+              variant="light"
+              color="gray"
+              onClick={() => setCanvassApprovalOpen(false)}
+              radius="md"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="gradient"
+              gradient={
+                approvalStatus === "IN REVIEW"
+                  ? { from: "teal", to: "lime" }
+                  : { from: "red", to: "pink" }
+              }
+              onClick={handleApprovalConfirm}
+              radius="md"
+            >
+              {approvalStatus === "IN REVIEW" ? "Approve" : "Decline"}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-                      {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
-                        isReviewer && (
-                          <>
-                            <Group
-                              gap="sm"
-                              align="center"
-                              wrap="nowrap"
-                              style={{
-                                cursor: "pointer",
-                                transition: "transform 0.2s ease",
-                                borderRadius: "4px",
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor = "gray")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  "transparent")
-                              }
-                              onClick={() => {
-                                setApprovalStatus("IN REVIEW"); // Store approval status
-                                setCanvassApprovalOpen(true); // Open modal
-                              }}
-                            >
-                              <IconClipboardCheck size={18} />
-                              <Text size="sm" fw={600}>
-                                Approve
-                              </Text>
-                            </Group>
+      <Modal
+        opened={canvassStartOpen}
+        onClose={() => setCanvassStartOpen(false)}
+        title={
+          <Group>
+            <ThemeIcon
+              size="lg"
+              radius="md"
+              variant="gradient"
+              gradient={{ from: "blue", to: "cyan" }}
+            >
+              <IconClipboardCheck size={20} />
+            </ThemeIcon>
+            <Text fw={500}>Start Canvass</Text>
+          </Group>
+        }
+        centered
+        size="md"
+        radius="lg"
+      >
+        <Stack gap="xl">
+          <Textarea
+            value={newComment}
+            onChange={(event) => setNewComment(event.target.value)}
+            placeholder="Add an optional comment..."
+            label="Comment"
+            autosize
+            minRows={3}
+            radius="md"
+          />
+          <Group justify="flex-end">
+            <Button
+              variant="light"
+              color="gray"
+              onClick={() => setCanvassStartOpen(false)}
+              radius="md"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="gradient"
+              gradient={{ from: "blue", to: "cyan" }}
+              onClick={handleStartConfirm}
+              radius="md"
+            >
+              Start Canvass
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-                            <Group
-                              gap="sm"
-                              align="center"
-                              wrap="nowrap"
-                              style={{
-                                cursor: "pointer",
-                                transition: "transform 0.2s ease",
-                                borderRadius: "4px",
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor = "gray")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  "transparent")
-                              }
-                              onClick={() => {
-                                setApprovalStatus("DECLINED"); // Store approval status
-                                setCanvassApprovalOpen(true); // Open modal
-                              }}
-                            >
-                              <IconClipboardX size={18} />
-                              <Text size="sm" fw={600}>
-                                Decline
-                              </Text>
-                            </Group>
-                          </>
-                        )}
+      <ShareTicketModal
+        isOpen={isSharing}
+        onClose={() => setIsSharing(false)}
+        ticketId={ticket_id}
+        updateTicketDetails={fetchTicketDetails}
+      />
+    </Box>
+  );
+};
 
-                      <Group
-                        gap="sm"
-                        pr="xs"
-                        align="center"
-                        wrap="nowrap"
-                        style={{
-                          cursor: "pointer",
-                          transition: "transform 0.2s ease",
-                          borderRadius: "4px",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "gray")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
-                        onClick={() => handleCanvassAction("CANCELED")}
-                      >
-                        <IconX size={18} />
-                        <Text size="sm" fw={600}>
-                          Cancel Request
-                        </Text>
-                      </Group>
-                    </Stack>
-                  </>
-                )}
-
-                <Stack gap="sm">
-                  <Text size="sm" fw={600}>
-                    Request type:
-                  </Text>
-                  <Group gap="xs">
-                    <ThemeIcon size="sm" variant="transparent" color="inherit">
-                      <IconShoppingCartFilled size={16} />
-                    </ThemeIcon>
-                    <Text size="sm">Sourcing</Text>
-                  </Group>
-                </Stack>
-
-                {/* Shared With */}
-                <Stack gap="sm">
-                  <Group gap="xs" align="center" wrap="nowrap">
-                    <Text size="sm" fw={600} ta="left">
-                      Shared With:
-                    </Text>
-                  </Group>
-
-                  <Stack gap="sm">
-                    {/* Display ticket creator at the top */}
-                    <Group gap="xs" align="center" wrap="nowrap">
-                      <Avatar
-                        src={ticket.ticket_created_by_avatar}
-                        radius="xl"
-                        size="sm"
-                      />
-                      <Text size="sm">{ticket.ticket_created_by_name}</Text>{" "}
-                      <Text size="xs" p="0" c="dimmed">
-                        (Creator)
-                      </Text>
-                    </Group>
-
-                    {/* Display shared users */}
-                    {ticket.shared_users.map((u) => (
-                      <Group
-                        key={u.user_id}
-                        gap="xs"
-                        align="center"
-                        wrap="nowrap"
-                      >
-                        <Avatar src={u.user_avatar} radius="xl" size="sm" />
-                        <Text size="sm">{u.user_full_name}</Text>
-                      </Group>
-                    ))}
-                  </Stack>
-                </Stack>
-
-                {/* Share Button */}
-                {isCreator && (
-                  <Button
-                    mt="sm"
-                    size="xs"
-                    variant="light"
-                    leftSection={<IconPlus size={18} />}
-                    onClick={() => setIsSharing(true)}
-                  >
-                    <Text size="sm" fw={600}>
-                      Share Ticket
-                    </Text>
-                  </Button>
-                )}
-              </Stack>
-            </Box>
-          </Flex>
-        </Card>
-      </Group>
-    </Container>
+const TicketDetailsItem = ({ label, value }: any) => {
+  return (
+    <Stack gap={4}>
+      <Text size="md" c="dimmed" fw={500}>
+        {label}
+      </Text>
+      <Text fw={500}>{value}</Text>
+    </Stack>
   );
 };
 
