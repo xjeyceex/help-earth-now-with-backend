@@ -214,35 +214,34 @@ CREATE TRIGGER after_user_signup
   FOR EACH ROW EXECUTE FUNCTION public.create_user();
 
 -- Trigger the function every time a user is created
-create or replace function get_dashboard_tickets(_user_id uuid)
-returns table (
-  ticket_id uuid,
-  ticket_status text,
-  ticket_item_description text
+CREATE OR REPLACE FUNCTION get_dashboard_tickets(_user_id UUID)
+RETURNS TABLE (
+  ticket_id UUID,
+  ticket_status TEXT,
+  ticket_item_description TEXT,
+  ticket_date_created TIMESTAMPTZ
 )
-language sql
-as $$
-  select 
+LANGUAGE SQL
+AS $$
+  SELECT 
     t.ticket_id,
     t.ticket_status,
-    t.ticket_item_description
-
-  from 
+    t.ticket_item_description,
+    timezone('Asia/Manila', t.ticket_date_created) AS ticket_date_created
+  FROM 
     ticket_table t
-
-  where _user_id is null 
-
-  or t.ticket_created_by = _user_id
-  or exists (
-    select 1 from ticket_shared_with_table s
-    where s.ticket_id = t.ticket_id and s.shared_user_id = _user_id
-  )
-
-  or exists (
-    select 1 from approval_table a
-    where a.approval_ticket_id = t.ticket_id 
-    and a.approval_reviewed_by = _user_id
-  )
+  WHERE 
+    _user_id IS NULL 
+    OR t.ticket_created_by = _user_id
+    OR EXISTS (
+      SELECT 1 FROM ticket_shared_with_table s
+      WHERE s.ticket_id = t.ticket_id AND s.shared_user_id = _user_id
+    )
+    OR EXISTS (
+      SELECT 1 FROM approval_table a
+      WHERE a.approval_ticket_id = t.ticket_id 
+      AND a.approval_reviewed_by = _user_id
+    )
 $$;
 
 --function for all user tickets

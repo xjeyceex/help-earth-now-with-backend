@@ -50,6 +50,7 @@ export type TicketDetailsType = {
 export type DashboardTicketType = {
   ticket_id: string;
   ticket_status: string;
+  ticket_date_created: string;
   ticket_item_description: string;
 };
 
