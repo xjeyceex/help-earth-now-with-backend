@@ -2,6 +2,7 @@
 import { useUserStore } from "@/stores/userStore";
 import { createClient } from "@/utils/supabase/client";
 import { UserType } from "@/utils/types";
+import { Group, Loader, Paper, Stack, Text, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -96,7 +97,39 @@ const AuthCallback = () => {
     fetchUser();
   }, [router, setUser]);
 
-  return <div>Processing authentication...</div>;
+  return (
+    <div
+      style={{
+        height: "100vh",
+        width: "100vw",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        position: "absolute",
+        top: 0,
+        left: 0,
+      }}
+    >
+      <Paper
+        p="lg"
+        radius="md"
+        withBorder={false}
+        style={{ background: "transparent" }}
+      >
+        <Stack align="center" gap="md">
+          <Title order={4} c="dimmed">
+            Please wait
+          </Title>
+          <Loader size="lg" type="dots" color="blue" />
+          <Group>
+            <Text size="sm" c="dimmed">
+              Processing authentication...
+            </Text>
+          </Group>
+        </Stack>
+      </Paper>
+    </div>
+  );
 };
 
 export default AuthCallback;

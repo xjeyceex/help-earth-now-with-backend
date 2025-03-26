@@ -1,8 +1,10 @@
 "use client";
 
+import { checkIfUserPasswordExists } from "@/actions/get";
 import { updateDisplayName, updateProfilePicture } from "@/actions/post";
-import { changePassword } from "@/actions/update";
+import ChangePasswordModal from "@/components/ChangePasswordModal";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
+import SetPasswordModal from "@/components/SetPasswordModal";
 import { useUserStore } from "@/stores/userStore";
 import {
   ActionIcon,
@@ -31,27 +33,26 @@ import {
   IconMail,
   IconUserShield,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const ProfilePage = () => {
   const { colorScheme } = useMantineColorScheme();
   const { user, setUser } = useUserStore();
 
   const [isEditingName, setIsEditingName] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
+  const [isSetPasswordModalOpen, setIsSetPasswordModalOpen] = useState(false);
   const [newName, setNewName] = useState(user?.user_full_name || "");
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [isPasswordExist, setIsPasswordExist] = useState(false);
 
   if (!user) {
     return <LoadingStateProtected />;
   }
 
   const handleAvatarUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -104,48 +105,21 @@ const ProfilePage = () => {
     }
   };
 
-  const handleChangePassword = async () => {
-    setError("");
+  useEffect(() => {
+    if (!user || !user.user_id) return;
 
-    // Validation logic
-    if (!oldPassword.trim()) {
-      setError("Current password is required.");
-      return;
-    }
-    if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters.");
-      return;
-    }
-    if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      setError(
-        "Password must contain at least one uppercase letter and one number.",
-      );
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError("New password and confirm password do not match.");
-      return;
-    }
+    const checkPasswordExists = async () => {
+      const result = await checkIfUserPasswordExists(user.user_id);
 
-    setLoading(true);
-    const result = await changePassword(oldPassword, newPassword);
-    setLoading(false);
+      if (result) {
+        setIsPasswordExist(true);
+      } else {
+        setIsPasswordExist(false);
+      }
+    };
 
-    if (result?.error) {
-      setError(result.message || "Failed to change password.");
-    } else {
-      notifications.show({
-        title: "Success",
-        message: "Password changed successfully",
-        color: "green",
-        icon: <IconCheck size={16} />,
-      });
-      setOldPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setIsChangingPassword(false);
-    }
-  };
+    checkPasswordExists();
+  }, [user?.user_id]);
 
   return (
     <Box p={{ base: "md", sm: "xl" }}>
@@ -271,10 +245,10 @@ const ProfilePage = () => {
               })}
             >
               <Stack gap={1}>
-                <Text size="sm" fw={500}>
+                <Text size="md" fw={500}>
                   Change Password
                 </Text>
-                <Text size="xs" c="dimmed">
+                <Text size="sm" c="dimmed">
                   Update your password to keep your account secure
                 </Text>
               </Stack>
@@ -282,7 +256,13 @@ const ProfilePage = () => {
                 variant="light"
                 size="xs"
                 leftSection={<IconLock size={14} />}
-                onClick={() => setIsChangingPassword(true)}
+                onClick={() => {
+                  if (isPasswordExist) {
+                    setIsChangePasswordModalOpen(true);
+                  } else {
+                    setIsSetPasswordModalOpen(true);
+                  }
+                }}
               >
                 Update
               </Button>
@@ -314,48 +294,20 @@ const ProfilePage = () => {
       </Modal>
 
       {/* Change Password Modal */}
-      <Modal
-        opened={isChangingPassword}
-        onClose={() => setIsChangingPassword(false)}
-        title="Change Passwords"
-        centered
-        size="sm"
-      >
-        <Stack>
-          <TextInput
-            type="password"
-            label="Current Password"
-            placeholder="Enter current password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            disabled={loading}
-          />
-          <TextInput
-            type="password"
-            label="New Password"
-            placeholder="Enter new password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            disabled={loading}
-          />
-          <TextInput
-            type="password"
-            label="Confirm Password"
-            placeholder="Confirm new password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={loading}
-          />
-          {error && (
-            <Text size="sm" c="red">
-              {error}
-            </Text>
-          )}
-          <Button onClick={handleChangePassword} loading={loading} fullWidth>
-            Update Password
-          </Button>
-        </Stack>
-      </Modal>
+      {isPasswordExist && (
+        <ChangePasswordModal
+          isModalOpen={isChangePasswordModalOpen}
+          setIsModalOpen={setIsChangePasswordModalOpen}
+        />
+      )}
+
+      {/* Set Password Modal */}
+      {!isPasswordExist && (
+        <SetPasswordModal
+          isModalOpen={isSetPasswordModalOpen}
+          setIsModalOpen={setIsSetPasswordModalOpen}
+        />
+      )}
     </Box>
   );
 };

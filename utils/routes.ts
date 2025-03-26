@@ -13,6 +13,7 @@ export const authRoutes = [
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/auth/callback",
 ] as const;
 
 /**

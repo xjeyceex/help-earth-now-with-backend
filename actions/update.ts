@@ -49,7 +49,7 @@ export const markAllUserNotificationsAsRead = async () => {
 
 export const editComment = async (
   comment_id: string,
-  newContent: string,
+  newContent: string
 ): Promise<void> => {
   const supabase = await createClient();
 
@@ -71,7 +71,7 @@ export const editComment = async (
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -95,7 +95,10 @@ export const changePassword = async (
 
   if (signInError) {
     console.error("Reauthentication failed:", signInError.message);
-    return { error: true, message: "Old password is incorrect." };
+    return {
+      error: true,
+      OldPasswordErrorMessage: "Old password is incorrect.",
+    };
   }
 
   // Update the password after successful reauthentication
@@ -107,6 +110,29 @@ export const changePassword = async (
   }
 
   return { success: true };
+};
+
+export const setUserPassword = async (password: string) => {
+  const supabase = await createClient();
+
+  // Get the currently logged-in user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { error: true, message: "User not authenticated." };
+  }
+
+  // Update the user's password
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: true, message: error.message };
+  }
+
+  return { success: true, message: "Password updated successfully." };
 };
 
 export const updateApprovalStatus = async ({

@@ -29,7 +29,7 @@ const FileSchema = z.instanceof(File).refine(
   {
     message:
       "Invalid file type or size. Please upload an image file (JPEG, PNG, GIF, WEBP) or PDF less than 5MB.",
-  },
+  }
 );
 
 export const CanvassFormSchema = z.object({
@@ -45,7 +45,7 @@ export const CanvassFormSchema = z.object({
     .array(
       z.object({
         file: z.union([FileSchema, z.undefined()]).optional(),
-      }),
+      })
     )
     .min(1, "At least one quotation is required")
     .max(4, "Maximum of 4 quotations allowed")
@@ -54,3 +54,32 @@ export const CanvassFormSchema = z.object({
       path: ["0", "file"],
     }),
 });
+
+export const SetPasswordSchema = z
+  .object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z
+      .string()
+      .min(6, "Password must be at least 6 characters"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match",
+    path: ["confirmPassword"],
+  });
+
+export const ChangePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(6, "Current password must be at least 6 characters"),
+    newPassword: z
+      .string()
+      .min(6, "New password must be at least 6 characters"),
+    confirmPassword: z
+      .string()
+      .min(6, "Confirm password must be at least 6 characters"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords must match",
+    path: ["confirmPassword"],
+  });

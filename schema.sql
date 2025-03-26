@@ -567,3 +567,21 @@ BEGIN
   RETURN v_comment_id;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION public.check_user_password_exists(user_id UUID)
+RETURNS BOOLEAN 
+LANGUAGE plpgsql 
+SECURITY DEFINER 
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 
+    FROM auth.users 
+    WHERE id = user_id 
+      AND encrypted_password IS NOT NULL 
+      AND encrypted_password <> ''
+  );
+END;
+$$;
+
+
