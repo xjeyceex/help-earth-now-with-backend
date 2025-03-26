@@ -17,6 +17,7 @@ import {
   Modal,
   MultiSelect,
   Paper,
+  SimpleGrid,
   Skeleton,
   Stack,
   Text,
@@ -397,42 +398,43 @@ const TicketStatusAndActions = ({
               )}
             </Group>
 
-            <Stack gap="sm">
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
               {/* Creator */}
-              <Group gap="xs">
+              <Group gap="xs" align="center">
                 <Avatar
                   src={ticket.ticket_created_by_avatar}
                   radius="xl"
-                  size="md"
+                  size="sm"
                 />
-                <Stack gap={4}>
-                  <Text size="sm" fw={500}>
+                <Stack gap={2} align="flex-start">
+                  <Text size="xs" fw={500}>
                     {ticket.ticket_created_by_name}
                   </Text>
-                  <Badge size="xs">Creator</Badge>
+                  <Text size="xs" c="dimmed">
+                    Creator
+                  </Text>
                 </Stack>
               </Group>
 
               {/* Shared Users */}
               {isSharingLoading ? (
                 <Stack gap="sm">
-                  <Skeleton height={40} radius="md" />
-                  <Skeleton height={40} radius="md" />
+                  <Skeleton height={32} radius="xl" />
+                  <Skeleton height={32} radius="xl" />
                 </Stack>
               ) : (
-                ticket.shared_users.map((user) => (
-                  <Box key={user.user_id}>
-                    <Divider my="xs" />
-                    <Group key={user.user_id}>
-                      <Avatar src={user.user_avatar} radius="xl" size="md" />
-                      <Text size="sm" fw={500}>
+                <>
+                  {ticket.shared_users.map((user) => (
+                    <Group key={user.user_id} gap="xs" align="center">
+                      <Avatar src={user.user_avatar} radius="xl" size="sm" />
+                      <Text size="xs" fw={500}>
                         {user.user_full_name}
                       </Text>
                     </Group>
-                  </Box>
-                ))
+                  ))}
+                </>
               )}
-            </Stack>
+            </SimpleGrid>
           </Box>
         </Stack>
       </Paper>
