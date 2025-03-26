@@ -244,10 +244,7 @@ const DashboardPage = () => {
         <Group justify="space-between" mb="lg">
           <Stack gap={2}>
             <Title order={3} fw={600}>
-              {isAdmin && "Recent Tickets"}
-              {user?.user_role === "PURCHASER" && "Your Open Tickets"}
-              {user?.user_role === "REVIEWER" && "Tickets to Review"}
-              {user?.user_role === "MANAGER" && "Tickets to Review"}
+              Recent Tickets
             </Title>
           </Stack>
           <Button
