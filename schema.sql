@@ -49,6 +49,22 @@ CREATE TABLE user_table (
     user_email TEXT
 );
 
+-- TICKET TABLE (Tracks Canvassing Requests)
+DROP TABLE IF EXISTS ticket_table CASCADE;
+CREATE TABLE public.ticket_table (
+  ticket_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ticket_item_name TEXT NOT NULL,
+  ticket_item_description TEXT NOT NULL,
+  ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
+  ticket_specifications TEXT,
+  ticket_notes TEXT,
+  ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
+  ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
+  ticket_rf_date_received TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
+  ticket_date_created TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()),
+  ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) 
+);
+
 -- create comment_table and comment_reply_table
 DROP TABLE IF EXISTS comment_reply_table CASCADE;
 DROP TABLE IF EXISTS comment_table CASCADE;
@@ -77,22 +93,6 @@ CREATE TABLE comment_reply_table (
   reply_child_comment_id UUID NOT NULL,
   FOREIGN KEY (reply_parent_comment_id) REFERENCES comment_table(comment_id),
   FOREIGN KEY (reply_child_comment_id) REFERENCES comment_table(comment_id)
-);
-
--- TICKET TABLE (Tracks Canvassing Requests)
-DROP TABLE IF EXISTS ticket_table CASCADE;
-CREATE TABLE public.ticket_table (
-  ticket_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  ticket_item_name TEXT NOT NULL,
-  ticket_item_description TEXT NOT NULL,
-  ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
-  ticket_specifications TEXT,
-  ticket_notes TEXT,
-  ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
-  ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
-  ticket_rf_date_received TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
-  ticket_date_created TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()),
-  ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) 
 );
 
 -- DROP TABLE IF EXISTS
