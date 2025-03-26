@@ -70,7 +70,7 @@ const TicketDetailsPage = () => {
 
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
-    null
+    null,
   );
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
@@ -105,10 +105,10 @@ const TicketDetailsPage = () => {
             reviewers: prev.reviewers.map((reviewer) =>
               reviewer.reviewer_id === user.user_id
                 ? { ...reviewer, approval_status: newApprovalStatus }
-                : reviewer
+                : reviewer,
             ),
           }
-        : null
+        : null,
     );
 
     try {
@@ -139,10 +139,10 @@ const TicketDetailsPage = () => {
               reviewers: prev.reviewers.map((reviewer) =>
                 reviewer.reviewer_id === user.user_id
                   ? { ...reviewer, approval_status: "PENDING" } // Reset to a safe fallback
-                  : reviewer
+                  : reviewer,
               ),
             }
-          : null
+          : null,
       );
     } finally {
       setStatusLoading(false);
@@ -162,7 +162,7 @@ const TicketDetailsPage = () => {
       }
 
       setTicket((prev) =>
-        prev ? { ...prev, ticket_status: "WORK IN PROGRESS" } : null
+        prev ? { ...prev, ticket_status: "WORK IN PROGRESS" } : null,
       );
 
       await handleCanvassAction("WORK IN PROGRESS");
@@ -172,7 +172,7 @@ const TicketDetailsPage = () => {
       console.error("Error adding comment or starting canvass:", error);
 
       setTicket((prev) =>
-        prev ? { ...prev, ticket_status: "FOR CANVASS" } : null
+        prev ? { ...prev, ticket_status: "FOR CANVASS" } : null,
       );
     } finally {
       setStatusLoading(false);
@@ -246,10 +246,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isSharedToMe = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id
+    (u) => u.user_id === user?.user_id,
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id
+    (r) => r.reviewer_id === user?.user_id,
   );
 
   // ✅ Check if the user is the creator of the ticket
@@ -374,7 +374,7 @@ const TicketDetailsPage = () => {
                           hour: "numeric",
                           minute: "numeric",
                           hour12: true,
-                        }
+                        },
                       )}
                     </Text>
                   </Group>
@@ -426,7 +426,7 @@ const TicketDetailsPage = () => {
                             <Text
                               dangerouslySetInnerHTML={{
                                 __html: DOMPurify.sanitize(
-                                  ticket.ticket_specifications
+                                  ticket.ticket_specifications,
                                 ),
                               }}
                             />
@@ -472,9 +472,9 @@ const TicketDetailsPage = () => {
                                             "APPROVED"
                                               ? "green"
                                               : reviewer.approval_status ===
-                                                "REJECTED"
-                                              ? "red"
-                                              : "gray"
+                                                  "REJECTED"
+                                                ? "red"
+                                                : "gray"
                                           }
                                         >
                                           {reviewer.reviewer_name.charAt(0)}
@@ -491,9 +491,9 @@ const TicketDetailsPage = () => {
                                           "APPROVED"
                                             ? "green"
                                             : reviewer.approval_status ===
-                                              "REJECTED"
-                                            ? "red"
-                                            : "gray"
+                                                "REJECTED"
+                                              ? "red"
+                                              : "gray"
                                         }
                                       >
                                         {reviewer.approval_status}
@@ -602,7 +602,7 @@ const TicketDetailsPage = () => {
                                               <Group gap="md">
                                                 <Avatar radius="xl" size="md">
                                                   {canvass.submitted_by.user_full_name?.charAt(
-                                                    0
+                                                    0,
                                                   )}
                                                 </Avatar>
                                                 <Stack gap={0}>
@@ -613,7 +613,7 @@ const TicketDetailsPage = () => {
                                                   </Text>
                                                   <Text size="xs" c="dimmed">
                                                     {new Date(
-                                                      canvass.canvass_form_date_submitted
+                                                      canvass.canvass_form_date_submitted,
                                                     ).toLocaleString()}
                                                   </Text>
                                                 </Stack>
@@ -647,7 +647,7 @@ const TicketDetailsPage = () => {
                                                 <Group gap="xs">
                                                   {canvass.attachments.map(
                                                     (
-                                                      attachment: CanvassAttachment
+                                                      attachment: CanvassAttachment,
                                                     ) => (
                                                       <Link
                                                         key={
@@ -664,7 +664,7 @@ const TicketDetailsPage = () => {
                                                             attachment.canvass_attachment_type ||
                                                             "Document"
                                                           } - ${new Date(
-                                                            attachment.canvass_attachment_created_at
+                                                            attachment.canvass_attachment_created_at,
                                                           ).toLocaleDateString()}`}
                                                         >
                                                           <ActionIcon
@@ -679,7 +679,7 @@ const TicketDetailsPage = () => {
                                                           </ActionIcon>
                                                         </Tooltip>
                                                       </Link>
-                                                    )
+                                                    ),
                                                   )}
                                                 </Group>
                                               </Stack>
@@ -688,7 +688,7 @@ const TicketDetailsPage = () => {
                                         </Grid.Col>
                                       </Grid>
                                     </Box>
-                                  )
+                                  ),
                                 )}
                               </Stack>
                             ) : user?.user_id === ticket?.ticket_created_by ? (
@@ -768,14 +768,14 @@ const TicketDetailsPage = () => {
                       ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
                         ? "yellow"
                         : ticket?.ticket_status === "IN REVIEW"
-                        ? "blue"
-                        : ticket?.ticket_status === "WORK IN PROGRESS"
-                        ? "indigo"
-                        : ticket?.ticket_status === "DONE"
-                        ? "teal"
-                        : ticket?.ticket_status === "CANCELED"
-                        ? "red"
-                        : "gray"
+                          ? "blue"
+                          : ticket?.ticket_status === "WORK IN PROGRESS"
+                            ? "indigo"
+                            : ticket?.ticket_status === "DONE"
+                              ? "teal"
+                              : ticket?.ticket_status === "CANCELED"
+                                ? "red"
+                                : "gray"
                     }
                     fullWidth
                   >
