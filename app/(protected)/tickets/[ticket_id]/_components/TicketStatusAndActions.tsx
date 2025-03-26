@@ -175,16 +175,18 @@ const TicketStatusAndActions = ({
               </Text>
               <Stack gap="sm">
                 {ticket?.ticket_status === "FOR CANVASS" && isCreator && (
-                  <Button
-                    leftSection={<IconClipboardCheck size={18} />}
-                    radius="md"
-                    variant="light"
-                    color="blue"
-                    style={{ flex: 1 }} // Takes full width when alone
-                    onClick={() => setCanvassStartOpen(true)}
-                  >
-                    Start Canvass
-                  </Button>
+                  <Group grow style={{ width: "100%" }}>
+                    <Button
+                      leftSection={<IconClipboardCheck size={18} />}
+                      radius="md"
+                      variant="light"
+                      color="blue"
+                      style={{ flex: 1 }} // Takes full width when alone
+                      onClick={() => setCanvassStartOpen(true)}
+                    >
+                      Start Canvass
+                    </Button>
+                  </Group>
                 )}
 
                 {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
