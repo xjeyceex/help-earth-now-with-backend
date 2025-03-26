@@ -188,11 +188,11 @@ const TicketStatusAndActions = ({
                         label: "Approve",
                         Icon: IconClipboardCheck,
                       },
-                      {
-                        status: "DECLINED",
-                        label: "Decline",
-                        Icon: IconClipboardX,
-                      },
+                      // {
+                      //   status: "DECLINED",
+                      //   label: "Decline",
+                      //   Icon: IconClipboardX,
+                      // },
                       {
                         status: "NEEDS_REVISION",
                         label: "Needs Revision",
