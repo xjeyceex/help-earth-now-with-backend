@@ -62,8 +62,9 @@ CREATE TABLE comment_table (
   comment_is_disabled BOOLEAN DEFAULT FALSE,
   comment_type TEXT NOT NULL,
   comment_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
-  comment_user_id UUID NOT NULL,  -- Add the user_id to track the user who posted the comment
-  FOREIGN KEY (comment_user_id) REFERENCES user_table(user_id)  -- Assuming you have a user_table
+  comment_user_id UUID NOT NULL,  
+  FOREIGN KEY (comment_user_id) REFERENCES user_table(user_id), 
+  FOREIGN KEY (comment_ticket_id) REFERENCES ticket_table(ticket_id) ON DELETE CASCADE 
 );
 
 -- Enable Supabase Realtime on this table
