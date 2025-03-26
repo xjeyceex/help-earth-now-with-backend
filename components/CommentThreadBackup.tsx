@@ -1,33 +1,43 @@
 import { deleteComment } from "@/actions/delete";
-import { getComments } from "@/actions/get";
 import { addComment } from "@/actions/post";
 import { editComment } from "@/actions/update";
+import { useCommentsStore } from "@/stores/commentStore";
 import { useUserStore } from "@/stores/userStore";
+import { createClient } from "@/utils/supabase/client";
 import { CommentType } from "@/utils/types";
 import {
+  ActionIcon,
   Avatar,
   Box,
   Button,
   Container,
-  Divider,
   Group,
   Loader,
+  Menu,
   Modal,
   Paper,
+  Skeleton,
   Text,
-  Textarea,
 } from "@mantine/core";
-import React, { useEffect, useState } from "react";
+import { IconDotsVertical, IconEdit, IconTrash } from "@tabler/icons-react";
+import DOMPurify from "dompurify";
+import React, { useEffect, useRef, useState } from "react";
+import LoadingStateProtected from "./LoadingStateProtected";
+
+import {
+  RichTextEditor,
+  RichTextEditorRef,
+} from "@/components/ui/RichTextEditor";
 
 type CommentThreadProps = {
-  ticket_id: string; // The ticket ID for which comments are fetched
+  ticket_id: string;
 };
 
-const CommentThreadBackup: React.FC<CommentThreadProps> = ({ ticket_id }) => {
+const CommentThread: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   const { user } = useUserStore();
+  const commentEditorRef = useRef<RichTextEditorRef>(null);
 
-  const [comments, setComments] = useState<CommentType[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { comments, setComments } = useCommentsStore();
   const [newComment, setNewComment] = useState<string>("");
 
   const [editingComment, setEditingComment] = useState<CommentType | null>(
@@ -38,27 +48,91 @@ const CommentThreadBackup: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
     {},
   );
+  const [isFocused, setIsFocus] = useState(false);
+
   const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
   const [deletingComment, setDeletingComment] = useState<CommentType | null>(
     null,
   );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setIsLoading(true);
-        const fetchedComments = await getComments(ticket_id);
-        setComments(fetchedComments);
-      } catch (error) {
-        console.error("Unexpected error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const cleanComment = newComment.trim();
 
-    fetchComments();
-  }, [ticket_id]);
+  useEffect(() => {
+    if (!user || !ticket_id) return;
+
+    const channelName = `comment_changes_${ticket_id}`;
+    const client = createClient();
+    const channel = client.channel(channelName);
+
+    channel
+      .on<CommentType>(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "comment_table",
+          filter: `comment_ticket_id=eq.${ticket_id}`,
+        },
+        async (payload) => {
+          if (!payload || !("eventType" in payload)) {
+            console.warn("Received unexpected payload:", payload);
+            return;
+          }
+
+          if (payload.eventType === "INSERT") {
+            const { data: newComment, error } = await createClient()
+              .from("comment_with_avatar_view")
+              .select("*")
+              .eq("comment_id", payload.new.comment_id)
+              .single();
+
+            if (error) {
+              console.error("Error fetching new comment:", error.message);
+              return;
+            }
+
+            // Append new comment at the end instead of the beginning
+            setComments((prev) => [...prev, newComment]);
+          }
+
+          if (payload.eventType === "UPDATE") {
+            setComments((prev) =>
+              prev.map((comment) =>
+                comment.comment_id === payload.new.comment_id
+                  ? { ...comment, ...payload.new }
+                  : comment,
+              ),
+            );
+          }
+
+          if (payload.eventType === "DELETE") {
+            setComments((prev) =>
+              prev.filter(
+                (comment) => comment.comment_id !== payload.old?.comment_id,
+              ),
+            );
+          }
+        },
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.error("Subscription error:", err);
+        }
+      });
+
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [user, ticket_id, setComments]);
+
+  useEffect(() => {
+    if (isFocused) {
+      setTimeout(() => {
+        commentEditorRef.current?.focus();
+      }, 50);
+    }
+  }, [isFocused]);
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,33 +141,22 @@ const CommentThreadBackup: React.FC<CommentThreadProps> = ({ ticket_id }) => {
       console.error("User not logged in.");
       return;
     }
-    if (!newComment.trim()) return; // Prevent adding empty comments
 
-    setIsAddingComment(true); // Disable the form
+    if (cleanComment === "<p></p>" || cleanComment === "") {
+      return;
+    }
+
+    setIsAddingComment(true);
 
     try {
-      const commentId = await addComment(ticket_id, newComment, user.user_id);
-      setComments([
-        ...comments,
-        {
-          comment_id: commentId,
-          comment_ticket_id: ticket_id,
-          comment_user_id: user.user_id,
-          comment_content: newComment,
-          comment_date_created: new Date().toISOString(),
-          comment_is_edited: false,
-          comment_type: "COMMENT",
-          comment_user_full_name: user.user_full_name,
-          comment_user_avatar: user?.user_avatar,
-          comment_last_updated: new Date().toISOString(),
-          replies: [],
-        },
-      ]);
-      setNewComment(""); // Clear the input after adding
+      await addComment(ticket_id, newComment, user.user_id);
+
+      setNewComment("");
+      commentEditorRef.current?.reset();
     } catch (error) {
       console.error("Unexpected error:", error);
     } finally {
-      setIsAddingComment(false); // Re-enable the form
+      setIsAddingComment(false);
     }
   };
 
@@ -166,157 +229,181 @@ const CommentThreadBackup: React.FC<CommentThreadProps> = ({ ticket_id }) => {
     setEditContent("");
   };
 
-  if (isLoading) {
-    return (
-      <Container style={{ display: "flex", justifyContent: "center" }}>
-        <Loader size="lg" />
-      </Container>
-    );
+  if (!comments) {
+    return <LoadingStateProtected />;
   }
 
   return (
-    <Container w="100%" mt="md">
+    <Container w="100%" pt="xs">
       {comments.length === 0 ? (
         <Text>No comments yet.</Text>
       ) : (
         <div>
           {comments.map((comment) => (
-            <Paper
-              key={comment.comment_id}
-              p="md"
-              shadow="xs"
-              style={{ marginBottom: "15px" }}
-            >
-              {loadingStates[comment.comment_id] ? (
-                <Container
-                  style={{ display: "flex", justifyContent: "center" }}
-                >
-                  <Loader size="sm" />
-                </Container>
-              ) : (
-                <>
-                  <Group
-                    justify="space-between"
-                    style={{ marginBottom: "10px" }}
-                  >
-                    <Box>
-                      <Group gap="xs" pb="sm" align="center">
-                        <Avatar
-                          src={comment.comment_user_avatar}
-                          radius="xl"
-                          size="md"
-                        />
-                        <Box>
-                          <Group gap={5}>
-                            <Text
-                              size="xs"
-                              style={{ marginRight: 10, fontWeight: 500 }}
-                            >
-                              {comment.comment_user_full_name}
-                            </Text>
-                            <Text size="xs" c="dimmed">
-                              {new Date(
-                                comment.comment_date_created,
-                              ).toLocaleString()}
-                            </Text>
-                          </Group>
-                          <Text style={{ marginTop: 10 }}>
-                            <strong>{comment.comment_content}</strong>
-                          </Text>
-                        </Box>
-                      </Group>
+            <Group key={comment.comment_id} align="flex-start" gap="xs">
+              <Avatar src={comment.comment_user_avatar} radius="xl" size="md" />
+              <Paper
+                bg="transparent"
+                pb="sm"
+                style={{
+                  boxShadow: "none",
+                  backgroundColor: "black",
+                  flex: 1,
+                }}
+              >
+                {loadingStates[comment.comment_id] ? (
+                  <Box style={{ flex: 1 }} pl="xs">
+                    <Group gap="xs" align="center">
+                      <Skeleton height={16} width={120} radius="sm" />
+                      <Skeleton height={14} width={160} radius="sm" />
+                    </Group>
 
-                      <Text size="sm" c="dimmed">
-                        {comment.comment_is_edited && " (Edited)"}
+                    <Skeleton height={50} mt={6} radius="sm" />
+                  </Box>
+                ) : (
+                  <Box style={{ flex: 1 }} pl="xs">
+                    <Group gap="0" align="center">
+                      <Text size="sm" fw={500} style={{ marginRight: 10 }}>
+                        {comment.comment_user_full_name}
                       </Text>
-                    </Box>
-
-                    <Group gap="xs">
-                      {user?.user_id === comment.comment_user_id && (
-                        <>
-                          <Button
-                            variant="outline"
-                            color="red"
-                            size="xs"
-                            onClick={() => openDeleteModal(comment)} // Open the delete confirmation modal
-                            disabled={loadingStates[comment.comment_id]}
-                          >
-                            Delete
-                          </Button>
-                          <Button
-                            variant="outline"
-                            color="blue"
-                            size="xs"
-                            onClick={() => openEditModal(comment)}
-                            disabled={loadingStates[comment.comment_id]}
-                          >
-                            Edit
-                          </Button>
-                        </>
+                      <Text size="xs" c="dimmed">
+                        {new Date(
+                          comment.comment_date_created,
+                        ).toLocaleString()}
+                      </Text>
+                      {comment.comment_is_edited && (
+                        <Text size="xs" c="dimmed" pl="xs">
+                          (Edited)
+                        </Text>
                       )}
                     </Group>
-                  </Group>
-                  <Divider />
-                </>
+
+                    <Text size="md">
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(comment.comment_content),
+                        }}
+                      />
+                    </Text>
+                  </Box>
+                )}
+              </Paper>
+
+              {user?.user_id === comment.comment_user_id && (
+                <Menu trigger="click" position="bottom-end">
+                  <Menu.Target>
+                    <ActionIcon
+                      variant="transparent"
+                      style={{ color: "inherit", marginLeft: "auto" }}
+                    >
+                      <IconDotsVertical size={18} />
+                    </ActionIcon>
+                  </Menu.Target>
+
+                  <Menu.Dropdown>
+                    <Menu.Item
+                      leftSection={<IconEdit size={16} />}
+                      onClick={() => openEditModal(comment)}
+                      disabled={loadingStates[comment.comment_id]}
+                    >
+                      Edit
+                    </Menu.Item>
+                    <Menu.Item
+                      leftSection={<IconTrash size={16} />}
+                      onClick={() => openDeleteModal(comment)}
+                      disabled={loadingStates[comment.comment_id]}
+                    >
+                      Delete
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
               )}
-            </Paper>
+            </Group>
           ))}
         </div>
       )}
 
-      <Paper p="md" shadow="xs" style={{ marginBottom: "20px" }}>
-        <form onSubmit={handleAddComment}>
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add a comment..."
-            rows={4}
-            style={{ width: "100%", marginBottom: "10px" }}
-            disabled={isAddingComment || isLoading} // Disable while adding or loading
-          />
-          <Button
-            type="submit"
-            fullWidth
-            disabled={isAddingComment || isLoading || !newComment.trim()}
-            style={{ marginBottom: "10px" }}
-          >
-            {isAddingComment ? <Loader size="xs" /> : "Add Comment"}
-          </Button>
-        </form>
-      </Paper>
+      {/* COMMENT INPUT */}
+      <Group align="flex-start" gap="xs" mt="md">
+        <Avatar src={user?.user_avatar} radius="xl" size="md" />
 
-      {/* Edit Comment Modal */}
+        <Paper p="md" shadow="xs" style={{ flex: 1 }}>
+          <form onSubmit={handleAddComment}>
+            {isFocused ? (
+              <>
+                <RichTextEditor
+                  ref={commentEditorRef}
+                  value={newComment}
+                  onChange={(value) => setNewComment(value)}
+                  onFocus={() => setIsFocus(true)}
+                />
+                <Button
+                  type="submit"
+                  fullWidth
+                  disabled={
+                    isAddingComment ||
+                    cleanComment === "<p></p>" ||
+                    cleanComment === ""
+                  }
+                  style={{ marginTop: "10px" }}
+                >
+                  {isAddingComment ? <Loader size="xs" /> : "Add Comment"}
+                </Button>
+              </>
+            ) : (
+              <Paper
+                bg="transparent"
+                onClick={() => setIsFocus(true)}
+                style={{
+                  boxShadow: "none",
+                  flex: 1,
+                }}
+              >
+                {cleanComment ? (
+                  <Text size="sm" c="dimmed">
+                    {cleanComment}
+                  </Text>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    Add a comment...
+                  </Text>
+                )}
+              </Paper>
+            )}
+          </form>
+        </Paper>
+      </Group>
+
       <Modal
         opened={!!editingComment}
         onClose={closeEditModal}
         title="Edit Comment"
         centered
+        size="xl"
       >
-        <Textarea
-          value={editContent}
-          onChange={(e) => setEditContent(e.target.value)}
-          placeholder="Edit your comment..."
-          rows={4}
-          style={{ width: "100%", marginBottom: "10px" }}
-        />
-        <Button
-          fullWidth
-          onClick={handleEditComment}
-          disabled={
-            isLoading ||
-            !editContent.trim() ||
-            loadingStates[editingComment?.comment_id || ""]
-          }
-        >
-          {loadingStates[editingComment?.comment_id || ""] ? (
-            <Loader size="xs" />
-          ) : (
-            "Save Changes"
-          )}
-        </Button>
+        <form onSubmit={handleEditComment}>
+          <RichTextEditor
+            value={editContent}
+            onChange={(value) => setEditContent(value)}
+          />
+          <Button
+            fullWidth
+            onClick={handleEditComment}
+            disabled={
+              !editContent.trim() ||
+              loadingStates[editingComment?.comment_id || ""]
+            }
+            style={{ marginTop: "10px" }}
+          >
+            {loadingStates[editingComment?.comment_id || ""] ? (
+              <Loader size="xs" />
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+        </form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <Modal
         opened={isDeleteModalOpen}
         onClose={closeDeleteModal}
@@ -340,4 +427,4 @@ const CommentThreadBackup: React.FC<CommentThreadProps> = ({ ticket_id }) => {
   );
 };
 
-export default CommentThreadBackup;
+export default CommentThread;

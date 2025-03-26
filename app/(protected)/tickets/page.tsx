@@ -39,7 +39,6 @@ const getStatusColor = (status: string) => {
     case "WORK IN PROGRESS":
       return "blue.6";
     case "FOR REVIEW":
-    case "IN REVIEW":
     case "FOR REVIEW OF SUBMISSIONS":
       return "violet.6";
     case "FOR APPROVAL":
@@ -57,12 +56,12 @@ type TicketStatus =
   | "FOR CANVASS"
   | "WORK IN PROGRESS"
   | "FOR REVIEW"
-  | "IN REVIEW"
   | "FOR APPROVAL"
   | "DONE"
   | "CANCELED"
   | "FOR REVIEW OF SUBMISSIONS"
   | "CANCELED"
+  | "DECLINED"
   | "all";
 
 const TicketList = () => {
@@ -94,10 +93,10 @@ const TicketList = () => {
     { value: "WORK IN PROGRESS", label: "Work in Progress" },
     { value: "FOR REVIEW", label: "For Review" },
     { value: "FOR REVIEW OF SUBMISSIONS", label: "For Review of Submissions" },
-    { value: "IN REVIEW", label: "In Review" },
     { value: "FOR APPROVAL", label: "For Approval" },
     { value: "CANCELED", label: "Canceled" },
     { value: "DONE", label: "Done" },
+    { value: "DECLINED", label: "Declined" },
   ];
 
   const handleTabChange = (value: string | null) => {
@@ -110,7 +109,7 @@ const TicketList = () => {
   const availableTickets = tickets.filter((ticket) => {
     const isPurchaser = user?.user_role === "PURCHASER";
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser === user?.user_id,
+      (sharedUser) => sharedUser === user?.user_id
     );
     const isTicketOwner = ticket.ticket_created_by === user?.user_id;
 
@@ -284,7 +283,7 @@ const TicketList = () => {
                     <Text size="xs" c="dimmed">
                       Created{" "}
                       {moment(ticket.ticket_date_created).format(
-                        "MMM D, YYYY [at] h:mm A",
+                        "MMM D, YYYY [at] h:mm A"
                       )}
                     </Text>
                   </Group>

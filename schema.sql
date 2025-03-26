@@ -1,7 +1,6 @@
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
-    'FOR CANVASS', 'WORK IN PROGRESS', 
-    'IN REVIEW', 'FOR APPROVAL', 'DONE', 'CANCELED', 'FOR REVIEW OF SUBMISSIONS', 'DECLINED'
+    'FOR CANVASS', 'WORK IN PROGRESS', 'FOR APPROVAL', 'DONE', 'CANCELED', 'FOR REVIEW OF SUBMISSIONS', 'DECLINED'
 );
 
 create policy "Allow authenticated users to insert" 
@@ -37,7 +36,7 @@ ON storage.objects
 FOR SELECT
 USING (TRUE);
 
-CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING');
+CREATE TYPE approval_status_enum AS ENUM ('APPROVED', 'REJECTED', 'PENDING', 'AWAITING ACTION');
 CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'PURCHASER', 'REVIEWER', 'MANAGER');
 
 -- USER TABLE (Manages User Roles)
@@ -63,8 +62,9 @@ CREATE TABLE comment_table (
   comment_is_disabled BOOLEAN DEFAULT FALSE,
   comment_type TEXT NOT NULL,
   comment_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
-  comment_user_id UUID NOT NULL,  -- Add the user_id to track the user who posted the comment
-  FOREIGN KEY (comment_user_id) REFERENCES user_table(user_id)  -- Assuming you have a user_table
+  comment_user_id UUID NOT NULL,  
+  FOREIGN KEY (comment_user_id) REFERENCES user_table(user_id), 
+  FOREIGN KEY (comment_ticket_id) REFERENCES ticket_table(ticket_id) ON DELETE CASCADE 
 );
 
 -- Enable Supabase Realtime on this table
@@ -447,7 +447,7 @@ SELECT
     WHERE ts.ticket_id = t.ticket_id    
   )::JSON AS shared_users,     
 
-  -- Reviewers JSON
+  -- Reviewers JSON (now includes user_role)
   (      
     SELECT COALESCE(        
       JSON_AGG(          
@@ -455,6 +455,7 @@ SELECT
           'reviewer_id', a.approval_reviewed_by,            
           'reviewer_name', u3.user_full_name,            
           'reviewer_avatar', u3.user_avatar,             
+          'reviewer_role', u3.user_role,  -- Added user_role here
           'approval_status', a.approval_review_status          
         )        
       ), '[]'      
