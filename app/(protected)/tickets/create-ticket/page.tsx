@@ -63,7 +63,7 @@ const CreateTicketPage = () => {
   const [specificationsValue, setSpecificationsValue] = useState<string>("");
   const [reviewerOptions, setReviewerOptions] = useState<ReviewerType[]>([]);
   const [selectedReviewers, setSelectedReviewers] = useState<ReviewerType[]>(
-    []
+    [],
   );
 
   const form = useForm<z.infer<typeof TicketFormSchema>>({
@@ -83,8 +83,8 @@ const CreateTicketPage = () => {
     const filteredReviewers = reviewerOptions.filter(
       (option) =>
         !selectedReviewers.some(
-          (reviewer) => reviewer.user_id === option.user_id
-        )
+          (reviewer) => reviewer.user_id === option.user_id,
+        ),
     );
 
     return filteredReviewers.map((reviewer) => ({
@@ -97,7 +97,7 @@ const CreateTicketPage = () => {
     if (!value) return;
 
     const selectedOption = reviewerOptions.find(
-      (option) => option.user_id === value
+      (option) => option.user_id === value,
     );
     if (
       selectedOption &&
@@ -121,12 +121,12 @@ const CreateTicketPage = () => {
 
   const removeReviewer = (id: string) => {
     const updatedReviewers = selectedReviewers.filter(
-      (reviewer) => reviewer.user_id !== id
+      (reviewer) => reviewer.user_id !== id,
     );
     setSelectedReviewers(updatedReviewers);
     form.setValue(
       "ticketReviewer",
-      updatedReviewers.map((r) => r.user_id)
+      updatedReviewers.map((r) => r.user_id),
     );
   };
 
@@ -225,7 +225,7 @@ const CreateTicketPage = () => {
                 required
                 radius="md"
                 leftSection={<IconClipboard size={16} />}
-                size="md"
+                size="sm"
               />
 
               <TextInput
@@ -237,7 +237,7 @@ const CreateTicketPage = () => {
                 required
                 radius="md"
                 leftSection={<IconPencil size={16} />}
-                size="md"
+                size="sm"
               />
 
               <Textarea
@@ -249,7 +249,7 @@ const CreateTicketPage = () => {
                 required
                 radius="md"
                 minRows={3}
-                size="md"
+                size="sm"
               />
 
               <TextInput
@@ -265,12 +265,12 @@ const CreateTicketPage = () => {
                 disabled={isPending}
                 radius="md"
                 leftSection={<IconSettings size={16} />}
-                size="md"
+                descriptionProps={{ fz: "sm" }}
               />
 
-              <Stack gap="xs">
+              <Stack gap={8}>
                 <Group justify="space-between">
-                  <Text fw={500} size="md">
+                  <Text fw={500} size="sm">
                     Select Reviewers <span style={{ color: "red" }}> * </span>
                   </Text>
                   <Badge radius="sm" size="md">
@@ -289,7 +289,7 @@ const CreateTicketPage = () => {
                   leftSection={<IconUsers size={16} />}
                   radius="md"
                   nothingFoundMessage="No more reviewers available"
-                  size="md"
+                  size="sm"
                 />
 
                 {form.formState.errors.ticketReviewer?.message && (
@@ -317,7 +317,7 @@ const CreateTicketPage = () => {
                             </Avatar>
                           </Grid.Col>
                           <Grid.Col span={9} pl={16}>
-                            <Stack gap={2}>
+                            <Stack gap={0}>
                               <Text fw={500} fz="md">
                                 {reviewer.user_full_name}
                               </Text>
@@ -353,10 +353,10 @@ const CreateTicketPage = () => {
                         <IconUserSearch size={28} />
                       </ThemeIcon>
                       <Stack gap={0}>
-                        <Text fw={500} size="lg">
+                        <Text fw={500} size="md">
                           No reviewers selected
                         </Text>
-                        <Text c="dimmed" size="md">
+                        <Text c="dimmed" size="sm">
                           Assign a reviewers to this ticket
                         </Text>
                       </Stack>
@@ -371,7 +371,7 @@ const CreateTicketPage = () => {
           <Grid.Col span={{ base: 12, md: 6 }}>
             <Stack mb="lg" gap={0}>
               <Stack gap={0}>
-                <Text fw={500} size="md">
+                <Text fw={500} size="sm">
                   Specifications
                 </Text>
                 <Text size="sm" c="dimmed" mb="xs">
@@ -390,7 +390,7 @@ const CreateTicketPage = () => {
 
             <Stack mb="lg" gap={0}>
               <Stack gap={0}>
-                <Text fw={500} size="md">
+                <Text fw={500} size="sm">
                   Notes
                 </Text>
                 <Text size="sm" c="dimmed" mb="xs">
@@ -414,7 +414,7 @@ const CreateTicketPage = () => {
                   onClick={() => router.push("/tickets")}
                   disabled={isPending}
                   radius="md"
-                  size="md"
+                  size="sm"
                 >
                   Cancel
                 </Button>
@@ -424,7 +424,7 @@ const CreateTicketPage = () => {
                   disabled={isPending}
                   radius="md"
                   color={isDark ? "blue.6" : "blue.5"}
-                  size="md"
+                  size="sm"
                 >
                   Create Ticket
                 </Button>

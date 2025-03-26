@@ -5,17 +5,24 @@ import { shareTicket } from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
 import { TicketDetailsType } from "@/utils/types";
 import {
+  ActionIcon,
   Avatar,
   Badge,
   Box,
   Button,
+  Divider,
+  Flex,
+  Grid,
   Group,
   Modal,
   MultiSelect,
+  Paper,
   Skeleton,
   Stack,
   Text,
   ThemeIcon,
+  Tooltip,
+  useMantineColorScheme,
 } from "@mantine/core";
 import {
   IconClipboardCheck,
@@ -31,11 +38,8 @@ type Props = {
   ticket: TicketDetailsType;
   statusLoading: boolean;
   isDisabled: boolean;
-  // setTicket: React.Dispatch<React.SetStateAction<TicketDetailsType | null>>;
   setCanvassStartOpen: (open: boolean) => void;
   setApprovalStatus: (status: string) => void;
-  setCancelRequestOpen: (open: boolean) => void;
-
   setCanvassApprovalOpen: (open: boolean) => void;
   handleCanvassAction: (action: string) => void;
   fetchTicketDetails: () => Promise<void>;
@@ -46,8 +50,6 @@ const TicketStatusAndActions = ({
   statusLoading,
   isDisabled,
   setCanvassStartOpen,
-  // setTicket,
-  setCancelRequestOpen,
   fetchTicketDetails,
   setApprovalStatus,
   setCanvassApprovalOpen,
@@ -58,9 +60,12 @@ const TicketStatusAndActions = ({
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [isSharingLoading, setIsSharingLoading] = useState(false);
+
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
     []
   );
+
+  const { colorScheme } = useMantineColorScheme();
 
   const fetchUsers = async () => {
     const users = await getAllUsers(ticket.ticket_id);
@@ -72,8 +77,8 @@ const TicketStatusAndActions = ({
 
     setAllUsers(users);
   };
-  const isAdmin = user?.user_role === "ADMIN";
 
+  const isAdmin = user?.user_role === "ADMIN";
   const isReviewer = ticket.reviewers?.some(
     (r) => r.reviewer_id === user?.user_id
   );
@@ -109,266 +114,231 @@ const TicketStatusAndActions = ({
   }, []);
 
   return (
-    <Box w="30%" p="md">
-      <Stack align="start" px="md">
-        <Stack gap="sm">
-          <Group gap="xs" align="center" wrap="nowrap">
-            <Text size="sm" fw={600} ta="left">
-              Ticket Status:
+    <Grid.Col span={{ base: 12, md: 4 }}>
+      <Paper
+        radius="lg"
+        shadow="sm"
+        p="xl"
+        withBorder
+        style={(theme) => ({
+          backgroundColor:
+            colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
+          borderColor:
+            colorScheme === "dark"
+              ? theme.colors.dark[5]
+              : theme.colors.gray[1],
+        })}
+      >
+        <Stack gap="xl">
+          {/* Status Section */}
+          <Box>
+            <Text size="md" fw={500} c="dimmed" mb="md">
+              Status
             </Text>
-          </Group>
+            {statusLoading ? (
+              <Skeleton height={40} radius="md" />
+            ) : (
+              <Badge
+                py="md"
+                size="lg"
+                radius="md"
+                color={
+                  ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
+                    ? "yellow"
+                    : ticket?.ticket_status === "FOR APPROVAL"
+                    ? "yellow"
+                    : ticket?.ticket_status === "WORK IN PROGRESS"
+                    ? "blue"
+                    : ticket?.ticket_status === "DONE"
+                    ? "teal"
+                    : ticket?.ticket_status === "DECLINED"
+                    ? "red"
+                    : "gray"
+                }
+                fullWidth
+              >
+                {ticket?.ticket_status}
+              </Badge>
+            )}
+          </Box>
 
-          {statusLoading ? (
-            <Skeleton height={24} width={120} radius="sm" />
-          ) : (
-            <Badge
-              color={
-                ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
-                  ? "yellow"
-                  : ticket?.ticket_status === "FOR APPROVAL"
-                  ? "yellow"
-                  : ticket?.ticket_status === "WORK IN PROGRESS"
-                  ? "blue"
-                  : ticket?.ticket_status === "DONE"
-                  ? "green"
-                  : ticket?.ticket_status === "DECLINED"
-                  ? "red"
-                  : "gray"
-              }
-              size="md"
-              variant="filled"
-              radius="sm"
-            >
-              {ticket?.ticket_status}
-            </Badge>
-          )}
-        </Stack>
-
-        {/* Actions */}
-        {!(
-          ticket?.ticket_status === "CANCELED" ||
-          ticket?.ticket_status === "DONE" ||
-          ticket?.ticket_status === "DECLINED"
-        ) && (
-          <>
-            <Group gap="xs" align="center" wrap="nowrap">
-              <Text size="sm" fw={600} ta="left">
-                Actions:
+          {/* Actions Section */}
+          {!(
+            ticket?.ticket_status === "CANCELED" ||
+            ticket?.ticket_status === "DONE" ||
+            ticket?.ticket_status === "DECLINED"
+          ) && (
+            <Box>
+              <Text size="md" fw={500} c="dimmed" mb="md">
+                Actions
               </Text>
-            </Group>
-            <Stack gap="md">
-              {ticket?.ticket_status === "FOR CANVASS" && isCreator && (
-                <Group
-                  gap="sm"
-                  align="center"
-                  wrap="nowrap"
-                  style={{
-                    cursor: "pointer",
-                    transition: "transform 0.2s ease",
-                    borderRadius: "4px",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = "gray")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = "transparent")
-                  }
-                  onClick={() => setCanvassStartOpen(true)} // Open the modal first
-                >
-                  <IconClipboardCheck size={18} />
-                  <Text size="sm" fw={600}>
+              <Stack gap="sm">
+                {ticket?.ticket_status === "FOR CANVASS" && isCreator && (
+                  <Button
+                    leftSection={<IconClipboardCheck size={18} />}
+                    radius="md"
+                    variant="light"
+                    color="blue"
+                    fullWidth
+                    onClick={() => setCanvassStartOpen(true)}
+                  >
                     Start Canvass
-                  </Text>
-                </Group>
-              )}
+                  </Button>
+                )}
 
-              {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
-                isReviewer &&
-                user?.user_role !== "MANAGER" && (
-                  <>
-                    {[
-                      {
-                        status: "APPROVED",
-                        label: "Approve",
-                        Icon: IconClipboardCheck,
-                      },
-                      // {
-                      //   status: "DECLINED",
-                      //   label: "Decline",
-                      //   Icon: IconClipboardX,
-                      // },
-                      {
-                        status: "NEEDS_REVISION",
-                        label: "Needs Revision",
-                        Icon: IconEdit,
-                      },
-                    ].map(({ status, label, Icon }) => (
-                      <Group
-                        key={status}
-                        gap="sm"
-                        align="center"
-                        wrap="nowrap"
-                        style={{
-                          cursor: isDisabled ? "not-allowed" : "pointer",
-                          opacity: isDisabled ? 0.5 : 1, // Dim the buttons if disabled
-                          transition: "transform 0.2s ease",
-                          borderRadius: "4px",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isDisabled)
-                            e.currentTarget.style.backgroundColor = "gray";
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isDisabled)
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
-                        }}
+                {ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS" &&
+                  isReviewer &&
+                  user?.user_role !== "MANAGER" && (
+                    <>
+                      <Button
+                        leftSection={<IconClipboardCheck size={18} />}
+                        radius="md"
+                        color="teal"
+                        fullWidth
+                        disabled={isDisabled}
                         onClick={() => {
-                          if (isDisabled) return;
-                          setApprovalStatus(status);
+                          setApprovalStatus("APPROVED");
                           setCanvassApprovalOpen(true);
                         }}
                       >
-                        <Icon size={18} />
-                        <Text size="sm" fw={600}>
-                          {label}
-                        </Text>
-                      </Group>
-                    ))}
-                  </>
-                )}
+                        Approve
+                      </Button>
+                      <Button
+                        leftSection={<IconEdit size={18} />}
+                        radius="md"
+                        color="yellow"
+                        variant="light"
+                        fullWidth
+                        disabled={isDisabled}
+                        onClick={() => {
+                          setApprovalStatus("NEEDS_REVISION");
+                          setCanvassApprovalOpen(true);
+                        }}
+                      >
+                        Needs Revision
+                      </Button>
+                    </>
+                  )}
 
-              {ticket?.ticket_status === "FOR APPROVAL" && isManager && (
-                <>
-                  {[
-                    {
-                      status: "APPROVED",
-                      label: "Approve",
-                      Icon: IconClipboardCheck,
-                    },
-                    {
-                      status: "DECLINED",
-                      label: "Decline",
-                      Icon: IconClipboardX,
-                    },
-                  ].map(({ status, label, Icon }) => (
-                    <Group
-                      key={status}
-                      gap="sm"
-                      align="center"
-                      wrap="nowrap"
-                      style={{
-                        cursor: "pointer",
-                        transition: "transform 0.2s ease",
-                        borderRadius: "4px",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor = "gray")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = "transparent")
-                      }
+                {ticket?.ticket_status === "FOR APPROVAL" && isManager && (
+                  <>
+                    <Button
+                      leftSection={<IconClipboardCheck size={18} />}
+                      radius="md"
+                      color="teal"
+                      fullWidth
                       onClick={() => {
-                        setApprovalStatus(status);
+                        setApprovalStatus("APPROVED");
                         setCanvassApprovalOpen(true);
                       }}
                     >
-                      <Icon size={18} />
-                      <Text size="sm" fw={600}>
-                        {label}
-                      </Text>
-                    </Group>
-                  ))}
-                </>
-              )}
-
-              <Group
-                gap="sm"
-                pr="xs"
-                align="center"
-                wrap="nowrap"
-                style={{
-                  cursor: "pointer",
-                  transition: "transform 0.2s ease",
-                  borderRadius: "4px",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "gray")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
-                onClick={() => setCancelRequestOpen(true)} // Open the modal
-              >
-                <IconX size={18} />
-                <Text size="sm" fw={600}>
-                  Cancel Request
-                </Text>
-              </Group>
-            </Stack>
-          </>
-        )}
-
-        <Stack gap="sm">
-          <Text size="sm" fw={600}>
-            Request type:
-          </Text>
-          <Group gap="xs">
-            <ThemeIcon size="sm" variant="transparent" color="inherit">
-              <IconShoppingCartFilled size={16} />
-            </ThemeIcon>
-            <Text size="sm">Sourcing</Text>
-          </Group>
-        </Stack>
-        {statusLoading ? (
-          <Skeleton height={24} width={120} radius="sm" />
-        ) : (
-          <Stack gap="sm">
-            {ticket.reviewers.length > 0 ? (
-              <>
-                {/* Regular Reviewers Section */}
-                {ticket.reviewers.some(
-                  (reviewer) => reviewer.reviewer_role !== "MANAGER"
-                ) && (
-                  <>
-                    <Text size="sm" fw={600}>
-                      Reviewer(s):
-                    </Text>
-                    {ticket.reviewers
-                      .filter(
-                        (reviewer) => reviewer.reviewer_role !== "MANAGER"
-                      )
-                      .map((reviewer) => (
-                        <Group key={reviewer.reviewer_id} gap="xs">
-                          <Avatar
-                            src={reviewer.reviewer_avatar}
-                            radius="xl"
-                            size="sm"
-                          />
-                          <Text size="sm">{reviewer.reviewer_name}</Text>
-                          <Badge
-                            color={
-                              reviewer.approval_status === "APPROVED"
-                                ? "green"
-                                : reviewer.approval_status === "REJECTED"
-                                ? "red"
-                                : "gray"
-                            }
-                            size="xs"
-                          >
-                            {reviewer.approval_status}
-                          </Badge>
-                        </Group>
-                      ))}
+                      Approve
+                    </Button>
+                    <Button
+                      leftSection={<IconClipboardX size={18} />}
+                      radius="md"
+                      color="red"
+                      variant="light"
+                      fullWidth
+                      onClick={() => {
+                        setApprovalStatus("DECLINED");
+                        setCanvassApprovalOpen(true);
+                      }}
+                    >
+                      Decline
+                    </Button>
                   </>
                 )}
-                {/* Managers Section */}
+
+                <Button
+                  variant="light"
+                  color="red"
+                  leftSection={<IconX size={18} />}
+                  radius="md"
+                  fullWidth
+                  onClick={() => handleCanvassAction("CANCELED")}
+                >
+                  Cancel Request
+                </Button>
+              </Stack>
+            </Box>
+          )}
+
+          <Divider />
+
+          {/* Request Info Section */}
+          <Box>
+            <Text size="md" fw={500} c="dimmed" mb="md">
+              Request Details
+            </Text>
+            <Group gap="md">
+              <ThemeIcon size="xl" color="blue" variant="light" radius="md">
+                <IconShoppingCartFilled size={20} />
+              </ThemeIcon>
+              <Stack gap={2}>
+                <Text size="md" fw={500}>
+                  Sourcing
+                </Text>
+                <Text size="sm" c="dimmed">
+                  Procurement Request
+                </Text>
+              </Stack>
+            </Group>
+          </Box>
+
+          <Divider />
+
+          {/* Reviewers Section */}
+          {!statusLoading && ticket.reviewers.length > 0 && (
+            <Box>
+              <Text size="md" fw={500} c="dimmed" mb="md">
+                Reviewers
+              </Text>
+              <Stack gap="md">
+                {/* Regular Reviewers */}
+                {ticket.reviewers
+                  .filter((reviewer) => reviewer.reviewer_role !== "MANAGER")
+                  .map((reviewer) => (
+                    <Group
+                      key={reviewer.reviewer_id}
+                      align="center"
+                      justify="space-between"
+                    >
+                      <Flex gap="xs" align="center">
+                        <Avatar
+                          src={reviewer.reviewer_avatar}
+                          radius="xl"
+                          size="md"
+                        />
+                        <Stack gap={2}>
+                          <Text size="sm" fw={500}>
+                            {reviewer.reviewer_name}
+                          </Text>
+                        </Stack>
+                      </Flex>
+
+                      <Badge
+                        size="sm"
+                        color={
+                          reviewer.approval_status === "APPROVED"
+                            ? "green"
+                            : reviewer.approval_status === "REJECTED"
+                            ? "red"
+                            : "gray"
+                        }
+                      >
+                        {reviewer.approval_status}
+                      </Badge>
+                    </Group>
+                  ))}
+
+                {/* Managers */}
                 {ticket.reviewers.some(
                   (reviewer) => reviewer.reviewer_role === "MANAGER"
                 ) && (
                   <>
-                    <Text size="sm" fw={600}>
-                      Manager(s):
+                    <Text size="sm" fw={500} mt="md">
+                      Managers:
                     </Text>
                     {ticket.reviewers
                       .filter(
@@ -379,119 +349,130 @@ const TicketStatusAndActions = ({
                           <Avatar
                             src={manager.reviewer_avatar}
                             radius="xl"
-                            size="sm"
+                            size="md"
                           />
-                          <Text size="sm">{manager.reviewer_name}</Text>
-                          <Badge
-                            color={
-                              manager.approval_status === "APPROVED"
-                                ? "green"
-                                : manager.approval_status === "REJECTED"
-                                ? "red"
-                                : "gray"
-                            }
-                            size="xs"
-                          >
-                            {manager.approval_status}
-                          </Badge>
+                          <Stack gap={2}>
+                            <Text size="sm" fw={500}>
+                              {manager.reviewer_name}
+                            </Text>
+                            <Badge
+                              size="sm"
+                              color={
+                                manager.approval_status === "APPROVED"
+                                  ? "green"
+                                  : manager.approval_status === "REJECTED"
+                                  ? "red"
+                                  : "gray"
+                              }
+                            >
+                              {manager.approval_status}
+                            </Badge>
+                          </Stack>
                         </Group>
                       ))}
                   </>
                 )}
-              </>
-            ) : (
-              <Text size="sm" c="dimmed">
-                No reviewers assigned
-              </Text>
-            )}
-          </Stack>
-        )}
-        {/* Shared With */}
-        <Stack gap="sm">
-          <Group gap="xs" align="center" wrap="nowrap">
-            <Text size="sm" fw={600} ta="left">
-              Shared With:
-            </Text>
-          </Group>
+              </Stack>
+            </Box>
+          )}
 
-          <Stack gap="sm">
-            {/* Display ticket creator at the top */}
-            <Group gap="xs" align="center" wrap="nowrap">
-              <Avatar
-                src={ticket.ticket_created_by_avatar}
-                radius="xl"
-                size="sm"
-              />
-              <Text size="sm">{ticket.ticket_created_by_name}</Text>
-              <Text size="xs" p="0" c="dimmed">
-                (Creator)
+          <Divider />
+
+          {/* Shared with Section */}
+          <Box>
+            <Group justify="space-between" mb="md">
+              <Text size="md" fw={500} c="dimmed">
+                Shared with
               </Text>
+
+              {isCreator && (
+                <Tooltip label="Share ticket">
+                  <ActionIcon
+                    variant="light"
+                    color="blue"
+                    onClick={() => setIsSharing(true)}
+                    radius="md"
+                    size="md"
+                  >
+                    <IconPlus size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
             </Group>
 
-            {/* Show loading state while sharing */}
-            {isSharingLoading ? (
-              <Stack gap="sm">
-                <Skeleton height={20} width={150} />
-                <Skeleton height={20} width={200} />
-              </Stack>
-            ) : ticket.shared_users.length > 0 ? (
-              ticket.shared_users.map((u) => (
-                <Group key={u.user_id} gap="xs" align="center" wrap="nowrap">
-                  <Avatar src={u.user_avatar} radius="xl" size="sm" />
-                  <Text size="sm">{u.user_full_name}</Text>
-                </Group>
-              ))
-            ) : (
-              <Text size="sm" c="dimmed">
-                No shared users yet.
-              </Text>
-            )}
-          </Stack>
-        </Stack>
+            <Stack gap="sm">
+              {/* Creator */}
+              <Group gap="xs">
+                <Avatar
+                  src={ticket.ticket_created_by_avatar}
+                  radius="xl"
+                  size="md"
+                />
+                <Stack gap={4}>
+                  <Text size="sm" fw={500}>
+                    {ticket.ticket_created_by_name}
+                  </Text>
+                  <Badge size="xs">Creator</Badge>
+                </Stack>
+              </Group>
 
-        {/* Share Button */}
-        {isCreator && (
+              {/* Shared Users */}
+              {isSharingLoading ? (
+                <Stack gap="sm">
+                  <Skeleton height={40} radius="md" />
+                  <Skeleton height={40} radius="md" />
+                </Stack>
+              ) : (
+                ticket.shared_users.map((user) => (
+                  <Box key={user.user_id}>
+                    <Divider my="xs" />
+                    <Group key={user.user_id}>
+                      <Avatar src={user.user_avatar} radius="xl" size="md" />
+                      <Text size="sm" fw={500}>
+                        {user.user_full_name}
+                      </Text>
+                    </Group>
+                  </Box>
+                ))
+              )}
+
+              {!isSharingLoading && ticket.shared_users.length === 0 && (
+                <Text c="dimmed" size="sm" pt="md">
+                  No one has been shared with yet
+                </Text>
+              )}
+            </Stack>
+          </Box>
+        </Stack>
+      </Paper>
+
+      {/* Share Modal */}
+      {(isAdmin || isCreator) && (
+        <Modal
+          opened={isSharing}
+          onClose={() => setIsSharing(false)}
+          title="Share Ticket"
+          centered
+        >
+          <MultiSelect
+            data={allUsers}
+            value={selectedUsers}
+            onChange={setSelectedUsers}
+            placeholder="Select users to share with"
+            searchable
+            clearable
+          />
           <Button
-            mt="sm"
-            size="xs"
-            variant="light"
-            leftSection={<IconPlus size={18} />}
-            onClick={() => setIsSharing(true)}
+            onClick={handleShareTicket}
+            mt="md"
+            loading={isSharingLoading}
+            disabled={isSharingLoading}
           >
-            <Text size="sm" fw={600}>
-              Share Ticket
-            </Text>
+            {isSharingLoading ? "Sharing..." : "Share"}
           </Button>
-        )}
-      </Stack>
-      {(isAdmin || ticket?.ticket_created_by === user?.user_id) && (
-        <>
-          <Modal
-            opened={isSharing}
-            onClose={() => setIsSharing(false)}
-            title="Share Ticket"
-            centered
-          >
-            <MultiSelect
-              data={allUsers}
-              value={selectedUsers}
-              onChange={setSelectedUsers}
-              placeholder="Select users to share with"
-              searchable
-              clearable
-            />
-            <Button
-              onClick={handleShareTicket}
-              mt="md"
-              loading={isSharingLoading}
-              disabled={isSharingLoading}
-            >
-              {isSharingLoading ? "Sharing..." : "Share"}
-            </Button>
-          </Modal>
-        </>
+        </Modal>
       )}
-    </Box>
+    </Grid.Col>
   );
 };
 

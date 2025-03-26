@@ -19,38 +19,49 @@ import {
   TicketDetailsType,
 } from "@/utils/types";
 import {
+  ActionIcon,
+  Alert,
   Avatar,
+  Badge,
   Box,
   Button,
-  Card,
   Center,
   Collapse,
   Container,
-  Flex,
+  Divider,
+  Grid,
   Group,
   Loader,
   Modal,
+  Paper,
   Stack,
   Text,
   Textarea,
+  ThemeIcon,
   Title,
+  Tooltip,
+  useMantineColorScheme,
 } from "@mantine/core";
 import {
   IconArrowLeft,
   IconChevronDown,
   IconChevronUp,
+  IconClock,
   IconFile,
   IconFileText,
 } from "@tabler/icons-react";
 import DOMPurify from "dompurify";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const TicketDetailsPage = () => {
   const { ticket_id } = useParams() as { ticket_id: string };
+  const router = useRouter();
+
   const { user } = useUserStore();
   // const { setComments } = useCommentsStore();
+  const { colorScheme } = useMantineColorScheme();
 
   const [comments, setComments] = useState<CommentType[]>([]);
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
@@ -525,32 +536,102 @@ const TicketDetailsPage = () => {
   }
 
   return (
-    <Container size="xl" py="xl">
-      <Flex justify="flex-start" align="center" gap="lg">
-        <Link href="/tickets">
-          <Button variant="light" leftSection={<IconArrowLeft size={16} />}>
-            Go back
-          </Button>
-        </Link>
-      </Flex>
-      <Group align="start" grow w="100%">
-        <Card shadow="sm" mt="lg" radius="sm" withBorder px={30}>
-          <Title ta="left" my={20} fz="h3">
-            Ticket Details
+    <Box p={{ base: "lg", sm: "xl" }}>
+      {/* Header Section with Back Button */}
+      <Stack gap={2} mb="xl">
+        <Button
+          variant="light"
+          onClick={() => router.push("/tickets")}
+          leftSection={<IconArrowLeft size={16} />}
+          radius="md"
+          w="fit-content"
+          mb="xl"
+        >
+          Back to Tickets
+        </Button>
+        <Group>
+          <Title
+            pl={16}
+            order={1}
+            styles={(theme) => ({
+              root: {
+                borderLeft: `4px solid ${theme.colors.blue[5]}`,
+                position: "relative",
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  bottom: -4,
+                  left: 16,
+                  width: "40%",
+                  height: "2px",
+                  background: theme.colors.gray[3],
+                },
+              },
+            })}
+          >
+            Ticket ID:{" "}
+            <Badge
+              fz="lg"
+              fw={600}
+              p="md"
+              style={{ position: "relative", top: -4 }}
+            >
+              {ticket_id}
+            </Badge>
           </Title>
-          <Flex w="100%" gap="md">
-            <Box w="70%">
-              <Card shadow="sm" radius="sm" withBorder px={30}>
-                <Group justify="space-between">
-                  <Group>
-                    <Avatar
-                      src={ticket.ticket_created_by_avatar}
-                      radius="xl"
-                      size="md"
-                    />
-                    <Text size="sm" c="dimmed">
-                      <strong>{ticket.ticket_created_by_name}</strong> raised
-                      this on{" "}
+        </Group>
+      </Stack>
+
+      {/* Main Content Grid */}
+      <Grid gutter="xl">
+        {/* Left Column */}
+        <Grid.Col span={{ base: 12, md: 8 }}>
+          <Paper
+            radius="lg"
+            shadow="sm"
+            p="xl"
+            withBorder
+            style={(theme) => ({
+              backgroundColor:
+                colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
+              borderColor:
+                colorScheme === "dark"
+                  ? theme.colors.dark[5]
+                  : theme.colors.gray[1],
+            })}
+          >
+            {/* Ticket Header */}
+            <Group align="center" justify="space-between">
+              <Group gap="lg">
+                <Box pos="relative">
+                  <Avatar
+                    src={ticket.ticket_created_by_avatar}
+                    radius="xl"
+                    size={64}
+                  />
+                  <Badge
+                    size="xs"
+                    variant="filled"
+                    color="blue"
+                    pos="absolute"
+                    bottom={-4}
+                    right={-4}
+                  >
+                    Creator
+                  </Badge>
+                </Box>
+                <Stack gap={4}>
+                  <Text size="sm" fw={600} tt="uppercase" c="dimmed">
+                    Created by
+                  </Text>
+                  <Text size="xl" fw={700}>
+                    {ticket.ticket_created_by_name}
+                  </Text>
+                  <Group gap={6}>
+                    <ThemeIcon size="xs" color="gray" variant="light">
+                      <IconClock size={12} />
+                    </ThemeIcon>
+                    <Text size="xs" c="dimmed">
                       {new Date(ticket.ticket_date_created).toLocaleString(
                         "en-US",
                         {
@@ -564,454 +645,537 @@ const TicketDetailsPage = () => {
                       )}
                     </Text>
                   </Group>
-                  <Text
-                    size="sm"
-                    c="blue"
-                    style={{
-                      cursor: "pointer",
-                      textDecoration: "none",
-                      transition: "text-decoration 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.textDecoration = "underline")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.textDecoration = "none")
-                    }
-                    onClick={() => setIsFormVisible((prev) => !prev)}
-                  >
-                    {isFormVisible ? "Hide details" : "Show details"}
-                  </Text>
-                </Group>
+                </Stack>
+              </Group>
+              <Tooltip label={isFormVisible ? "Hide details" : "Show details"}>
+                <ActionIcon
+                  variant={isFormVisible ? "filled" : "light"}
+                  onClick={() => setIsFormVisible((prev) => !prev)}
+                  color={isFormVisible ? "blue" : "gray"}
+                  radius="xl"
+                  size={30}
+                >
+                  {isFormVisible ? (
+                    <IconChevronUp size={18} />
+                  ) : (
+                    <IconChevronDown size={18} />
+                  )}
+                </ActionIcon>
+              </Tooltip>
+            </Group>
 
-                <Collapse in={isFormVisible}>
-                  {isFormVisible && (
-                    <>
-                      <Box pt="md" px="md">
-                        <Stack align="start" px="md" gap="md">
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              RF Date Received:
-                            </Text>
-                            <Text size="sm">
-                              {new Date(
-                                ticket.ticket_rf_date_received
-                              ).toLocaleString("en-US", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </Text>
-                          </Stack>
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              Item Name:
-                            </Text>
-                            <Text size="sm">{ticket.ticket_item_name}</Text>
-                          </Stack>
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              Item Description:
-                            </Text>
-                            <Text size="sm">
-                              {ticket.ticket_item_description}
-                            </Text>
-                          </Stack>
-                          <Stack gap="sm">
-                            <Text size="md" fw={600} ta="left">
-                              Quantity:
-                            </Text>
-                            <Text size="sm">{ticket.ticket_quantity}</Text>
-                          </Stack>
-                          <Stack gap="0">
-                            <Text size="md" fw={600} ta="left">
+            {/* Ticket Details Collapse */}
+            <Collapse in={isFormVisible}>
+              {isFormVisible && (
+                <>
+                  {/* Ticket Details */}
+                  <Grid gutter="xl" mt={`${isFormVisible ? "xl" : 0}`}>
+                    <Grid.Col span={12}>
+                      <Stack gap="xl">
+                        {/* RF Date Received */}
+                        <Stack gap={4}>
+                          <Text size="md" c="dimmed" fw={500}>
+                            RF Date Received:
+                          </Text>
+                          <Text fw={500}>
+                            {new Date(
+                              ticket.ticket_rf_date_received
+                            ).toLocaleString("en-US", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </Text>
+                        </Stack>
+
+                        {/* Item Name */}
+                        <Stack gap={4}>
+                          <Text size="md" c="dimmed" fw={500}>
+                            Item Name:
+                          </Text>
+                          <Text fw={500}>{ticket.ticket_item_name}</Text>
+                        </Stack>
+
+                        {/* Item Description */}
+                        <Stack gap={4}>
+                          <Text size="md" c="dimmed" fw={500}>
+                            Item Description:
+                          </Text>
+                          <Text fw={500}>{ticket.ticket_item_description}</Text>
+                        </Stack>
+
+                        {/* Quantity */}
+                        <Stack gap={4}>
+                          <Text size="md" c="dimmed" fw={500}>
+                            Item Description:
+                          </Text>
+                          <Text fw={500}>{ticket.ticket_quantity}</Text>
+                        </Stack>
+
+                        {/* Specifications */}
+                        {ticket.ticket_specifications && (
+                          <Stack gap={0}>
+                            <Text size="md" c="dimmed" fw={500}>
                               Specifications:
                             </Text>
-                            <Text size="md">
-                              <span
-                                dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(
-                                    ticket.ticket_specifications
-                                  ),
-                                }}
-                              />
-                            </Text>
+                            <Text
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(
+                                  ticket.ticket_specifications
+                                ),
+                              }}
+                            />
                           </Stack>
-                          <Stack gap="0">
-                            <Text size="md" fw={600} ta="left">
+                        )}
+
+                        {/* Notes */}
+                        {ticket.ticket_notes && (
+                          <Stack gap={4}>
+                            <Text size="md" c="dimmed" fw={500}>
                               Notes:
                             </Text>
-                            <Text size="md">
-                              <span
-                                dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(
-                                    ticket.ticket_notes
-                                  ),
-                                }}
-                              />
-                            </Text>
+                            <Text
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(ticket.ticket_notes),
+                              }}
+                            />
                           </Stack>
-                        </Stack>
-                      </Box>
-                      <Modal
-                        opened={canvassApprovalOpen}
-                        onClose={() => setCanvassApprovalOpen(false)}
-                        title={
-                          isManager
-                            ? "Finalize Ticket"
-                            : `Confirm ${
-                                approvalStatus === "APPROVED"
-                                  ? "Approval"
-                                  : approvalStatus === "NEEDS_REVISION"
-                                  ? "Request Revision"
-                                  : "Decline"
-                              }`
-                        }
-                        centered
+                        )}
+                      </Stack>
+                    </Grid.Col>
+                  </Grid>
+
+                  {/* Approval Modal */}
+                  <Modal
+                    opened={canvassApprovalOpen}
+                    onClose={() => setCanvassApprovalOpen(false)}
+                    title={
+                      isManager
+                        ? "Finalize Ticket"
+                        : `Confirm ${
+                            approvalStatus === "APPROVED"
+                              ? "Approval"
+                              : approvalStatus === "NEEDS_REVISION"
+                              ? "Request Revision"
+                              : "Decline"
+                          }`
+                    }
+                    centered
+                  >
+                    <Textarea
+                      value={newComment}
+                      onChange={(event) => setNewComment(event.target.value)}
+                      placeholder="Optional comment..."
+                      autosize
+                      minRows={3}
+                    />
+
+                    <Group mt="md" justify="flex-end">
+                      <Button
+                        variant="default"
+                        onClick={() => setCanvassApprovalOpen(false)}
                       >
-                        <Textarea
-                          value={newComment}
-                          onChange={(event) =>
-                            setNewComment(event.target.value)
+                        Cancel
+                      </Button>
+
+                      {isManager ? (
+                        <Button
+                          loading={statusLoading}
+                          color={
+                            approvalStatus === "APPROVED" ? "green" : "red"
                           }
-                          placeholder="Optional comment..."
-                          autosize
-                          minRows={3}
-                        />
-
-                        <Group mt="md" justify="flex-end">
-                          <Button
-                            variant="default"
-                            onClick={() => setCanvassApprovalOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-
-                          {isManager ? (
-                            <Button
-                              loading={statusLoading}
-                              color={
-                                approvalStatus === "APPROVED" ? "green" : "red"
-                              }
-                              onClick={async () => {
-                                setStatusLoading(true);
-                                await handleManagerApproval();
-                                setCanvassApprovalOpen(false);
-                                setStatusLoading(false);
-                              }}
-                            >
-                              {approvalStatus === "APPROVED"
-                                ? "Approve"
-                                : "Decline"}
-                            </Button>
-                          ) : (
-                            <Button
-                              loading={statusLoading}
-                              color={
-                                approvalStatus === "APPROVED"
-                                  ? "blue"
-                                  : approvalStatus === "NEEDS_REVISION"
-                                  ? "yellow"
-                                  : "red"
-                              }
-                              onClick={async () => {
-                                setStatusLoading(true);
-
-                                if (approvalStatus === "NEEDS_REVISION") {
-                                  await handleRevision();
-                                } else {
-                                  await handleReviewerApproval();
-                                }
-
-                                setStatusLoading(false);
-                                setCanvassApprovalOpen(false);
-                              }}
-                            >
-                              {approvalStatus === "APPROVED"
-                                ? "Approve"
-                                : approvalStatus === "NEEDS_REVISION"
-                                ? "Request Revision"
-                                : "Decline"}
-                            </Button>
-                          )}
-                        </Group>
-                      </Modal>
-
-                      <Modal
-                        opened={cancelRequestOpen}
-                        onClose={() => setCancelRequestOpen(false)}
-                        title="Confirm Cancellation"
-                        centered
-                      >
-                        <Textarea
-                          value={newComment}
-                          onChange={(event) =>
-                            setNewComment(event.target.value)
-                          }
-                          placeholder="Optional comment..."
-                          autosize
-                          minRows={3}
-                        />
-
-                        <Group mt="md" justify="flex-end">
-                          <Button
-                            variant="default"
-                            onClick={() => setCancelRequestOpen(false)}
-                          >
-                            No, Keep It
-                          </Button>
-
-                          <Button
-                            color="red"
-                            loading={statusLoading}
-                            onClick={async () => {
-                              setStatusLoading(true);
-                              await handleCancelRequest();
-                              setStatusLoading(false);
-                              setCancelRequestOpen(false);
-                            }}
-                          >
-                            Yes, Cancel Request
-                          </Button>
-                        </Group>
-                      </Modal>
-
-                      <Modal
-                        opened={canvassStartOpen}
-                        onClose={() => setCanvassStartOpen(false)}
-                        title="Confirm Action"
-                        centered
-                      >
-                        <Textarea
-                          value={newComment}
-                          onChange={(event) =>
-                            setNewComment(event.target.value)
-                          }
-                          placeholder="Optional comment..."
-                          autosize
-                          minRows={3}
-                        />
-
-                        <Group mt="md" justify="flex-end">
-                          <Button
-                            variant="default"
-                            onClick={() => setCanvassStartOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-
-                          <Button
-                            color="blue"
-                            loading={statusLoading}
-                            onClick={async () => {
-                              setStatusLoading(true);
-                              await handleStartConfirm();
-                              setStatusLoading(false);
-                              setCanvassStartOpen(false);
-                            }}
-                          >
-                            Start Canvass
-                          </Button>
-                        </Group>
-                      </Modal>
-
-                      <br />
-
-                      {ticket?.ticket_status !== "FOR CANVASS" && (
-                        <Card
-                          shadow="sm"
-                          radius="sm"
-                          withBorder
-                          px={30}
-                          style={{
-                            cursor: !isCanvasVisible ? "pointer" : "default",
-                          }} // Change cursor based on collapse state
-                          onClick={
-                            !isCanvasVisible
-                              ? () => setIsCanvasVisible(true)
-                              : undefined
-                          }
+                          onClick={async () => {
+                            setStatusLoading(true);
+                            await handleManagerApproval();
+                            setCanvassApprovalOpen(false);
+                            setStatusLoading(false);
+                          }}
                         >
-                          {canvasLoading ? (
-                            <Center p="md">
-                              <Loader size="sm" />
-                            </Center>
-                          ) : (
-                            <Stack p={0}>
-                              <Stack
-                                w="100%"
-                                onClick={
-                                  isCanvasVisible
-                                    ? () => setIsCanvasVisible(false)
-                                    : undefined
-                                } // Click only the header to collapse when open
-                                style={{ cursor: "pointer" }}
+                          {approvalStatus === "APPROVED"
+                            ? "Approve"
+                            : "Decline"}
+                        </Button>
+                      ) : (
+                        <Button
+                          loading={statusLoading}
+                          color={
+                            approvalStatus === "APPROVED"
+                              ? "blue"
+                              : approvalStatus === "NEEDS_REVISION"
+                              ? "yellow"
+                              : "red"
+                          }
+                          onClick={async () => {
+                            setStatusLoading(true);
+
+                            if (approvalStatus === "NEEDS_REVISION") {
+                              await handleRevision();
+                            } else {
+                              await handleReviewerApproval();
+                            }
+
+                            setStatusLoading(false);
+                            setCanvassApprovalOpen(false);
+                          }}
+                        >
+                          {approvalStatus === "APPROVED"
+                            ? "Approve"
+                            : approvalStatus === "NEEDS_REVISION"
+                            ? "Request Revision"
+                            : "Decline"}
+                        </Button>
+                      )}
+                    </Group>
+                  </Modal>
+
+                  {/* Start Canvass Modal */}
+                  <Modal
+                    opened={canvassStartOpen}
+                    onClose={() => setCanvassStartOpen(false)}
+                    title="Confirm Action"
+                    centered
+                  >
+                    <Textarea
+                      value={newComment}
+                      onChange={(event) => setNewComment(event.target.value)}
+                      placeholder="Optional comment..."
+                      autosize
+                      minRows={3}
+                    />
+
+                    <Group mt="md" justify="flex-end">
+                      <Button
+                        variant="default"
+                        onClick={() => setCanvassStartOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+
+                      <Button
+                        color="blue"
+                        loading={statusLoading}
+                        onClick={async () => {
+                          setStatusLoading(true);
+                          await handleStartConfirm();
+                          setStatusLoading(false);
+                          setCanvassStartOpen(false);
+                        }}
+                      >
+                        Start Canvass
+                      </Button>
+                    </Group>
+                  </Modal>
+                  <br />
+
+                  {/* Canvass Form Section */}
+                  {ticket?.ticket_status !== "FOR CANVASS" && (
+                    <>
+                      <Divider mb="xl" />
+                      <Box
+                        onClick={
+                          !isCanvasVisible
+                            ? () => setIsCanvasVisible(true)
+                            : undefined
+                        }
+                        px="sm"
+                      >
+                        {canvasLoading ? (
+                          <Center>
+                            <Loader size="sm" variant="dots" />
+                          </Center>
+                        ) : (
+                          <Stack gap="xl">
+                            <Group
+                              justify="space-between"
+                              onClick={
+                                isCanvasVisible
+                                  ? () => setIsCanvasVisible(false)
+                                  : undefined
+                              } // Click only the header to collapse when open
+                              style={{ cursor: "pointer" }}
+                            >
+                              <Group gap="md">
+                                <ThemeIcon
+                                  size="xl"
+                                  radius="md"
+                                  variant="light"
+                                  color="blue"
+                                >
+                                  <IconFileText size={20} stroke={1.5} />
+                                </ThemeIcon>
+                                <Text fz="lg" fw={600}>
+                                  Canvass Form
+                                </Text>
+                              </Group>
+
+                              <ActionIcon
+                                variant="light"
+                                color="gray"
+                                radius="xl"
+                                size={30}
                               >
-                                <Group justify="space-between">
-                                  <Group gap={6}>
-                                    <IconFileText size={18} stroke={1.5} />
-                                    <Text size="sm">Canvass Form</Text>
-                                  </Group>
-
-                                  <Text size="sm">
-                                    {isCanvasVisible ? (
-                                      <IconChevronUp size={18} />
-                                    ) : (
-                                      <IconChevronDown size={18} />
-                                    )}
-                                  </Text>
-                                </Group>
-                              </Stack>
-
-                              <Collapse in={isCanvasVisible}>
-                                {(canvassDetails?.length ?? 0) > 0 ? (
-                                  <>
-                                    {canvassDetails?.map(
-                                      (canvass: CanvassDetail) => (
-                                        <Stack
-                                          key={canvass.canvass_form_id}
-                                          px="sm"
-                                        >
-                                          <Text>
-                                            <strong>RF Date Received:</strong>{" "}
-                                            {new Date(
-                                              canvass.canvass_form_rf_date_received
-                                            ).toLocaleDateString("en-US", {
-                                              day: "2-digit",
-                                              month: "short",
-                                              year: "numeric",
-                                            })}
-                                          </Text>
-                                          <Text>
-                                            <strong>
-                                              Recommended Supplier:
-                                            </strong>{" "}
-                                            {
-                                              canvass.canvass_form_recommended_supplier
-                                            }
-                                          </Text>
-                                          <Text>
-                                            <strong>Lead Time (days):</strong>{" "}
-                                            {canvass.canvass_form_lead_time_day}
-                                          </Text>
-                                          <Text>
-                                            <strong>Total Amount:</strong> ₱
-                                            {canvass.canvass_form_total_amount.toFixed(
-                                              2
-                                            )}
-                                          </Text>
-                                          {canvass.canvass_form_payment_terms && (
-                                            <Text>
-                                              <strong>Payment Terms:</strong>{" "}
-                                              {
-                                                canvass.canvass_form_payment_terms
-                                              }
-                                            </Text>
-                                          )}
-                                          <Text>
-                                            <strong>Submitted By:</strong>{" "}
-                                            {canvass.submitted_by
-                                              .user_full_name || "Unknown"}
-                                          </Text>
-                                          <Text>
-                                            <strong>Date Submitted:</strong>{" "}
-                                            {new Date(
-                                              canvass.canvass_form_date_submitted
-                                            ).toLocaleDateString()}
-                                          </Text>
-
-                                          {canvass.attachments.length > 0 && (
-                                            <div>
-                                              <Text fw={600}>Attachments:</Text>
-                                              {canvass.attachments.map(
-                                                (
-                                                  attachment: CanvassAttachment
-                                                ) => (
-                                                  <Link
-                                                    key={
-                                                      attachment.canvass_attachment_id
-                                                    }
-                                                    href={
-                                                      attachment.canvass_attachment_url ||
-                                                      "#"
-                                                    }
-                                                    target="_blank"
-                                                    style={{
-                                                      color: "#228be6",
-                                                      textDecoration: "none",
-                                                      display: "flex",
-                                                      alignItems: "center",
-                                                      gap: "8px",
-                                                      padding: "4px 0",
-                                                    }}
-                                                  >
-                                                    <IconFile size={16} />
-                                                    {attachment.canvass_attachment_type ||
-                                                      "Document"}{" "}
-                                                    (
-                                                    {new Date(
-                                                      attachment.canvass_attachment_created_at
-                                                    ).toLocaleDateString()}
-                                                    )
-                                                  </Link>
-                                                )
-                                              )}
-                                            </div>
-                                          )}
-                                        </Stack>
-                                      )
-                                    )}
-                                  </>
-                                ) : user?.user_id ===
-                                  ticket?.ticket_created_by ? (
-                                  <CanvassForm
-                                    ticketId={ticket?.ticket_id}
-                                    updateCanvassDetails={fetchCanvassDetails}
-                                    setTicket={setTicket}
-                                  />
+                                {isCanvasVisible ? (
+                                  <IconChevronUp size={18} />
                                 ) : (
-                                  <Text p="md" c="dimmed">
+                                  <IconChevronDown size={18} />
+                                )}
+                              </ActionIcon>
+                            </Group>
+
+                            <Collapse in={isCanvasVisible}>
+                              {(canvassDetails?.length ?? 0) > 0 ? (
+                                <>
+                                  {canvassDetails?.map(
+                                    (canvass: CanvassDetail) => (
+                                      <Box key={canvass.canvass_form_id}>
+                                        <Grid gutter="xl">
+                                          <Grid.Col span={6}>
+                                            <Stack gap="xl">
+                                              {/* RF Date Received */}
+                                              <Stack gap={4}>
+                                                <Text
+                                                  size="md"
+                                                  c="dimmed"
+                                                  fw={500}
+                                                >
+                                                  RF Date Received:
+                                                </Text>
+                                                <Text fw={500}>
+                                                  {new Date(
+                                                    canvass.canvass_form_rf_date_received
+                                                  ).toLocaleString("en-US", {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                  })}
+                                                </Text>
+                                              </Stack>
+
+                                              {/* Lead Time */}
+                                              <Stack gap={4}>
+                                                <Text
+                                                  size="md"
+                                                  c="dimmed"
+                                                  fw={500}
+                                                >
+                                                  Lead Time:
+                                                </Text>
+                                                <Text fw={500}>
+                                                  {
+                                                    canvass.canvass_form_lead_time_day
+                                                  }
+                                                </Text>
+                                              </Stack>
+
+                                              {/* Payment Terms */}
+                                              <Stack gap={4}>
+                                                <Text
+                                                  size="md"
+                                                  c="dimmed"
+                                                  fw={500}
+                                                >
+                                                  Payment Terms:
+                                                </Text>
+                                                <Text fw={500}>
+                                                  {
+                                                    canvass.canvass_form_payment_terms
+                                                  }
+                                                </Text>
+                                              </Stack>
+
+                                              {/* Submitted By */}
+                                              <Stack gap={4}>
+                                                <Text
+                                                  size="md"
+                                                  c="dimmed"
+                                                  fw={500}
+                                                >
+                                                  Submitted By:
+                                                </Text>
+                                                <Group gap="md">
+                                                  <Avatar
+                                                    variant="light"
+                                                    radius="xl"
+                                                    size="md"
+                                                  >
+                                                    {canvass.submitted_by.user_full_name?.charAt(
+                                                      0
+                                                    )}
+                                                  </Avatar>
+                                                  <Stack gap={0}>
+                                                    <Text fw={500}>
+                                                      {canvass.submitted_by
+                                                        .user_full_name ||
+                                                        "Unknown"}
+                                                    </Text>
+                                                    <Text size="xs" c="dimmed">
+                                                      {new Date(
+                                                        canvass.canvass_form_date_submitted
+                                                      ).toLocaleString()}
+                                                    </Text>
+                                                  </Stack>
+                                                </Group>
+                                              </Stack>
+                                            </Stack>
+                                          </Grid.Col>
+                                          <Grid.Col span={6}>
+                                            <Stack gap="xl">
+                                              {/* Recommended Supplier */}
+                                              <Stack gap={4}>
+                                                <Text
+                                                  size="md"
+                                                  c="dimmed"
+                                                  fw={500}
+                                                >
+                                                  Recommended Supplier:
+                                                </Text>
+                                                <Text fw={500}>
+                                                  {
+                                                    canvass.canvass_form_recommended_supplier
+                                                  }
+                                                </Text>
+                                              </Stack>
+
+                                              {/* Total Amount */}
+                                              <Stack gap={4}>
+                                                <Text
+                                                  size="md"
+                                                  c="dimmed"
+                                                  fw={500}
+                                                >
+                                                  Total Amount:
+                                                </Text>
+                                                <Text fw={500}>
+                                                  ₱
+                                                  {canvass.canvass_form_total_amount.toFixed(
+                                                    2
+                                                  )}
+                                                </Text>
+                                              </Stack>
+
+                                              {/* Canvass Attachments */}
+                                              {canvass.attachments.length >
+                                                0 && (
+                                                <Stack gap={4}>
+                                                  <Text
+                                                    size="md"
+                                                    c="dimmed"
+                                                    fw={500}
+                                                  >
+                                                    Attachments:
+                                                  </Text>
+                                                  <Group gap="xs">
+                                                    {canvass.attachments.map(
+                                                      (
+                                                        attachment: CanvassAttachment
+                                                      ) => (
+                                                        <Link
+                                                          key={
+                                                            attachment.canvass_attachment_id
+                                                          }
+                                                          href={
+                                                            attachment.canvass_attachment_url ||
+                                                            "#"
+                                                          }
+                                                          target="_blank"
+                                                        >
+                                                          <Tooltip
+                                                            label={`${
+                                                              attachment.canvass_attachment_type ||
+                                                              "Document"
+                                                            } - ${new Date(
+                                                              attachment.canvass_attachment_created_at
+                                                            ).toLocaleDateString()}`}
+                                                          >
+                                                            <ActionIcon
+                                                              variant="light"
+                                                              color="blue"
+                                                              size="lg"
+                                                              radius="md"
+                                                            >
+                                                              <IconFile
+                                                                size={20}
+                                                              />
+                                                            </ActionIcon>
+                                                          </Tooltip>
+                                                        </Link>
+                                                      )
+                                                    )}
+                                                  </Group>
+                                                </Stack>
+                                              )}
+                                            </Stack>
+                                          </Grid.Col>
+                                        </Grid>
+                                      </Box>
+                                    )
+                                  )}
+                                </>
+                              ) : user?.user_id ===
+                                ticket?.ticket_created_by ? (
+                                <CanvassForm
+                                  ticketId={ticket?.ticket_id}
+                                  updateCanvassDetails={fetchCanvassDetails}
+                                  setTicket={setTicket}
+                                />
+                              ) : (
+                                <Alert variant="light" color="gray" radius="md">
+                                  <Text>
                                     Canvass form is not available yet.
                                   </Text>
-                                )}
-                              </Collapse>
-                            </Stack>
-                          )}
-                        </Card>
-                      )}
+                                </Alert>
+                              )}
+                            </Collapse>
+                          </Stack>
+                        )}
+                      </Box>
                     </>
                   )}
-                </Collapse>
-              </Card>
+                </>
+              )}
+            </Collapse>
+          </Paper>
 
-              <Text size="md" mt="xl" fw="500">
-                {" "}
-                Activity
-              </Text>
-              {/* Comment thread realtime backup */}
-              {/* <CommentThread ticket_id={ticket_id}/> */}
-              <CommentThread
-                ticket_id={ticket_id}
-                comments={comments}
-                setComments={setComments}
-                ticket_status={ticket.ticket_status}
-              />
-            </Box>
-            <TicketStatusAndActions
-              ticket={ticket}
-              statusLoading={statusLoading}
-              isDisabled={isDisabled}
-              setCancelRequestOpen={setCancelRequestOpen}
-              fetchTicketDetails={fetchTicketDetails}
-              setCanvassStartOpen={setCanvassStartOpen}
-              setApprovalStatus={setApprovalStatus}
-              setCanvassApprovalOpen={setCanvassApprovalOpen}
-              handleCanvassAction={handleCanvassAction}
+          <Paper
+            mt="xl"
+            radius="lg"
+            shadow="sm"
+            p="xl"
+            withBorder
+            style={(theme) => ({
+              backgroundColor:
+                colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
+              borderColor:
+                colorScheme === "dark"
+                  ? theme.colors.dark[5]
+                  : theme.colors.gray[1],
+            })}
+          >
+            <Text mb="lg" size="xl" fw={700}>
+              Activity
+            </Text>
+            {/* Comment thread realtime backup */}
+            {/* <CommentThread ticket_id={ticket_id}/> */}
+            <CommentThread
+              ticket_id={ticket_id}
+              comments={comments}
+              setComments={setComments}
+              ticket_status={ticket.ticket_status}
             />
-          </Flex>
-        </Card>
-      </Group>
-    </Container>
+          </Paper>
+        </Grid.Col>
+        <TicketStatusAndActions
+          ticket={ticket}
+          statusLoading={statusLoading}
+          isDisabled={isDisabled}
+          fetchTicketDetails={fetchTicketDetails}
+          setCanvassStartOpen={setCanvassStartOpen}
+          setApprovalStatus={setApprovalStatus}
+          setCanvassApprovalOpen={setCanvassApprovalOpen}
+          handleCanvassAction={handleCanvassAction}
+        />
+      </Grid>
+    </Box>
   );
 };
 

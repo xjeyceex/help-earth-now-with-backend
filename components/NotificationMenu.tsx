@@ -179,7 +179,7 @@ const NotificationMenu = () => {
       </Menu.Target>
 
       <Menu.Dropdown miw={320} p={6}>
-        <Menu.Label fz="md" fw="bold">
+        <Menu.Label fz="md" fw={600}>
           Notifications
         </Menu.Label>
 
