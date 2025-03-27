@@ -610,8 +610,8 @@ const TicketDetailsPage = () => {
                                     )
                                   )}
                                 </>
-                              ) : user?.user_id ===
-                                ticket?.ticket_created_by ? (
+                              ) : user?.user_id === ticket?.ticket_created_by &&
+                                ticket?.ticket_status !== "CANCELED" ? (
                                 <CanvassForm
                                   ticketId={ticket?.ticket_id}
                                   updateCanvassDetails={fetchCanvassDetails}
