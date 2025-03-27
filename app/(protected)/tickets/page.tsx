@@ -38,7 +38,6 @@ const getStatusColor = (status: string) => {
       return "indigo.6";
     case "WORK IN PROGRESS":
       return "blue.6";
-    case "FOR REVIEW":
     case "FOR REVIEW OF SUBMISSIONS":
       return "violet.6";
     case "FOR APPROVAL":
@@ -55,7 +54,6 @@ const getStatusColor = (status: string) => {
 type TicketStatus =
   | "FOR CANVASS"
   | "WORK IN PROGRESS"
-  | "FOR REVIEW"
   | "FOR APPROVAL"
   | "DONE"
   | "CANCELED"
@@ -91,7 +89,6 @@ const TicketList = () => {
     { value: "all", label: "All" },
     { value: "FOR CANVASS", label: "For Canvass" },
     { value: "WORK IN PROGRESS", label: "Work in Progress" },
-    { value: "FOR REVIEW", label: "For Review" },
     { value: "FOR REVIEW OF SUBMISSIONS", label: "For Review of Submissions" },
     { value: "FOR APPROVAL", label: "For Approval" },
     { value: "CANCELED", label: "Canceled" },
@@ -109,7 +106,7 @@ const TicketList = () => {
   const availableTickets = tickets.filter((ticket) => {
     const isPurchaser = user?.user_role === "PURCHASER";
     const isSharedWithUser = ticket.shared_users?.some(
-      (sharedUser) => sharedUser === user?.user_id,
+      (sharedUser) => sharedUser === user?.user_id
     );
     const isTicketOwner = ticket.ticket_created_by === user?.user_id;
 
