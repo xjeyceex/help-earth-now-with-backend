@@ -62,6 +62,22 @@ export const getDashboardTickets = async (user_id?: string) => {
   return data as DashboardTicketType[];
 };
 
+export const fetchUserById = async (user_id: string) => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("user_table")
+    .select("user_id, user_full_name, user_email, user_avatar, user_role") // Added user_role
+    .eq("user_id", user_id)
+    .single();
+
+  if (error) {
+    console.error("Supabase Error:", error.message);
+    return null; // Return null if there's an error or no user found
+  }
+
+  return data; // Return the user data
+};
 export const getTicketDetails = async (ticket_id: string) => {
   const supabase = await createClient();
 
