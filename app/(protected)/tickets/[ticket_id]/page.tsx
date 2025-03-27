@@ -361,7 +361,7 @@ const TicketDetailsPage = () => {
                   {/* Canvass Form Section */}
                   {ticket?.ticket_status !== "FOR CANVASS" && (
                     <>
-                      <Divider mb="lg" />
+                      <Divider mb="lg" mt="xl" />
                       <Box
                         onClick={
                           !isCanvasVisible
