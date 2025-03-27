@@ -213,10 +213,12 @@ CREATE TRIGGER after_user_signup
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.create_user();
 
--- Trigger the function every time a user is created
+-- Function to retrieve dashboard tickets
+DROP FUNCTION IF EXISTS get_dashboard_tickets(UUID);
 CREATE OR REPLACE FUNCTION get_dashboard_tickets(_user_id UUID)
 RETURNS TABLE (
   ticket_id UUID,
+  ticket_name TEXT,
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_date_created TIMESTAMPTZ
@@ -225,6 +227,7 @@ LANGUAGE SQL
 AS $$
   SELECT 
     t.ticket_id,
+    t.ticket_name,  -- Added ticket_name
     t.ticket_status,
     t.ticket_item_description,
     timezone('Asia/Manila', t.ticket_date_created) AS ticket_date_created
@@ -244,7 +247,7 @@ AS $$
     )
 $$;
 
---function for all user tickets
+-- Drop existing function if it exists
 DROP FUNCTION IF EXISTS get_all_my_tickets(UUID, TEXT, UUID);
 CREATE OR REPLACE FUNCTION get_all_my_tickets(
   user_id UUID, 
@@ -253,10 +256,11 @@ CREATE OR REPLACE FUNCTION get_all_my_tickets(
 )
 RETURNS TABLE (
   ticket_id UUID,
+  ticket_name TEXT, -- Added ticket_name
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_created_by UUID,
-  ticket_date_created TIMESTAMPTZ, -- Added this field
+  ticket_date_created TIMESTAMPTZ,
   shared_users JSON,
   reviewers JSON
 )
@@ -264,10 +268,11 @@ LANGUAGE sql
 AS $$  
   SELECT
     t.ticket_id,
+    t.ticket_name, -- Included ticket_name
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
-    t.ticket_date_created, -- Added this field
+    t.ticket_date_created,
 
     -- Combine all shared users into an array
     COALESCE(
@@ -312,13 +317,15 @@ AS $$
 
   GROUP BY
     t.ticket_id,
+    t.ticket_name, -- Ensure grouping includes ticket_name
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
-    t.ticket_date_created -- Ensuring this is grouped properly
+    t.ticket_date_created
   ORDER BY
-    t.ticket_date_created DESC -- Ensuring the final output is sorted
+    t.ticket_date_created DESC
 $$;
+
 
 --view for realtime comment
 CREATE VIEW comment_with_avatar_view AS
@@ -383,6 +390,7 @@ DROP FUNCTION IF EXISTS get_ticket_details(uuid);
 CREATE OR REPLACE FUNCTION get_ticket_details(ticket_uuid UUID) 
 RETURNS TABLE (   
   ticket_id UUID,   
+  ticket_name TEXT,  -- Added ticket_name   
   ticket_item_name TEXT,    
   ticket_item_description TEXT,   
   ticket_status TEXT,   
@@ -403,6 +411,7 @@ LANGUAGE SQL
 AS $$    
 SELECT     
   t.ticket_id,    
+  t.ticket_name,   -- Added ticket_name  
   t.ticket_item_name,     
   t.ticket_item_description,    
   t.ticket_status,    
@@ -418,7 +427,7 @@ SELECT
       SELECT a.approval_review_status        
       FROM approval_table a        
       WHERE a.approval_ticket_id = t.ticket_id        
-      ORDER BY a.approval_review_date DESC  -- Ensures latest status
+      ORDER BY a.approval_review_date DESC  
       LIMIT 1      
     ), 
     'PENDING'    
@@ -454,7 +463,7 @@ SELECT
           'reviewer_id', a.approval_reviewed_by,            
           'reviewer_name', u3.user_full_name,            
           'reviewer_avatar', u3.user_avatar,             
-          'reviewer_role', u3.user_role,  -- Added user_role here
+          'reviewer_role', u3.user_role,  
           'approval_status', a.approval_review_status          
         )        
       ), '[]'      
@@ -583,4 +592,37 @@ BEGIN
 END;
 $$;
 
+-- Drop the trigger first (to avoid dependency errors)
+DROP TRIGGER IF EXISTS trigger_generate_ticket_name ON public.ticket_table;
+DROP FUNCTION IF EXISTS generate_ticket_name;
 
+CREATE OR REPLACE FUNCTION generate_ticket_name()
+RETURNS TRIGGER AS $$
+DECLARE
+    latest_number INT;
+    new_ticket_name TEXT;
+    formatted_date TEXT;
+BEGIN
+    -- Format the date as DD-MMM-YY (e.g., 27MAR25)
+    formatted_date := TO_CHAR(NEW.ticket_date_created, 'DDMONYY');
+
+    -- Get the latest sequential number for the current date format
+    SELECT COALESCE(MAX(CAST(SUBSTRING(ticket_name FROM 5 FOR 4) AS INT)), 0) + 1
+    INTO latest_number
+    FROM public.ticket_table
+    WHERE ticket_name LIKE '-%-' || formatted_date;
+
+    -- Generate the ticket name
+    new_ticket_name := '' || LPAD(latest_number::TEXT, 4, '0') || '-' || formatted_date;
+
+    -- Assign it to the new ticket
+    NEW.ticket_name := new_ticket_name;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply the trigger on insert
+CREATE TRIGGER trigger_generate_ticket_name
+BEFORE INSERT ON public.ticket_table
+FOR EACH ROW
+EXECUTE FUNCTION generate_ticket_name();

@@ -322,7 +322,7 @@ const DashboardPage = () => {
                           </Text>
                           <Group gap="xs">
                             <Text size="xs" c="dimmed">
-                              ID: #{ticket.ticket_id}
+                              ID: #{ticket.ticket_name}
                             </Text>
                             <Text size="xs" c="dimmed">
                               •

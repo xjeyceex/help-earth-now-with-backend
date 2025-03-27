@@ -22,6 +22,7 @@ import {
   ActionIcon,
   Alert,
   Avatar,
+  Badge,
   Box,
   Button,
   Center,
@@ -543,41 +544,33 @@ const TicketDetailsPage = () => {
           onClick={() => router.push("/tickets")}
           leftSection={<IconArrowLeft size={16} />}
           radius="md"
+          mb="sm"
           w="fit-content"
         >
           Back to Tickets
         </Button>
-        {/* <Group>
+        <Group>
           <Title
-            pl={16}
-            order={1}
+            pl="xs"
+            order={3} // Changed from h1 to h3 for smaller size
             styles={(theme) => ({
               root: {
-                borderLeft: `4px solid ${theme.colors.blue[5]}`,
+                borderLeft: `2px solid ${theme.colors.blue[5]}`,
                 position: "relative",
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  bottom: -4,
-                  left: 16,
-                  width: "40%",
-                  height: "2px",
-                  background: theme.colors.gray[3],
-                },
               },
             })}
           >
-            Ticket ID:{" "}
+            Ticket:{" "}
             <Badge
-              fz="lg"
-              fw={600}
-              p="md"
-              style={{ position: "relative", top: -4 }}
+              fz="sm"
+              fw="500"
+              p="xs"
+              style={{ position: "relative", top: -3 }}
             >
-              {ticket_id}
+              {ticket.ticket_name}
             </Badge>
           </Title>
-        </Group> */}
+        </Group>
       </Stack>
 
       {/* Main Content Grid */}
