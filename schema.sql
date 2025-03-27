@@ -591,7 +591,7 @@ DROP TRIGGER IF EXISTS trigger_generate_ticket_name ON public.ticket_table;
 DROP FUNCTION IF EXISTS generate_ticket_name;
 
 CREATE OR REPLACE FUNCTION generate_ticket_name()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $$ 
 DECLARE
     latest_number INT;
     new_ticket_name TEXT;
@@ -601,13 +601,13 @@ BEGIN
     formatted_date := TO_CHAR(NEW.ticket_date_created, 'DDMONYY');
 
     -- Get the latest sequential number for the current date format
-    SELECT COALESCE(MAX(CAST(SUBSTRING(ticket_name FROM 5 FOR 4) AS INT)), 0) + 1
+    SELECT COALESCE(MAX(CAST(LEFT(ticket_name, 4) AS INT)), 0) + 1
     INTO latest_number
     FROM public.ticket_table
-    WHERE ticket_name LIKE '-%-' || formatted_date;
+    WHERE ticket_name LIKE '%-' || formatted_date;
 
-    -- Generate the ticket name
-    new_ticket_name := '' || LPAD(latest_number::TEXT, 4, '0') || '-' || formatted_date;
+    -- Generate the ticket name (0001-27MAR25)
+    new_ticket_name := LPAD(latest_number::TEXT, 4, '0') || '-' || formatted_date;
 
     -- Assign it to the new ticket
     NEW.ticket_name := new_ticket_name;
