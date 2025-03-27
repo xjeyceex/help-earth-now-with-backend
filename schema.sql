@@ -344,11 +344,11 @@ returns table(
   comment_id uuid,
   comment_ticket_id uuid,
   comment_content text,
-  comment_date_created timestamp,
+  comment_date_created TIMESTAMPTZ,
   comment_is_edited boolean,
   comment_is_disabled boolean,
   comment_type text,
-  comment_last_updated timestamp,
+  comment_last_updated TIMESTAMPTZ,
   comment_user_id uuid,
   comment_user_avatar text,
   comment_user_full_name text -- Add full name column
