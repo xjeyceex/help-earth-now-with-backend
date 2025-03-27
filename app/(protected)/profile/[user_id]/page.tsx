@@ -406,7 +406,6 @@ const ProfilePage = () => {
                   variant="light"
                   radius="md"
                   size="sm"
-                  onClick={() => console.log("Change role clicked")}
                 >
                   Change Role
                 </Button>
