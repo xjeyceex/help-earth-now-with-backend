@@ -1,9 +1,11 @@
 "use client";
 
 import { userLogout } from "@/actions/post";
+import { useSidebarStore } from "@/stores/sidebarStore";
 import { useUserStore } from "@/stores/userStore";
 import {
   ActionIcon,
+  Anchor,
   Avatar,
   Box,
   Button,
@@ -13,9 +15,16 @@ import {
   Menu,
   rem,
   Text,
+  Tooltip,
   useMantineColorScheme,
+  useMantineTheme,
 } from "@mantine/core";
-import { IconLogout, IconUser, IconUserCircle } from "@tabler/icons-react";
+import {
+  IconLogout,
+  IconMenu2,
+  IconUser,
+  IconUserCircle,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import NotificationMenu from "./NotificationMenu";
@@ -25,7 +34,9 @@ const Navbar = () => {
   const { user, clearUser } = useUserStore();
   const [, startTransition] = useTransition();
   const { colorScheme } = useMantineColorScheme();
+  const theme = useMantineTheme();
   const [mounted, setMounted] = useState(false);
+  const { openMobileSidebar } = useSidebarStore();
 
   useEffect(() => {
     setMounted(true);
@@ -56,8 +67,59 @@ const Navbar = () => {
         }`,
       }}
     >
-      <Flex justify="space-between" align="center" h={rem(50)}>
-        <Text>TODO: Sidebar Menu</Text>
+      <Flex
+        justify={{ base: "space-between", md: "flex-end" }}
+        align="center"
+        w="100%"
+        h={rem(50)}
+      >
+        {/* Logo */}
+        <Group
+          align="center"
+          justify="start"
+          display={{ base: "flex", md: "none" }}
+        >
+          <Tooltip label="Open Sidebar">
+            <ActionIcon
+              variant="light"
+              size="lg"
+              radius="md"
+              onClick={openMobileSidebar}
+              color="gray"
+              style={{ marginRight: rem(7) }}
+            >
+              <IconMenu2 style={{ width: rem(20), height: rem(20) }} />
+            </ActionIcon>
+          </Tooltip>
+          <Anchor
+            href="/dashboard"
+            component={Link}
+            underline="never"
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: theme.spacing.xs,
+              color:
+                theme.colors[theme.primaryColor][
+                  colorScheme === "dark" ? 4 : 6
+                ],
+              transition: "color 0.2s ease",
+              outline: "none",
+            }}
+          >
+            <Text
+              component="span"
+              fw={900}
+              fz={rem(22)}
+              style={{
+                letterSpacing: "-0.5px",
+                textTransform: "uppercase",
+              }}
+            >
+              CanvassingApp
+            </Text>
+          </Anchor>
+        </Group>
         <Group gap="md">
           <ModeToggle />
           {user ? (

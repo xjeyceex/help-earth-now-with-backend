@@ -49,7 +49,7 @@ const LoadingStateProtected = () => {
       />
 
       {/* Absolute Centered Loading */}
-      <div
+      <Box
         style={{
           height: "100vh", // Full height of the viewport
           width: "100vw", // Full width of the viewport
@@ -59,8 +59,8 @@ const LoadingStateProtected = () => {
           position: "absolute",
           top: 0,
           left: 0,
-          paddingLeft: "300px", // Add 300px left padding
         }}
+        pl={{ base: 0, md: 300 }}
       >
         <Paper
           p="lg"
@@ -80,7 +80,7 @@ const LoadingStateProtected = () => {
             </Group>
           </Stack>
         </Paper>
-      </div>
+      </Box>
     </>
   );
 };

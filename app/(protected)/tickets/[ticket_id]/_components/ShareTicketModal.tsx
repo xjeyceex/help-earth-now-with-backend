@@ -14,12 +14,12 @@ import {
 import { IconUserPlus } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 
-interface ShareTicketModalProps {
+type ShareTicketModalProps = {
   isOpen: boolean;
   onClose: () => void;
   ticketId: string;
   updateTicketDetails: () => void;
-}
+};
 
 const ShareTicketModal = ({
   isOpen,
@@ -28,7 +28,7 @@ const ShareTicketModal = ({
   updateTicketDetails,
 }: ShareTicketModalProps) => {
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
+    []
   );
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
@@ -37,12 +37,12 @@ const ShareTicketModal = ({
 
     // Share the ticket with each selected user
     await Promise.all(
-      selectedUsers.map((userId) => shareTicket(ticketId, userId)),
+      selectedUsers.map((userId) => shareTicket(ticketId, userId))
     );
 
     // Filter out the selected users from the dropdown
     setAllUsers((prev) =>
-      prev.filter((user) => !selectedUsers.includes(user.value)),
+      prev.filter((user) => !selectedUsers.includes(user.value))
     );
 
     onClose();

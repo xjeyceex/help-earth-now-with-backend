@@ -1,7 +1,7 @@
 "use client";
 
 import { ActionIcon, useMantineColorScheme } from "@mantine/core";
-import { IconMoon, IconSun } from "@tabler/icons-react";
+import { IconMoonFilled, IconSunFilled } from "@tabler/icons-react";
 
 const ModeToggle = () => {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -13,7 +13,11 @@ const ModeToggle = () => {
       onClick={toggleColorScheme}
       aria-label="Toggle theme"
     >
-      {colorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
+      {colorScheme === "dark" ? (
+        <IconSunFilled size={18} />
+      ) : (
+        <IconMoonFilled size={18} />
+      )}
     </ActionIcon>
   );
 };

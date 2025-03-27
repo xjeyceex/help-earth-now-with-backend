@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from "@/actions/get";
 import LoadingStatePublic from "@/components/LoadingStatePublic";
+import MobileSidebar from "@/components/MobileSidebar";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useUserStore } from "@/stores/userStore";
@@ -45,14 +46,16 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
   return (
     <Flex style={{ minHeight: "100vh" }}>
       <Sidebar />
+      <MobileSidebar />
       <Box
         style={{
           flex: 1,
-          marginLeft: "280px",
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
+          transition: "padding-left 0.3s ease-in-out",
         }}
+        pl={{ base: 0, md: "300px" }}
       >
         <Navbar />
         <Box

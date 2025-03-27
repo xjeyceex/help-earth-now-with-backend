@@ -83,16 +83,17 @@ const Sidebar = () => {
 
   return (
     <Paper
-      w={280}
+      w={300}
       h="100vh"
       p="md"
       pos="fixed"
-      left={0}
+      left={{ base: -300, md: 0 }}
       radius={0}
       style={{
         borderRight: `1px solid ${
           colorScheme === "dark" ? "#2C2E33" : "#E9ECEF"
         }`,
+        transition: "all 0.3s ease",
       }}
     >
       <Stack h="100%" justify="space-between">
@@ -144,8 +145,8 @@ const Sidebar = () => {
                             colorScheme === "dark" ? 4 : 6
                           ]
                         : colorScheme === "dark"
-                          ? theme.colors.dark[0]
-                          : theme.colors.gray[7],
+                        ? theme.colors.dark[0]
+                        : theme.colors.gray[7],
                       position: "relative",
                       top: 3,
                     }}
