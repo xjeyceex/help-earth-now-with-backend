@@ -19,6 +19,7 @@ import {
   useMantineColorScheme,
   useMantineTheme,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import {
   IconLogout,
   IconMenu2,
@@ -38,6 +39,8 @@ const Navbar = () => {
   const [mounted, setMounted] = useState(false);
   const { openMobileSidebar } = useSidebarStore();
 
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -53,8 +56,8 @@ const Navbar = () => {
 
   return (
     <Box
-      py="md"
-      px="xl"
+      py={{ base: "sm", md: "md" }}
+      px={{ base: "md", md: "xl" }}
       bg={colorScheme === "dark" ? "dark.7" : "white"}
       style={{
         position: "sticky",
@@ -71,24 +74,26 @@ const Navbar = () => {
         justify={{ base: "space-between", md: "flex-end" }}
         align="center"
         w="100%"
-        h={rem(50)}
+        h={{ base: rem(40), md: rem(50) }}
       >
-        {/* Logo */}
+        {/* Logo and Mobile Menu */}
         <Group
           align="center"
           justify="start"
           display={{ base: "flex", md: "none" }}
+          gap="xs"
         >
           <Tooltip label="Open Sidebar">
             <ActionIcon
               variant="light"
-              size="lg"
               radius="md"
               onClick={openMobileSidebar}
               color="gray"
-              style={{ marginRight: rem(7) }}
+              style={{
+                size: { base: "md", md: "lg" },
+              }}
             >
-              <IconMenu2 style={{ width: rem(20), height: rem(20) }} />
+              <IconMenu2 style={{ width: rem(18), height: rem(18) }} />
             </ActionIcon>
           </Tooltip>
           <Anchor
@@ -110,7 +115,7 @@ const Navbar = () => {
             <Text
               component="span"
               fw={900}
-              fz={rem(22)}
+              fz={{ base: rem(18), sm: rem(20) }}
               style={{
                 letterSpacing: "-0.5px",
                 textTransform: "uppercase",
@@ -120,11 +125,19 @@ const Navbar = () => {
             </Text>
           </Anchor>
         </Group>
-        <Group gap="md">
-          <ModeToggle />
+
+        {/* Right Side Controls */}
+        <Group gap={isMobile ? "xs" : "md"}>
+          <Box display={{ base: "none", sm: "block" }}>
+            <ModeToggle />
+          </Box>
+
           {user ? (
-            <Group gap="sm">
-              <NotificationMenu />
+            <Group gap={isMobile ? "xs" : "sm"}>
+              <Box display={{ base: "none", sm: "block" }}>
+                <NotificationMenu />
+              </Box>
+
               <Menu shadow="md" width={200} position="bottom-end" withinPortal>
                 <Menu.Target>
                   <ActionIcon
@@ -138,18 +151,18 @@ const Navbar = () => {
                       <Avatar
                         src={user.user_avatar}
                         radius="xl"
-                        size="md"
+                        size={isMobile ? "sm" : "md"}
                         alt={user.user_full_name || "User avatar"}
                       />
                     ) : (
                       <Avatar
                         radius="xl"
-                        size="md"
+                        size={isMobile ? "sm" : "md"}
                         color="primary"
                         variant="filled"
                       >
                         {user.user_full_name?.charAt(0).toUpperCase() || (
-                          <IconUserCircle size={24} />
+                          <IconUserCircle size={20} />
                         )}
                       </Avatar>
                     )}
@@ -188,16 +201,22 @@ const Navbar = () => {
               </Menu>
             </Group>
           ) : (
-            <Group gap="sm">
+            <Group gap={isMobile ? "xs" : "sm"}>
               <Button
                 component={Link}
                 href="/login"
                 variant="outline"
                 radius="md"
+                size={isMobile ? "compact-sm" : "sm"}
               >
                 Sign In
               </Button>
-              <Button component={Link} href="/register" radius="md">
+              <Button
+                component={Link}
+                href="/register"
+                radius="md"
+                size={isMobile ? "compact-sm" : "sm"}
+              >
                 Sign Up
               </Button>
             </Group>
