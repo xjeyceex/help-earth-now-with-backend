@@ -277,7 +277,7 @@ AS $$
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
-    t.ticket_date_created,
+    timezone('Asia/Manila', t.ticket_date_created) AS ticket_date_created,
 
     -- Aggregate shared users
     COALESCE(
@@ -339,51 +339,51 @@ LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
 
 
 --function for comment
-create or replace function get_comments_with_avatars(ticket_id uuid)
-returns table(
-  comment_id uuid,
-  comment_ticket_id uuid,
-  comment_content text,
+DROP FUNCTION get_comments_with_avatars(uuid);
+CREATE OR REPLACE FUNCTION get_comments_with_avatars(ticket_id UUID)
+RETURNS TABLE(
+  comment_id UUID,
+  comment_ticket_id UUID,
+  comment_content TEXT,
   comment_date_created TIMESTAMPTZ,
-  comment_is_edited boolean,
-  comment_is_disabled boolean,
-  comment_type text,
+  comment_is_edited BOOLEAN,
+  comment_is_disabled BOOLEAN,
+  comment_type TEXT,
   comment_last_updated TIMESTAMPTZ,
-  comment_user_id uuid,
-  comment_user_avatar text,
-  comment_user_full_name text -- Add full name column
-) language sql
-as $$
+  comment_user_id UUID,
+  comment_user_avatar TEXT,
+  comment_user_full_name TEXT -- Add full name column
+) LANGUAGE sql
+AS $$
 
-  select
+  SELECT
     c.comment_id,
     c.comment_ticket_id,
     c.comment_content,
-    c.comment_date_created,
+    timezone('Asia/Manila', c.comment_date_created) AS comment_date_created,
     c.comment_is_edited,
     c.comment_is_disabled,
     c.comment_type,
-    c.comment_last_updated,
+    timezone('Asia/Manila', c.comment_last_updated) AS comment_last_updated,
     c.comment_user_id,
-    u.user_avatar as comment_user_avatar,
-    u.user_full_name as comment_user_full_name
-  from
+    u.user_avatar AS comment_user_avatar,
+    u.user_full_name AS comment_user_full_name
+  FROM
     comment_table c
-  left join
-    user_table u on c.comment_user_id = u.user_id
-  where
+  LEFT JOIN
+    user_table u ON c.comment_user_id = u.user_id
+  WHERE
     c.comment_ticket_id = ticket_id
-    and c.comment_type = 'COMMENT'
-  order by c.comment_date_created asc;
+    AND c.comment_type = 'COMMENT'
+  ORDER BY timezone('Asia/Manila', c.comment_date_created) ASC;
 $$;
 
 --function for getting specific ticket
 DROP FUNCTION IF EXISTS get_ticket_details(uuid); 
-
 CREATE OR REPLACE FUNCTION get_ticket_details(ticket_uuid UUID) 
 RETURNS TABLE (   
   ticket_id UUID,   
-  ticket_name TEXT,  -- Added ticket_name   
+  ticket_name TEXT,    
   ticket_item_name TEXT,    
   ticket_item_description TEXT,   
   ticket_status TEXT,   
@@ -404,7 +404,7 @@ LANGUAGE SQL
 AS $$    
 SELECT     
   t.ticket_id,    
-  t.ticket_name,   -- Added ticket_name  
+  t.ticket_name,    
   t.ticket_item_name,     
   t.ticket_item_description,    
   t.ticket_status,    
@@ -426,10 +426,11 @@ SELECT
     'PENDING'    
   ) AS approval_status,     
 
-  t.ticket_date_created,    
-  t.ticket_last_updated,    
+  -- Convert timestamps to Asia/Manila timezone
+  timezone('Asia/Manila', t.ticket_date_created) AS ticket_date_created,    
+  timezone('Asia/Manila', t.ticket_last_updated) AS ticket_last_updated,    
   t.ticket_notes,    
-  t.ticket_rf_date_received,     
+  timezone('Asia/Manila', t.ticket_rf_date_received) AS ticket_rf_date_received,     
 
   -- Shared Users JSON
   (
