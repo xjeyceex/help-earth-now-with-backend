@@ -100,7 +100,7 @@ const DashboardPage = () => {
         return "yellow";
       case "WORK IN PROGRESS":
         return "blue";
-      case "COMPLETED":
+      case "DONE":
         return "green";
       default:
         return "gray";
