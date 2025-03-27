@@ -258,7 +258,8 @@ CREATE OR REPLACE FUNCTION get_all_my_tickets(
 )
 RETURNS TABLE (
   ticket_id UUID,
-  ticket_name TEXT, -- Added ticket_name
+  ticket_name TEXT, 
+  ticket_item_name TEXT,
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_created_by UUID,
@@ -270,64 +271,53 @@ LANGUAGE sql
 AS $$  
   SELECT
     t.ticket_id,
-    t.ticket_name, -- Included ticket_name
+    t.ticket_name, 
+    t.ticket_item_name,
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
     t.ticket_date_created,
 
-    -- Combine all shared users into an array
+    -- Aggregate shared users
     COALESCE(
-      JSON_AGG(DISTINCT ts.shared_user_id) FILTER (WHERE ts.shared_user_id IS NOT NULL),
-      '[]'::JSON
+      (SELECT JSON_AGG(
+        JSON_BUILD_OBJECT(
+          'user_id', u2.user_id,
+          'user_full_name', u2.user_full_name,
+          'user_email', u2.user_email,
+          'user_avatar', u2.user_avatar
+        )
+      ) FROM ticket_shared_with_table ts
+      LEFT JOIN user_table u2 ON ts.shared_user_id = u2.user_id
+      WHERE ts.ticket_id = t.ticket_id), '[]'::JSON
     ) AS shared_users,
 
-    -- Get all reviewers
+    -- Aggregate reviewers
     COALESCE(
-      JSON_AGG(
+      (SELECT JSON_AGG(
         JSON_BUILD_OBJECT(
           'reviewer_id', a.approval_reviewed_by,
-          'reviewer_name', a.user_full_name,
+          'reviewer_name', u3.user_full_name,
           'approval_status', a.approval_review_status
         )
-      ) FILTER (WHERE a.approval_reviewed_by IS NOT NULL), '[]'::JSON
+      ) FROM approval_table a
+      LEFT JOIN user_table u3 ON u3.user_id = a.approval_reviewed_by
+      WHERE a.approval_ticket_id = t.ticket_id), '[]'::JSON
     ) AS reviewers
 
   FROM
-    (SELECT * FROM ticket_table ORDER BY ticket_date_created DESC) t -- Sorting before aggregation
-
-  LEFT JOIN
-    ticket_shared_with_table ts ON ts.ticket_id = t.ticket_id
-
-  LEFT JOIN
-    (
-      SELECT DISTINCT ON (a.approval_reviewed_by, a.approval_ticket_id)
-        a.approval_ticket_id,
-        a.approval_review_status,
-        a.approval_reviewed_by,
-        u.user_full_name
-      FROM 
-        approval_table a
-      LEFT JOIN 
-        user_table u ON u.user_id = a.approval_reviewed_by
-    ) a ON a.approval_ticket_id = t.ticket_id
+    ticket_table t -- No need to sort before JOIN
 
   WHERE
-    user_id = ANY(ARRAY[t.ticket_created_by, ts.shared_user_id, a.approval_reviewed_by])
+    user_id IN (t.ticket_created_by)
+    OR EXISTS (SELECT 1 FROM ticket_shared_with_table ts WHERE ts.ticket_id = t.ticket_id AND ts.shared_user_id = user_id)
+    OR EXISTS (SELECT 1 FROM approval_table a WHERE a.approval_ticket_id = t.ticket_id AND a.approval_reviewed_by = user_id)
     AND (ticket_status IS NULL OR t.ticket_status = ticket_status)
     AND (ticket_uuid IS NULL OR t.ticket_id = ticket_uuid)
 
-  GROUP BY
-    t.ticket_id,
-    t.ticket_name, -- Ensure grouping includes ticket_name
-    t.ticket_status,
-    t.ticket_item_description,
-    t.ticket_created_by,
-    t.ticket_date_created
   ORDER BY
     t.ticket_date_created DESC
 $$;
-
 
 --view for realtime comment
 CREATE VIEW comment_with_avatar_view AS

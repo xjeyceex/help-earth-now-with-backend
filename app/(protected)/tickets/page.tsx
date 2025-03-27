@@ -291,7 +291,7 @@ const TicketList = () => {
                     <Text fw={500} size="sm">
                       #{ticket.ticket_name}
                     </Text>
-                    <Text size="sm">{ticket.ticket_item_description}</Text>
+                    <Text size="sm">{ticket.ticket_item_name}</Text>
                   </Group>
                 </Box>
                 <Button
