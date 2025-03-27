@@ -64,7 +64,7 @@ const TicketDetailsPage = () => {
   const [comments, setComments] = useState<CommentType[]>([]);
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
-    null
+    null,
   );
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
@@ -73,7 +73,7 @@ const TicketDetailsPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const userApprovalStatus = ticket?.reviewers.find(
-    (reviewer) => reviewer.reviewer_id === user?.user_id
+    (reviewer) => reviewer.reviewer_id === user?.user_id,
   )?.approval_status;
 
   const isDisabled =
@@ -146,10 +146,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isSharedToMe = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id
+    (u) => u.user_id === user?.user_id,
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id
+    (r) => r.reviewer_id === user?.user_id,
   );
   // const isManager = user?.user_role === "MANAGER";
 
@@ -305,7 +305,7 @@ const TicketDetailsPage = () => {
                             <Text
                               dangerouslySetInnerHTML={{
                                 __html: DOMPurify.sanitize(
-                                  ticket.ticket_specifications
+                                  ticket.ticket_specifications,
                                 ),
                               }}
                             />
@@ -324,7 +324,7 @@ const TicketDetailsPage = () => {
                           </Text>
                           <Text fw={500}>
                             {new Date(
-                              ticket.ticket_rf_date_received
+                              ticket.ticket_rf_date_received,
                             ).toLocaleString("en-US", {
                               day: "2-digit",
                               month: "short",
@@ -437,7 +437,7 @@ const TicketDetailsPage = () => {
                                                 </Text>
                                                 <Text fw={500}>
                                                   {new Date(
-                                                    canvass.canvass_form_rf_date_received
+                                                    canvass.canvass_form_rf_date_received,
                                                   ).toLocaleString("en-US", {
                                                     day: "2-digit",
                                                     month: "short",
@@ -494,7 +494,7 @@ const TicketDetailsPage = () => {
                                                     size="md"
                                                   >
                                                     {canvass.submitted_by.user_full_name?.charAt(
-                                                      0
+                                                      0,
                                                     )}
                                                   </Avatar>
                                                   <Stack gap={0}>
@@ -505,7 +505,7 @@ const TicketDetailsPage = () => {
                                                     </Text>
                                                     <Text size="xs" c="dimmed">
                                                       {new Date(
-                                                        canvass.canvass_form_date_submitted
+                                                        canvass.canvass_form_date_submitted,
                                                       ).toLocaleString()}
                                                     </Text>
                                                   </Stack>
@@ -543,7 +543,7 @@ const TicketDetailsPage = () => {
                                                 <Text fw={500}>
                                                   ₱
                                                   {canvass.canvass_form_total_amount.toFixed(
-                                                    2
+                                                    2,
                                                   )}
                                                 </Text>
                                               </Stack>
@@ -562,7 +562,7 @@ const TicketDetailsPage = () => {
                                                   <Group gap="xs">
                                                     {canvass.attachments.map(
                                                       (
-                                                        attachment: CanvassAttachment
+                                                        attachment: CanvassAttachment,
                                                       ) => (
                                                         <Link
                                                           key={
@@ -579,7 +579,7 @@ const TicketDetailsPage = () => {
                                                               attachment.canvass_attachment_type ||
                                                               "Document"
                                                             } - ${new Date(
-                                                              attachment.canvass_attachment_created_at
+                                                              attachment.canvass_attachment_created_at,
                                                             ).toLocaleDateString()}`}
                                                           >
                                                             <ActionIcon
@@ -594,7 +594,7 @@ const TicketDetailsPage = () => {
                                                             </ActionIcon>
                                                           </Tooltip>
                                                         </Link>
-                                                      )
+                                                      ),
                                                     )}
                                                   </Group>
                                                 </Stack>
@@ -603,7 +603,7 @@ const TicketDetailsPage = () => {
                                           </Grid.Col>
                                         </Grid>
                                       </Box>
-                                    )
+                                    ),
                                   )}
                                 </>
                               ) : user?.user_id ===
