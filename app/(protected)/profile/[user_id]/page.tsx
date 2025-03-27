@@ -1,7 +1,11 @@
 "use client";
 
 import { checkIfUserPasswordExists, fetchUserById } from "@/actions/get";
-import { updateDisplayName, updateProfilePicture } from "@/actions/post";
+import {
+  updateDisplayName,
+  updateProfilePicture,
+  updateUserRole,
+} from "@/actions/post";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
 import LoadingStateProtected from "@/components/LoadingStateProtected";
 import SetPasswordModal from "@/components/SetPasswordModal";
@@ -17,6 +21,8 @@ import {
   Modal,
   Paper,
   rem,
+  Select,
+  Skeleton,
   Stack,
   Text,
   TextInput,
@@ -34,6 +40,7 @@ import {
   IconMail,
   IconSettings,
   IconUserShield,
+  IconX,
 } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -51,44 +58,64 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [isPasswordExist, setIsPasswordExist] = useState(false);
   const [profileUser, setProfileUser] = useState<UserType | null>(null);
+  const [opened, setOpened] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [changingRole, setChangingRole] = useState(false);
+
+  const isAdmin = user?.user_role === "ADMIN";
+  const isManager = user?.user_role === "MANAGER";
+  // const isReviewer = user?.user_role === "REVIEWER";
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchUser = async () => {
       if (!user_id) return;
+
       try {
         const fetchedUser = await fetchUserById(user_id);
+
         if (isMounted) {
           setProfileUser(fetchedUser);
         }
       } catch (error) {
         console.error("Error fetching profileUser:", error);
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchUser();
+
     return () => {
       isMounted = false;
     };
   }, [user_id]);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!user || !user.user_id) return;
 
     const checkPasswordExists = async () => {
       const result = await checkIfUserPasswordExists(user.user_id);
 
-      if (result) {
-        setIsPasswordExist(true);
-      } else {
-        setIsPasswordExist(false);
+      if (isMounted) {
+        if (result) {
+          setIsPasswordExist(true);
+        } else {
+          setIsPasswordExist(false);
+        }
       }
     };
 
     checkPasswordExists();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user?.user_id]);
 
   if (!user) {
@@ -96,6 +123,39 @@ const ProfilePage = () => {
   }
 
   const isUser = user.user_id === profileUser?.user_id;
+
+  const handleChangeRole = async () => {
+    if (!selectedRole || !profileUser) return;
+
+    setChangingRole(true);
+    const previousUser = { ...profileUser };
+
+    setProfileUser({
+      ...profileUser,
+      user_role: selectedRole,
+    });
+
+    const success = await updateUserRole(user_id, selectedRole);
+    setChangingRole(false);
+
+    if (success) {
+      notifications.show({
+        title: "Success",
+        message: "Profile picture updated successfully",
+        color: "green",
+        icon: <IconCheck size={16} />,
+      });
+      setOpened(false);
+    } else {
+      setProfileUser(previousUser);
+      notifications.show({
+        title: "Failed",
+        message: "Failed to update role.",
+        color: "red",
+        icon: <IconX size={16} />,
+      });
+    }
+  };
 
   const handleAvatarUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -391,9 +451,14 @@ const ProfilePage = () => {
                       style={{ width: rem(14), height: rem(14) }}
                     />
                   </ThemeIcon>
-                  <Text size="sm" c="dimmed" tt="capitalize">
-                    {profileUser?.user_role.toLowerCase()}
-                  </Text>
+
+                  {changingRole ? (
+                    <Skeleton width={100} height={18} />
+                  ) : (
+                    <Text size="sm" c="dimmed" tt="capitalize">
+                      {profileUser?.user_role.toLowerCase()}
+                    </Text>
+                  )}
                 </Group>
               </Stack>
 
@@ -401,17 +466,42 @@ const ProfilePage = () => {
 
               {/* Placeholder for Role Change */}
               <Stack align="center">
-                <Button
-                  leftSection={<IconSettings size={16} />}
-                  variant="light"
-                  radius="md"
-                  size="sm"
-                >
-                  Change Role
-                </Button>
+                {(isAdmin || isManager) && (
+                  <Button
+                    leftSection={<IconSettings size={16} />}
+                    variant="light"
+                    radius="md"
+                    size="sm"
+                    onClick={() => setOpened(true)}
+                  >
+                    Change Role
+                  </Button>
+                )}
               </Stack>
             </Paper>
           </Stack>
+          <Modal
+            opened={opened}
+            onClose={() => setOpened(false)}
+            title="Change User Role"
+          >
+            <Select
+              label="Select a Role"
+              placeholder="Choose a role"
+              data={["REVIEWER", "PURCHASER"]}
+              value={selectedRole}
+              onChange={setSelectedRole}
+            />
+
+            <Button
+              fullWidth
+              mt="md"
+              onClick={handleChangeRole}
+              loading={changingRole}
+            >
+              Update Role
+            </Button>
+          </Modal>
         </Box>
       ) : (
         <LoadingStateProtected />
