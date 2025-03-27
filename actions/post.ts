@@ -206,7 +206,9 @@ export const createTicket = async (
         approval_ticket_id: ticket.ticket_id,
         approval_reviewed_by: reviewerId,
         approval_review_status: "PENDING",
-        approval_review_date: new Date(),
+        approval_review_date: new Date().toLocaleString("en-US", {
+          timeZone: "Asia/Manila",
+        }),
       }))
     );
 
@@ -652,7 +654,9 @@ export const startCanvass = async (
         ticket_status_history_previous_status: previousStatus,
         ticket_status_history_new_status: status,
         ticket_status_history_changed_by: user_id,
-        ticket_status_history_change_date: new Date().toISOString(), // Store as ISO string
+        ticket_status_history_change_date: new Date(
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
+        ).toISOString(),
       },
     ]);
 

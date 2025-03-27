@@ -214,7 +214,6 @@ CREATE TRIGGER after_user_signup
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.create_user();
 
--- Function to retrieve dashboard tickets
 DROP FUNCTION IF EXISTS get_dashboard_tickets(UUID);
 CREATE OR REPLACE FUNCTION get_dashboard_tickets(_user_id UUID)
 RETURNS TABLE (
@@ -233,7 +232,7 @@ AS $$
     t.ticket_item_name,
     t.ticket_status,
     t.ticket_item_description,
-    timezone('Asia/Manila', t.ticket_date_created) AS ticket_date_created
+    t.ticket_date_created  -- No timezone conversion
   FROM 
     ticket_table t
   WHERE 
@@ -277,7 +276,7 @@ AS $$
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
-    timezone('Asia/Manila', t.ticket_date_created) AS ticket_date_created,
+    t.ticket_date_created, -- No timezone conversion
 
     -- Aggregate shared users
     COALESCE(
@@ -338,8 +337,8 @@ FROM comment_table c
 LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
 
 
---function for comment
-DROP FUNCTION get_comments_with_avatars(uuid);
+-- Function for fetching comments with avatars
+DROP FUNCTION IF EXISTS get_comments_with_avatars(UUID);
 CREATE OR REPLACE FUNCTION get_comments_with_avatars(ticket_id UUID)
 RETURNS TABLE(
   comment_id UUID,
@@ -360,11 +359,11 @@ AS $$
     c.comment_id,
     c.comment_ticket_id,
     c.comment_content,
-    timezone('Asia/Manila', c.comment_date_created) AS comment_date_created,
+    c.comment_date_created, -- No timezone conversion
     c.comment_is_edited,
     c.comment_is_disabled,
     c.comment_type,
-    timezone('Asia/Manila', c.comment_last_updated) AS comment_last_updated,
+    c.comment_last_updated, -- No timezone conversion
     c.comment_user_id,
     u.user_avatar AS comment_user_avatar,
     u.user_full_name AS comment_user_full_name
@@ -375,11 +374,11 @@ AS $$
   WHERE
     c.comment_ticket_id = ticket_id
     AND c.comment_type = 'COMMENT'
-  ORDER BY timezone('Asia/Manila', c.comment_date_created) ASC;
+  ORDER BY c.comment_date_created ASC; -- No timezone conversion in ORDER BY
 $$;
 
---function for getting specific ticket
-DROP FUNCTION IF EXISTS get_ticket_details(uuid); 
+-- Function for getting specific ticket
+DROP FUNCTION IF EXISTS get_ticket_details(UUID); 
 CREATE OR REPLACE FUNCTION get_ticket_details(ticket_uuid UUID) 
 RETURNS TABLE (   
   ticket_id UUID,   
@@ -426,11 +425,11 @@ SELECT
     'PENDING'    
   ) AS approval_status,     
 
-  -- Convert timestamps to Asia/Manila timezone
-  timezone('Asia/Manila', t.ticket_date_created) AS ticket_date_created,    
-  timezone('Asia/Manila', t.ticket_last_updated) AS ticket_last_updated,    
+  -- Keep timestamps in UTC and format them in the frontend
+  t.ticket_date_created,    
+  t.ticket_last_updated,    
   t.ticket_notes,    
-  timezone('Asia/Manila', t.ticket_rf_date_received) AS ticket_rf_date_received,     
+  t.ticket_rf_date_received,     
 
   -- Shared Users JSON
   (
@@ -536,7 +535,7 @@ BEGIN
     p_ticket_id,
     p_content,
     'COMMENT',
-    timezone('Asia/Manila', now()),
+    now(),  -- Store timestamps in UTC
     false,
     p_user_id
   ) RETURNING comment_id INTO v_comment_id;

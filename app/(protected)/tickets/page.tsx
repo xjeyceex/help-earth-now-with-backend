@@ -282,9 +282,9 @@ const TicketList = () => {
                     </Badge>
                     <Text size="xs" c="dimmed">
                       Created{" "}
-                      {moment(ticket.ticket_date_created).format(
-                        "MMM D, YYYY [at] h:mm A"
-                      )}
+                      {moment
+                        .utc(ticket.ticket_date_created)
+                        .format("MMM D, YYYY [at] h:mm A")}
                     </Text>
                   </Group>
                   <Group gap="xs" mb={4}>

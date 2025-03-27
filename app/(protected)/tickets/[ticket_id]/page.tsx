@@ -51,6 +51,7 @@ import {
   IconFileText,
 } from "@tabler/icons-react";
 import DOMPurify from "dompurify";
+import moment from "moment";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -613,17 +614,9 @@ const TicketDetailsPage = () => {
                       <IconClock size={10} />
                     </ThemeIcon>
                     <Text size="xs" c="dimmed">
-                      {new Date(ticket.ticket_date_created).toLocaleString(
-                        "en-US",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "2-digit",
-                          hour: "numeric",
-                          minute: "numeric",
-                          hour12: true,
-                        }
-                      )}
+                      {moment
+                        .utc(ticket.ticket_date_created)
+                        .format("MMM D, YY [at] h:mm A")}
                     </Text>
                   </Group>
                 </Stack>
