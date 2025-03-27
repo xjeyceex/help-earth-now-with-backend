@@ -58,6 +58,7 @@ CREATE TABLE public.ticket_table (
   ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
   ticket_specifications TEXT,
   ticket_notes TEXT,
+  ticket_name TEXT,
   ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
   ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
   ticket_rf_date_received TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
@@ -165,7 +166,7 @@ CREATE TABLE notification_table (
   notification_message TEXT NOT NULL,
   notification_read BOOLEAN DEFAULT FALSE,
   notification_url TEXT NULL,
-  notification_created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+  notification_created_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
 -- Enable Supabase Realtime on this table
@@ -213,39 +214,42 @@ CREATE TRIGGER after_user_signup
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.create_user();
 
--- Trigger the function every time a user is created
-create or replace function get_dashboard_tickets(_user_id uuid)
-returns table (
-  ticket_id uuid,
-  ticket_status text,
-  ticket_item_description text
+DROP FUNCTION IF EXISTS get_dashboard_tickets(UUID);
+CREATE OR REPLACE FUNCTION get_dashboard_tickets(_user_id UUID)
+RETURNS TABLE (
+  ticket_id UUID,
+  ticket_name TEXT,
+  ticket_item_name TEXT,
+  ticket_status TEXT,
+  ticket_item_description TEXT,
+  ticket_date_created TIMESTAMPTZ
 )
-language sql
-as $$
-  select 
+LANGUAGE SQL
+AS $$
+  SELECT 
     t.ticket_id,
+    t.ticket_name, 
+    t.ticket_item_name,
     t.ticket_status,
-    t.ticket_item_description
-
-  from 
+    t.ticket_item_description,
+    t.ticket_date_created  -- No timezone conversion
+  FROM 
     ticket_table t
-
-  where _user_id is null 
-
-  or t.ticket_created_by = _user_id
-  or exists (
-    select 1 from ticket_shared_with_table s
-    where s.ticket_id = t.ticket_id and s.shared_user_id = _user_id
-  )
-
-  or exists (
-    select 1 from approval_table a
-    where a.approval_ticket_id = t.ticket_id 
-    and a.approval_reviewed_by = _user_id
-  )
+  WHERE 
+    _user_id IS NULL 
+    OR t.ticket_created_by = _user_id
+    OR EXISTS (
+      SELECT 1 FROM ticket_shared_with_table s
+      WHERE s.ticket_id = t.ticket_id AND s.shared_user_id = _user_id
+    )
+    OR EXISTS (
+      SELECT 1 FROM approval_table a
+      WHERE a.approval_ticket_id = t.ticket_id 
+      AND a.approval_reviewed_by = _user_id
+    )
 $$;
 
---function for all user tickets
+-- Drop existing function if it exists
 DROP FUNCTION IF EXISTS get_all_my_tickets(UUID, TEXT, UUID);
 CREATE OR REPLACE FUNCTION get_all_my_tickets(
   user_id UUID, 
@@ -254,10 +258,12 @@ CREATE OR REPLACE FUNCTION get_all_my_tickets(
 )
 RETURNS TABLE (
   ticket_id UUID,
+  ticket_name TEXT, 
+  ticket_item_name TEXT,
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_created_by UUID,
-  ticket_date_created TIMESTAMP, -- Added this field
+  ticket_date_created TIMESTAMPTZ,
   shared_users JSON,
   reviewers JSON
 )
@@ -265,60 +271,52 @@ LANGUAGE sql
 AS $$  
   SELECT
     t.ticket_id,
+    t.ticket_name, 
+    t.ticket_item_name,
     t.ticket_status,
     t.ticket_item_description,
     t.ticket_created_by,
-    t.ticket_date_created, -- Added this field
+    t.ticket_date_created, -- No timezone conversion
 
-    -- Combine all shared users into an array
+    -- Aggregate shared users
     COALESCE(
-      JSON_AGG(DISTINCT ts.shared_user_id) FILTER (WHERE ts.shared_user_id IS NOT NULL),
-      '[]'::JSON
+      (SELECT JSON_AGG(
+        JSON_BUILD_OBJECT(
+          'user_id', u2.user_id,
+          'user_full_name', u2.user_full_name,
+          'user_email', u2.user_email,
+          'user_avatar', u2.user_avatar
+        )
+      ) FROM ticket_shared_with_table ts
+      LEFT JOIN user_table u2 ON ts.shared_user_id = u2.user_id
+      WHERE ts.ticket_id = t.ticket_id), '[]'::JSON
     ) AS shared_users,
 
-    -- Get all reviewers
+    -- Aggregate reviewers
     COALESCE(
-      JSON_AGG(
+      (SELECT JSON_AGG(
         JSON_BUILD_OBJECT(
           'reviewer_id', a.approval_reviewed_by,
-          'reviewer_name', a.user_full_name,
+          'reviewer_name', u3.user_full_name,
           'approval_status', a.approval_review_status
         )
-      ) FILTER (WHERE a.approval_reviewed_by IS NOT NULL), '[]'::JSON
+      ) FROM approval_table a
+      LEFT JOIN user_table u3 ON u3.user_id = a.approval_reviewed_by
+      WHERE a.approval_ticket_id = t.ticket_id), '[]'::JSON
     ) AS reviewers
 
   FROM
-    (SELECT * FROM ticket_table ORDER BY ticket_date_created DESC) t -- Sorting before aggregation
-
-  LEFT JOIN
-    ticket_shared_with_table ts ON ts.ticket_id = t.ticket_id
-
-  LEFT JOIN
-    (
-      SELECT DISTINCT ON (a.approval_reviewed_by, a.approval_ticket_id)
-        a.approval_ticket_id,
-        a.approval_review_status,
-        a.approval_reviewed_by,
-        u.user_full_name
-      FROM 
-        approval_table a
-      LEFT JOIN 
-        user_table u ON u.user_id = a.approval_reviewed_by
-    ) a ON a.approval_ticket_id = t.ticket_id
+    ticket_table t -- No need to sort before JOIN
 
   WHERE
-    user_id = ANY(ARRAY[t.ticket_created_by, ts.shared_user_id, a.approval_reviewed_by])
+    user_id IN (t.ticket_created_by)
+    OR EXISTS (SELECT 1 FROM ticket_shared_with_table ts WHERE ts.ticket_id = t.ticket_id AND ts.shared_user_id = user_id)
+    OR EXISTS (SELECT 1 FROM approval_table a WHERE a.approval_ticket_id = t.ticket_id AND a.approval_reviewed_by = user_id)
     AND (ticket_status IS NULL OR t.ticket_status = ticket_status)
     AND (ticket_uuid IS NULL OR t.ticket_id = ticket_uuid)
 
-  GROUP BY
-    t.ticket_id,
-    t.ticket_status,
-    t.ticket_item_description,
-    t.ticket_created_by,
-    t.ticket_date_created -- Ensuring this is grouped properly
   ORDER BY
-    t.ticket_date_created DESC -- Ensuring the final output is sorted
+    t.ticket_date_created DESC
 $$;
 
 --view for realtime comment
@@ -339,51 +337,52 @@ FROM comment_table c
 LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
 
 
---function for comment
-create or replace function get_comments_with_avatars(ticket_id uuid)
-returns table(
-  comment_id uuid,
-  comment_ticket_id uuid,
-  comment_content text,
-  comment_date_created timestamp,
-  comment_is_edited boolean,
-  comment_is_disabled boolean,
-  comment_type text,
-  comment_last_updated timestamp,
-  comment_user_id uuid,
-  comment_user_avatar text,
-  comment_user_full_name text -- Add full name column
-) language sql
-as $$
+-- Function for fetching comments with avatars
+DROP FUNCTION IF EXISTS get_comments_with_avatars(UUID);
+CREATE OR REPLACE FUNCTION get_comments_with_avatars(ticket_id UUID)
+RETURNS TABLE(
+  comment_id UUID,
+  comment_ticket_id UUID,
+  comment_content TEXT,
+  comment_date_created TIMESTAMPTZ,
+  comment_is_edited BOOLEAN,
+  comment_is_disabled BOOLEAN,
+  comment_type TEXT,
+  comment_last_updated TIMESTAMPTZ,
+  comment_user_id UUID,
+  comment_user_avatar TEXT,
+  comment_user_full_name TEXT -- Add full name column
+) LANGUAGE sql
+AS $$
 
-  select
+  SELECT
     c.comment_id,
     c.comment_ticket_id,
     c.comment_content,
-    c.comment_date_created,
+    c.comment_date_created, -- No timezone conversion
     c.comment_is_edited,
     c.comment_is_disabled,
     c.comment_type,
-    c.comment_last_updated,
+    c.comment_last_updated, -- No timezone conversion
     c.comment_user_id,
-    u.user_avatar as comment_user_avatar,
-    u.user_full_name as comment_user_full_name
-  from
+    u.user_avatar AS comment_user_avatar,
+    u.user_full_name AS comment_user_full_name
+  FROM
     comment_table c
-  left join
-    user_table u on c.comment_user_id = u.user_id
-  where
+  LEFT JOIN
+    user_table u ON c.comment_user_id = u.user_id
+  WHERE
     c.comment_ticket_id = ticket_id
-    and c.comment_type = 'COMMENT'
-  order by c.comment_date_created asc;
+    AND c.comment_type = 'COMMENT'
+  ORDER BY c.comment_date_created ASC; -- No timezone conversion in ORDER BY
 $$;
 
---function for getting specific ticket
-DROP FUNCTION IF EXISTS get_ticket_details(uuid); 
-
+-- Function for getting specific ticket
+DROP FUNCTION IF EXISTS get_ticket_details(UUID); 
 CREATE OR REPLACE FUNCTION get_ticket_details(ticket_uuid UUID) 
 RETURNS TABLE (   
   ticket_id UUID,   
+  ticket_name TEXT,    
   ticket_item_name TEXT,    
   ticket_item_description TEXT,   
   ticket_status TEXT,   
@@ -393,10 +392,10 @@ RETURNS TABLE (
   ticket_quantity INTEGER,   
   ticket_specifications TEXT,   
   approval_status TEXT,   
-  ticket_date_created TIMESTAMP,   
-  ticket_last_updated TIMESTAMP,   
+  ticket_date_created TIMESTAMPTZ,   
+  ticket_last_updated TIMESTAMPTZ,   
   ticket_notes TEXT,   
-  ticket_rf_date_received TIMESTAMP,    
+  ticket_rf_date_received TIMESTAMPTZ,    
   shared_users JSON,   
   reviewers JSON 
 ) 
@@ -404,6 +403,7 @@ LANGUAGE SQL
 AS $$    
 SELECT     
   t.ticket_id,    
+  t.ticket_name,    
   t.ticket_item_name,     
   t.ticket_item_description,    
   t.ticket_status,    
@@ -419,12 +419,13 @@ SELECT
       SELECT a.approval_review_status        
       FROM approval_table a        
       WHERE a.approval_ticket_id = t.ticket_id        
-      ORDER BY a.approval_review_date DESC  -- Ensures latest status
+      ORDER BY a.approval_review_date DESC  
       LIMIT 1      
     ), 
     'PENDING'    
   ) AS approval_status,     
 
+  -- Keep timestamps in UTC and format them in the frontend
   t.ticket_date_created,    
   t.ticket_last_updated,    
   t.ticket_notes,    
@@ -455,7 +456,7 @@ SELECT
           'reviewer_id', a.approval_reviewed_by,            
           'reviewer_name', u3.user_full_name,            
           'reviewer_avatar', u3.user_avatar,             
-          'reviewer_role', u3.user_role,  -- Added user_role here
+          'reviewer_role', u3.user_role,  
           'approval_status', a.approval_review_status          
         )        
       ), '[]'      
@@ -534,7 +535,7 @@ BEGIN
     p_ticket_id,
     p_content,
     'COMMENT',
-    timezone('Asia/Manila', now()),
+    now(),  -- Store timestamps in UTC
     false,
     p_user_id
   ) RETURNING comment_id INTO v_comment_id;
@@ -584,4 +585,37 @@ BEGIN
 END;
 $$;
 
+-- Drop the trigger first (to avoid dependency errors)
+DROP TRIGGER IF EXISTS trigger_generate_ticket_name ON public.ticket_table;
+DROP FUNCTION IF EXISTS generate_ticket_name;
 
+CREATE OR REPLACE FUNCTION generate_ticket_name()
+RETURNS TRIGGER AS $$ 
+DECLARE
+    latest_number INT;
+    new_ticket_name TEXT;
+    formatted_date TEXT;
+BEGIN
+    -- Format the date as DD-MMM-YY (e.g., 27MAR25)
+    formatted_date := TO_CHAR(NEW.ticket_date_created, 'DDMONYY');
+
+    -- Get the latest sequential number for the current date format
+    SELECT COALESCE(MAX(CAST(LEFT(ticket_name, 4) AS INT)), 0) + 1
+    INTO latest_number
+    FROM public.ticket_table
+    WHERE ticket_name LIKE '%-' || formatted_date;
+
+    -- Generate the ticket name (0001-27MAR25)
+    new_ticket_name := LPAD(latest_number::TEXT, 4, '0') || '-' || formatted_date;
+
+    -- Assign it to the new ticket
+    NEW.ticket_name := new_ticket_name;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply the trigger on insert
+CREATE TRIGGER trigger_generate_ticket_name
+BEFORE INSERT ON public.ticket_table
+FOR EACH ROW
+EXECUTE FUNCTION generate_ticket_name();

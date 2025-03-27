@@ -23,7 +23,6 @@ import {
   IconChartBar,
   IconCheck,
   IconDeviceMobile,
-  IconMap,
   IconUsers,
 } from "@tabler/icons-react";
 
@@ -136,56 +135,56 @@ export default function HomePage() {
 
   const features = [
     {
-      icon: IconMap,
-      title: "Smart Territory Mapping",
-      description:
-        "Automatically divide your canvassing territory using advanced algorithms for optimal coverage and team distribution.",
-    },
-    {
       icon: IconUsers,
-      title: "Team Management",
+      title: "Centralized Purchase Requests",
       description:
-        "Coordinate volunteers and staff with real-time tracking, communication tools, and performance analytics.",
+        "Streamline purchase requests with real-time tracking and automated status updates, ensuring transparency at every step.",
     },
     {
       icon: IconDeviceMobile,
-      title: "Mobile-First Design",
+      title: "Efficient Quote Comparison",
       description:
-        "Seamless experience across all devices with offline capabilities for areas with limited connectivity.",
+        "Easily compare supplier quotes with detailed cost breakdowns, historical pricing data, and AI-powered recommendations for smarter decisions.",
+    },
+    {
+      icon: IconCheck,
+      title: "Seamless Approval Workflow",
+      description:
+        "Speed up approvals with role-based access, automated notifications, and one-click approvals to keep purchases moving forward efficiently.",
     },
     {
       icon: IconChartBar,
-      title: "Data Analytics",
+      title: "Data-Driven Procurement Insights",
       description:
-        "Powerful insights and visualization tools to track campaign progress, voter sentiment, and team effectiveness.",
+        "Leverage analytics to track spending trends, identify cost-saving opportunities, and improve purchasing efficiency with real-time data.",
     },
   ];
 
   const testimonials = [
     {
       quote:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci, ratione? Lorem ipsum dolor sit amet consectetur adipisicing elit. Quo, libero corporis laudantium, ad assumenda expedita quos ea porro iste a rerum sequi. Architecto, ab rerum sint vero delectus beatae sunt.",
-      author: "John Doe",
-      role: "Campaign ",
+        "This platform has completely streamlined our procurement process! The ability to compare supplier quotes and track purchases in real-time has saved us time and money.",
+      author: "Macario Batungbacal",
+      role: "Procurement Manager, Global Supplies Inc.",
     },
     {
       quote:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci, ratione? Lorem ipsum dolor sit amet consectetur adipisicing elit. Quo, libero corporis laudantium, ad assumenda expedita quos ea porro iste a rerum sequi. Architecto, ab rerum sint vero delectus beatae sunt.",
-      author: "Jane Doe",
-      role: "Field Director",
+        "Managing purchase requests used to be a hassle, but now everything is organized in one place. The automated tracking and approvals make our workflow much smoother.",
+      author: "Junmar Balarbar",
+      role: "Operations Lead, FreshMart Wholesale",
     },
   ];
 
   const pricingPlans = [
     {
       title: "Starter",
-      price: "$50.0",
+      price: "$49",
       period: "per month",
-      description: "Perfect for small campaigns and organizations",
+      description: "Best for small campaigns or grassroots initiatives.",
       features: [
-        "Up to 5 team members",
-        "Basic territory mapping",
-        "Standard data analytics",
+        "Up to 5 campaign team members",
+        "Basic territory mapping tools",
+        "Standard voter data tracking",
         "Email support",
       ],
       cta: "Get Started",
@@ -193,32 +192,32 @@ export default function HomePage() {
     },
     {
       title: "Professional",
-      price: "$100.0",
+      price: "$99",
       period: "per month",
-      description: "For growing campaigns with advanced needs",
+      description: "For growing campaigns that need real-time insights.",
       features: [
-        "Up to 20 team members",
-        "Advanced territory optimization",
-        "Real-time team coordination",
-        "Enhanced data analytics",
+        "Up to 25 team members",
+        "AI-powered territory optimization",
+        "Real-time volunteer tracking",
+        "Advanced voter sentiment analytics",
         "Priority support",
       ],
-      cta: "Try Professional",
+      cta: "Upgrade Now",
       active: true,
     },
     {
       title: "Enterprise",
       price: "Custom",
       period: "",
-      description: "Tailored solutions for large-scale operations",
+      description: "Tailored solutions for large-scale political operations.",
       features: [
-        "Unlimited team members",
-        "Custom integrations",
-        "Dedicated account manager",
-        "Advanced security features",
+        "Unlimited team members & districts",
+        "Custom voter data integrations",
+        "Dedicated success manager",
+        "Enterprise-grade security & compliance",
         "24/7 premium support",
       ],
-      cta: "Contact Us",
+      cta: "Request a Demo",
       active: false,
     },
   ];
@@ -247,18 +246,17 @@ export default function HomePage() {
             }}
             withBorder
           >
-            <Box style={{ relative: "relative", zIndex: 1 }}>
+            <Box style={{ position: "relative", zIndex: 1 }}>
               <Title style={styles.title}>
-                <span style={styles.highlight}>Transform</span>
-                Canvassing Operations with Data-Driven Tools
+                <span style={styles.highlight}>Revolutionize</span>
+                Canvassing Operations with Data-Driven Insights
               </Title>
 
               <Text style={styles.description} size="xl">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Adipisci, ratione? Lorem ipsum dolor sit amet consectetur
-                adipisicing elit. Quo, libero corporis laudantium, ad assumenda
-                expedita quos ea porro iste a rerum sequi. Architecto, ab rerum
-                sint vero delectus beatae sunt.
+                Simplify procurement with a seamless, all-in-one platform for
+                sourcing, comparing supplier quotes, and managing approvals.
+                Boost efficiency, enhance transparency, and make smarter
+                decisions—all in one place.
               </Text>
 
               <Group style={styles.controls}>
@@ -267,11 +265,11 @@ export default function HomePage() {
                   rightSection={<IconArrowRight size={20} />}
                   style={styles.control}
                 >
-                  Get Started
+                  Get Started Today
                 </Button>
 
                 <Button size="xl" variant="outline" style={styles.control}>
-                  Watch Demo
+                  Watch the Demo
                 </Button>
               </Group>
             </Box>
@@ -286,7 +284,7 @@ export default function HomePage() {
         {/* ----------------------- */}
         <Container mt={{ base: "md", sm: "xl", md: "xl" }} size="xl">
           <Title fw={800} ta="center" mb={50} fz={rem(40)}>
-            Built For Modern <span style={styles.highlight}>Campaigns</span>
+            Built for <span style={styles.highlight}>Modern Campaigns</span>
           </Title>
 
           <SimpleGrid
@@ -296,21 +294,27 @@ export default function HomePage() {
             {features.map((feature, index) => (
               <Card
                 key={index}
-                shadow="sm"
+                shadow="md"
                 padding="xl"
                 withBorder
+                radius="md"
                 style={{
                   borderColor:
                     colorScheme === "dark"
-                      ? theme.colors.dark[5]
-                      : theme.colors.gray[1],
+                      ? theme.colors.dark[4]
+                      : theme.colors.gray[2],
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: theme.shadows.md,
+                  },
                 }}
               >
                 <Card.Section p="lg">
                   <Group gap="md">
                     <ThemeIcon
                       size={56}
-                      radius="md"
+                      radius="lg"
                       variant="light"
                       color="blue"
                     >
@@ -322,13 +326,14 @@ export default function HomePage() {
                   </Group>
                 </Card.Section>
 
-                <Text size="sm" c="dimmed" lh={1.6}>
+                <Text size="md" c="dimmed" lh={1.6} mt="sm">
                   {feature.description}
                 </Text>
               </Card>
             ))}
           </SimpleGrid>
         </Container>
+
         {/* ----------------------- */}
         {/*  Featured Section       */}
         {/* ----------------------- */}

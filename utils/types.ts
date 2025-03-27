@@ -22,6 +22,7 @@ export type TicketDetailsType = {
   ticket_item_name: string;
   ticket_item_description: string;
   ticket_status: string;
+  ticket_name: string;
   ticket_created_by: string;
   ticket_created_by_avatar: string;
   ticket_quantity: number;
@@ -50,12 +51,17 @@ export type TicketDetailsType = {
 export type DashboardTicketType = {
   ticket_id: string;
   ticket_status: string;
+  ticket_name: string;
+  ticket_item_name: string;
+  ticket_date_created: string;
   ticket_item_description: string;
 };
 
 export type MyTicketType = {
   ticket_id: string;
   ticket_status: string;
+  ticket_name: string;
+  ticket_item_name: string;
   ticket_item_description: string;
   ticket_created_by: string;
   ticket_date_created: string;

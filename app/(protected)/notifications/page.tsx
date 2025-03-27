@@ -47,11 +47,11 @@ const NotificationsPage = () => {
   const [sortBy, setSortBy] = useState<string>("newest");
 
   const getRelativeTime = (timestamp: string) => {
-    return moment(timestamp).format("MMM D, YYYY [at] h:mm A");
+    return moment.utc(timestamp).format("MMM D, YYYY [at] h:mm A");
   };
 
   const filteredNotifications = notifications.filter((notification) =>
-    filter === "unread" ? !notification.notification_read : true,
+    filter === "unread" ? !notification.notification_read : true
   );
 
   const sortedNotifications = [...filteredNotifications].sort((a, b) => {
@@ -81,8 +81,8 @@ const NotificationsPage = () => {
       prev.map((notification) =>
         notification.notification_id === notificationId
           ? { ...notification, notification_read: true }
-          : notification,
-      ),
+          : notification
+      )
     );
   };
 
@@ -103,7 +103,7 @@ const NotificationsPage = () => {
       prev.map((notification) => ({
         ...notification,
         notification_read: true,
-      })),
+      }))
     );
 
     Notifications.show({

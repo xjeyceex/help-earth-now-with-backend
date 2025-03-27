@@ -15,10 +15,10 @@ import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-interface ChangePasswordModalProps {
+type ChangePasswordModalProps = {
   isModalOpen: boolean;
   setIsModalOpen: (value: boolean) => void;
-}
+};
 
 const ChangePasswordModal = ({
   isModalOpen,

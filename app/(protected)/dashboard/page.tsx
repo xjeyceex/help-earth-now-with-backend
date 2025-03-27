@@ -53,7 +53,7 @@ const DashboardPage = () => {
 
   function countUserTicketsByStatus(
     tickets: DashboardTicketType[],
-    statusType: "OPEN" | "COMPLETED",
+    statusType: "OPEN" | "COMPLETED"
   ) {
     if (statusType === "OPEN") {
       return tickets.filter(
@@ -61,7 +61,7 @@ const DashboardPage = () => {
           ticket.ticket_status === "FOR CANVASS" ||
           ticket.ticket_status === "FOR APPROVAL" ||
           ticket.ticket_status === "FOR REVIEW OF SUBMISSIONS" ||
-          ticket.ticket_status === "WORK IN PROGRESS",
+          ticket.ticket_status === "WORK IN PROGRESS"
       ).length;
     }
 
@@ -76,7 +76,7 @@ const DashboardPage = () => {
     try {
       setLoading(true);
       const data = await getDashboardTickets(
-        isAdmin ? undefined : user?.user_id,
+        isAdmin ? undefined : user?.user_id
       );
       setTickets(data ?? []);
     } catch (error) {
@@ -100,7 +100,7 @@ const DashboardPage = () => {
         return "yellow";
       case "WORK IN PROGRESS":
         return "blue";
-      case "COMPLETED":
+      case "DONE":
         return "green";
       default:
         return "gray";
@@ -244,10 +244,7 @@ const DashboardPage = () => {
         <Group justify="space-between" mb="lg">
           <Stack gap={2}>
             <Title order={3} fw={600}>
-              {isAdmin && "Recent Tickets"}
-              {user?.user_role === "PURCHASER" && "Your Open Tickets"}
-              {user?.user_role === "REVIEWER" && "Tickets to Review"}
-              {user?.user_role === "MANAGER" && "Tickets to Review"}
+              Recent Tickets
             </Title>
           </Stack>
           <Button
@@ -281,82 +278,90 @@ const DashboardPage = () => {
             </Stack>
           ) : (
             <Box>
-              {tickets.slice(0, 5).map((ticket, index) => (
-                <Box
-                  key={ticket.ticket_id}
-                  p="md"
-                  style={(theme) => ({
-                    borderRadius: 0,
-                    backgroundColor: "transparent",
-                    borderBottom:
-                      index !== tickets.length - 1
-                        ? `1px solid ${
-                            colorScheme === "dark"
-                              ? theme.colors.dark[4]
-                              : theme.colors.gray[2]
-                          }`
-                        : "none",
-                  })}
-                >
-                  <Group align="center" justify="space-between" wrap="nowrap">
-                    <Group wrap="nowrap" style={{ flex: 1 }}>
-                      <Box
+              {tickets
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(b.ticket_date_created).getTime() -
+                    new Date(a.ticket_date_created).getTime()
+                )
+                .slice(0, 5)
+                .map((ticket, index) => (
+                  <Box
+                    key={ticket.ticket_id}
+                    p="md"
+                    style={(theme) => ({
+                      borderRadius: 0,
+                      backgroundColor: "transparent",
+                      borderBottom:
+                        index !== tickets.length - 1
+                          ? `1px solid ${
+                              colorScheme === "dark"
+                                ? theme.colors.dark[4]
+                                : theme.colors.gray[2]
+                            }`
+                          : "none",
+                    })}
+                  >
+                    <Group align="center" justify="space-between" wrap="nowrap">
+                      <Group wrap="nowrap" style={{ flex: 1 }}>
+                        <Box
+                          style={(theme) => ({
+                            width: rem(8),
+                            height: rem(8),
+                            borderRadius: "50%",
+                            backgroundColor:
+                              theme.colors[
+                                getStatusColor(ticket.ticket_status)
+                              ][colorScheme === "dark" ? 4 : 6],
+                          })}
+                        />
+                        <Stack gap={4} style={{ flex: 1 }}>
+                          <Text fw={500} size="sm" lineClamp={1}>
+                            {ticket.ticket_item_name}
+                          </Text>
+                          <Group gap="xs">
+                            <Text size="xs" c="dimmed">
+                              ID: #{ticket.ticket_name}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              •
+                            </Text>
+                            <Text
+                              size="xs"
+                              c={getStatusColor(ticket.ticket_status)}
+                              fw={500}
+                            >
+                              {ticket.ticket_status}
+                            </Text>
+                          </Group>
+                        </Stack>
+                      </Group>
+                      <Button
+                        component={Link}
+                        href={`/tickets/${ticket.ticket_id}`}
+                        variant="subtle"
+                        size="xs"
                         style={(theme) => ({
-                          width: rem(8),
-                          height: rem(8),
-                          borderRadius: "50%",
-                          backgroundColor:
-                            theme.colors[getStatusColor(ticket.ticket_status)][
+                          color:
+                            theme.colors[theme.primaryColor][
                               colorScheme === "dark" ? 4 : 6
                             ],
                         })}
-                      />
-                      <Stack gap={4} style={{ flex: 1 }}>
-                        <Text fw={500} size="sm" lineClamp={1}>
-                          {ticket.ticket_item_description}
-                        </Text>
-                        <Group gap="xs">
-                          <Text size="xs" c="dimmed">
-                            ID: #{ticket.ticket_id}
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            •
-                          </Text>
-                          <Text
-                            size="xs"
-                            c={getStatusColor(ticket.ticket_status)}
-                            fw={500}
-                          >
-                            {ticket.ticket_status}
-                          </Text>
-                        </Group>
-                      </Stack>
+                        rightSection={
+                          <IconChevronRight
+                            style={{
+                              width: rem(14),
+                              height: rem(14),
+                            }}
+                          />
+                        }
+                      >
+                        View
+                      </Button>
                     </Group>
-                    <Button
-                      component={Link}
-                      href={`/tickets/${ticket.ticket_id}`}
-                      variant="subtle"
-                      size="xs"
-                      style={(theme) => ({
-                        color:
-                          theme.colors[theme.primaryColor][
-                            colorScheme === "dark" ? 4 : 6
-                          ],
-                      })}
-                      rightSection={
-                        <IconChevronRight
-                          style={{
-                            width: rem(14),
-                            height: rem(14),
-                          }}
-                        />
-                      }
-                    >
-                      View
-                    </Button>
-                  </Group>
-                </Box>
-              ))}
+                  </Box>
+                ))}
             </Box>
           )}
         </Paper>
