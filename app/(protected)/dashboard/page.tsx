@@ -318,7 +318,7 @@ const DashboardPage = () => {
                         />
                         <Stack gap={4} style={{ flex: 1 }}>
                           <Text fw={500} size="sm" lineClamp={1}>
-                            {ticket.ticket_item_description}
+                            {ticket.ticket_item_name}
                           </Text>
                           <Group gap="xs">
                             <Text size="xs" c="dimmed">

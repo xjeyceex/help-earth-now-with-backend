@@ -219,6 +219,7 @@ CREATE OR REPLACE FUNCTION get_dashboard_tickets(_user_id UUID)
 RETURNS TABLE (
   ticket_id UUID,
   ticket_name TEXT,
+  ticket_item_name TEXT,
   ticket_status TEXT,
   ticket_item_description TEXT,
   ticket_date_created TIMESTAMPTZ
@@ -227,7 +228,8 @@ LANGUAGE SQL
 AS $$
   SELECT 
     t.ticket_id,
-    t.ticket_name,  -- Added ticket_name
+    t.ticket_name, 
+    t.ticket_item_name,
     t.ticket_status,
     t.ticket_item_description,
     timezone('Asia/Manila', t.ticket_date_created) AS ticket_date_created
