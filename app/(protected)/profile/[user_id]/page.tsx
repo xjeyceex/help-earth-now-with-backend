@@ -98,7 +98,7 @@ const ProfilePage = () => {
   const isUser = user.user_id === profileUser?.user_id;
 
   const handleAvatarUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -343,7 +343,7 @@ const ProfilePage = () => {
             />
           )}
         </Box>
-      ) : (
+      ) : profileUser ? (
         <Box p={{ base: "md", sm: "xl" }} mx="auto" maw={500}>
           <Stack gap="lg">
             <Paper
@@ -413,6 +413,8 @@ const ProfilePage = () => {
             </Paper>
           </Stack>
         </Box>
+      ) : (
+        <LoadingStateProtected />
       )}
     </>
   );

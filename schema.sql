@@ -597,7 +597,7 @@ DECLARE
     formatted_date TEXT;
 BEGIN
     -- Format the date as DD-MMM-YY (e.g., 27MAR25)
-    formatted_date := TO_CHAR(NEW.ticket_date_created, 'DDMONYY');
+    formatted_date := TO_CHAR(NEW.ticket_date_created, 'DDMONYYYY');
 
     -- Get the latest sequential number for the current date format
     SELECT COALESCE(MAX(CAST(LEFT(ticket_name, 4) AS INT)), 0) + 1
