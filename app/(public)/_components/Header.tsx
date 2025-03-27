@@ -42,6 +42,7 @@ const Header = () => {
     { label: "About", href: "#about" },
     { label: "Features", href: "#features" },
     { label: "Contact Us", href: "#contact-us" },
+    ...(user ? [{ label: "Dashboard", href: "/dashboard" }] : []),
   ];
 
   const handleLogout = () => {
