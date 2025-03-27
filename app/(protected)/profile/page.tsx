@@ -24,6 +24,7 @@ import {
   Tooltip,
   useMantineColorScheme,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {
   IconAlertCircle,
@@ -47,6 +48,8 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [isPasswordExist, setIsPasswordExist] = useState(false);
 
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   useEffect(() => {
     if (!user || !user.user_id) return;
 
@@ -68,7 +71,7 @@ const ProfilePage = () => {
   }
 
   const handleAvatarUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -122,20 +125,25 @@ const ProfilePage = () => {
   };
 
   return (
-    <Box p={{ base: "md", sm: "xl" }}>
-      <Stack gap={2} mb="xl">
-        <Title order={2} fw={600}>
+    <Box p={{ base: "sm", sm: "md" }}>
+      <Stack gap={isMobile ? 1 : 2} mb="xl">
+        <Title order={2} fw={600} ta={isMobile ? "center" : "left"}>
           Profile
         </Title>
-        <Text c="dimmed" size="sm">
+        <Text
+          c="dimmed"
+          size={isMobile ? "xs" : "sm"}
+          ta={isMobile ? "center" : "left"}
+        >
           TODO: Breadcrumbs
         </Text>
       </Stack>
+
       <Stack gap="xl">
         {/* Header Section */}
         <Paper
           shadow="xs"
-          p="xl"
+          p={isMobile ? "md" : "xl"}
           radius="md"
           style={(theme) => ({
             backgroundColor:
@@ -147,13 +155,16 @@ const ProfilePage = () => {
             }`,
           })}
         >
-          <Group wrap="nowrap" gap="xl">
+          <Group
+            wrap={isMobile ? "wrap" : "nowrap"}
+            gap={isMobile ? "xs" : "xl"}
+          >
             <Box>
               <label htmlFor="avatar-upload" style={{ cursor: "pointer" }}>
                 <Avatar
                   variant="light"
                   src={user.user_avatar}
-                  size={120}
+                  size={isMobile ? 80 : 120}
                   radius="md"
                   color="blue"
                   style={{
@@ -176,16 +187,16 @@ const ProfilePage = () => {
               />
             </Box>
 
-            <Stack gap={4}>
+            <Stack gap={4} style={{ width: isMobile ? "100%" : "auto" }}>
               <Group align="center" gap="xs">
-                <Title order={2} fw={600}>
+                <Title order={2} fw={600} ta={isMobile ? "center" : "left"}>
                   {user.user_full_name}
                 </Title>
                 <Tooltip label="Edit name">
                   <ActionIcon
                     variant="subtle"
                     onClick={() => setIsEditingName(true)}
-                    size="sm"
+                    size={isMobile ? "xs" : "sm"}
                   >
                     <IconEdit style={{ width: rem(14), height: rem(14) }} />
                   </ActionIcon>
@@ -195,7 +206,7 @@ const ProfilePage = () => {
                 <ThemeIcon size="sm" variant="light" radius="xl">
                   <IconMail style={{ width: rem(12), height: rem(12) }} />
                 </ThemeIcon>
-                <Text size="sm" c="dimmed">
+                <Text size={isMobile ? "xs" : "sm"} c="dimmed">
                   {user.user_email}
                 </Text>
               </Group>
@@ -203,7 +214,7 @@ const ProfilePage = () => {
                 <ThemeIcon size="sm" variant="light" radius="xl">
                   <IconUserShield style={{ width: rem(12), height: rem(12) }} />
                 </ThemeIcon>
-                <Text size="sm" c="dimmed" tt="capitalize">
+                <Text size={isMobile ? "xs" : "sm"} c="dimmed" tt="capitalize">
                   {user.user_role.toLowerCase()}
                 </Text>
               </Group>
@@ -245,16 +256,16 @@ const ProfilePage = () => {
               })}
             >
               <Stack gap={1}>
-                <Text size="md" fw={500}>
+                <Text size={isMobile ? "sm" : "md"} fw={500}>
                   Change Password
                 </Text>
-                <Text size="sm" c="dimmed">
+                <Text size={isMobile ? "xs" : "sm"} c="dimmed">
                   Update your password to keep your account secure
                 </Text>
               </Stack>
               <Button
                 variant="light"
-                size="xs"
+                size={isMobile ? "xs" : "sm"}
                 leftSection={<IconLock size={14} />}
                 onClick={() => {
                   if (isPasswordExist) {
@@ -277,7 +288,7 @@ const ProfilePage = () => {
         onClose={() => setIsEditingName(false)}
         title="Update Name"
         centered
-        size="sm"
+        size={isMobile ? "xs" : "sm"}
       >
         <Stack>
           <TextInput
