@@ -214,7 +214,8 @@ const TicketList = () => {
                 </ActionIcon>
               </Tooltip>
 
-              {user.user_role === "PURCHASER" && (
+              {(user.user_role === "PURCHASER" ||
+                user.user_role === "ADMIN") && (
                 <Button
                   leftSection={<IconPlus size={16} />}
                   onClick={() => router.push("/tickets/create-ticket")}
@@ -313,7 +314,7 @@ const TicketList = () => {
             <Text c="dimmed" ta="center" mt="md">
               No tickets found
             </Text>
-            {user.user_role === "PURCHASER" && (
+            {(user.user_role === "PURCHASER" || user.user_role === "ADMIN") && (
               <Group justify="center" mt="md">
                 <Button
                   variant="light"
