@@ -40,7 +40,7 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
       ],
       maxSize = 5 * 1024 * 1024,
     },
-    ref
+    ref,
   ) => {
     const theme = useMantineTheme();
     const { colorScheme } = useMantineColorScheme();
@@ -242,7 +242,7 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
         )}
       </Box>
     );
-  }
+  },
 );
 
 DropzoneFileInput.displayName = "DropzoneFileInput";
