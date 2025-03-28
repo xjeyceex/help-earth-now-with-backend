@@ -158,7 +158,7 @@ const ProfilePage = () => {
   };
 
   const handleAvatarUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -466,17 +466,19 @@ const ProfilePage = () => {
 
               {/* Placeholder for Role Change */}
               <Stack align="center">
-                {(isAdmin || isManager) && (
-                  <Button
-                    leftSection={<IconSettings size={16} />}
-                    variant="light"
-                    radius="md"
-                    size="sm"
-                    onClick={() => setOpened(true)}
-                  >
-                    Change Role
-                  </Button>
-                )}
+                {(isAdmin || isManager) &&
+                  profileUser.user_role !== "ADMIN" &&
+                  profileUser.user_role !== "MANAGER" && (
+                    <Button
+                      leftSection={<IconSettings size={16} />}
+                      variant="light"
+                      radius="md"
+                      size="sm"
+                      onClick={() => setOpened(true)}
+                    >
+                      Change Role
+                    </Button>
+                  )}
               </Stack>
             </Paper>
           </Stack>
@@ -488,7 +490,11 @@ const ProfilePage = () => {
             <Select
               label="Select a Role"
               placeholder="Choose a role"
-              data={["REVIEWER", "PURCHASER"]}
+              data={
+                isAdmin
+                  ? ["REVIEWER", "PURCHASER", "MANAGER"]
+                  : ["REVIEWER", "PURCHASER"]
+              }
               value={selectedRole}
               onChange={setSelectedRole}
             />
