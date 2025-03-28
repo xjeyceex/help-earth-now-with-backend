@@ -163,14 +163,20 @@ const TicketStatusAndActions = ({
     const nonManagerReviewers = updatedReviewers.filter(
       (reviewer) => reviewer.reviewer_role !== "MANAGER",
     );
+
+    const isSingleReviewer = nonManagerReviewers.length === 1;
     const allApproved =
       nonManagerReviewers.length > 0 &&
       nonManagerReviewers.every(
         (reviewer) => reviewer.approval_status === "APPROVED",
       );
 
-    // Only update the ticket status if all reviewers are approved
-    const newTicketStatus = allApproved ? "FOR APPROVAL" : ticket.ticket_status;
+    // Handle edge case where there's only one non-manager reviewer
+    const newTicketStatus = allApproved
+      ? "FOR APPROVAL"
+      : isSingleReviewer && newApprovalStatus === "REJECTED"
+      ? "REJECTED"
+      : ticket.ticket_status;
 
     try {
       if (newComment.trim()) {
@@ -200,11 +206,35 @@ const TicketStatusAndActions = ({
 
     if (!ticket) return;
 
-    // Determine new ticket status based on manager's decision
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
-    const newTicketStatus =
-      newApprovalStatus === "APPROVED" ? "DONE" : "DECLINED";
+
+    // Optimistically update only the manager's approval status
+    const updatedReviewers = ticket.reviewers.map((reviewer) =>
+      reviewer.reviewer_role === "MANAGER" &&
+      reviewer.reviewer_id === user.user_id
+        ? { ...reviewer, approval_status: newApprovalStatus }
+        : reviewer
+    );
+
+    // Filter only managers
+    const managerReviewers = updatedReviewers.filter(
+      (reviewer) => reviewer.reviewer_role === "MANAGER"
+    );
+
+    const isSingleManager = managerReviewers.length === 1;
+    const allManagersApproved =
+      managerReviewers.length > 0 &&
+      managerReviewers.every(
+        (reviewer) => reviewer.approval_status === "APPROVED"
+      );
+
+    // Handle single or multiple manager approvals
+    const newTicketStatus = allManagersApproved
+      ? "DONE"
+      : isSingleManager && newApprovalStatus === "REJECTED"
+      ? "REJECTED"
+      : ticket.ticket_status;
 
     try {
       if (newComment.trim()) {
@@ -555,20 +585,19 @@ const TicketStatusAndActions = ({
                   Shared with
                 </Text>
 
-                {isCreator ||
-                  (isAdmin && (
-                    <Tooltip label="Share ticket">
-                      <ActionIcon
-                        variant="light"
-                        color="blue"
-                        onClick={() => setIsSharing(true)}
-                        radius="md"
-                        size="md"
-                      >
-                        <IconPlus size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  ))}
+                {(isCreator || isAdmin || isManager) && (
+                  <Tooltip label="Share ticket">
+                    <ActionIcon
+                      variant="light"
+                      color="blue"
+                      onClick={() => setIsSharing(true)}
+                      radius="md"
+                      size="md"
+                    >
+                      <IconPlus size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
 
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">

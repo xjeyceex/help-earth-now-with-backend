@@ -27,6 +27,7 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import NotificationMenu from "./NotificationMenu";
 import ModeToggle from "./ThemeToggle";
@@ -36,6 +37,7 @@ const Navbar = () => {
   const [, startTransition] = useTransition();
   const { colorScheme } = useMantineColorScheme();
   const theme = useMantineTheme();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { openMobileSidebar } = useSidebarStore();
 
@@ -49,6 +51,7 @@ const Navbar = () => {
     startTransition(() => {
       userLogout();
       clearUser();
+      router.push("/login"); // Redirect to login page
     });
   };
 

@@ -49,6 +49,37 @@ CREATE TABLE user_table (
     user_email TEXT
 );
 
+-- Enable Row-Level Security
+ALTER TABLE public.user_table ENABLE ROW LEVEL SECURITY;
+
+-- Allow all authenticated users to SELECT
+DROP POLICY IF EXISTS select_users ON public.user_table;
+CREATE POLICY select_users 
+ON public.user_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to INSERT
+DROP POLICY IF EXISTS insert_users ON public.user_table;
+CREATE POLICY insert_users 
+ON public.user_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to UPDATE
+DROP POLICY IF EXISTS update_users ON public.user_table;
+CREATE POLICY update_users 
+ON public.user_table 
+FOR UPDATE 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to DELETE
+DROP POLICY IF EXISTS delete_users ON public.user_table;
+CREATE POLICY delete_users 
+ON public.user_table 
+FOR DELETE 
+USING (auth.role() = 'authenticated');
+
 -- TICKET TABLE (Tracks Canvassing Requests)
 DROP TABLE IF EXISTS ticket_table CASCADE;
 CREATE TABLE public.ticket_table (
@@ -66,10 +97,39 @@ CREATE TABLE public.ticket_table (
   ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) 
 );
 
--- create comment_table and comment_reply_table
-DROP TABLE IF EXISTS comment_reply_table CASCADE;
-DROP TABLE IF EXISTS comment_table CASCADE;
+-- Enable RLS
+ALTER TABLE public.ticket_table ENABLE ROW LEVEL SECURITY;
 
+-- Allow all authenticated users to SELECT
+DROP POLICY IF EXISTS select_tickets ON public.ticket_table;
+CREATE POLICY select_tickets 
+ON public.ticket_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to INSERT
+DROP POLICY IF EXISTS insert_tickets ON public.ticket_table;
+CREATE POLICY insert_tickets 
+ON public.ticket_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to UPDATE
+DROP POLICY IF EXISTS update_tickets ON public.ticket_table;
+CREATE POLICY update_tickets 
+ON public.ticket_table 
+FOR UPDATE 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to DELETE
+DROP POLICY IF EXISTS delete_tickets ON public.ticket_table;
+CREATE POLICY delete_tickets 
+ON public.ticket_table 
+FOR DELETE 
+USING (auth.role() = 'authenticated');
+
+-- create comment_table
+DROP TABLE IF EXISTS comment_table CASCADE;
 CREATE TABLE comment_table (
   comment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comment_ticket_id UUID NOT NULL,
@@ -84,10 +144,42 @@ CREATE TABLE comment_table (
   FOREIGN KEY (comment_ticket_id) REFERENCES ticket_table(ticket_id) ON DELETE CASCADE 
 );
 
--- Enable Supabase Realtime on this table
-ALTER PUBLICATION supabase_realtime ADD TABLE comment_table;
-ALTER TABLE comment_table REPLICA IDENTITY FULL;
+-- Enable RLS
+ALTER TABLE public.comment_table ENABLE ROW LEVEL SECURITY;
 
+-- Allow all authenticated users to SELECT comments
+DROP POLICY IF EXISTS select_comments ON public.comment_table;
+CREATE POLICY select_comments 
+ON public.comment_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to INSERT comments
+DROP POLICY IF EXISTS insert_comments ON public.comment_table;
+CREATE POLICY insert_comments 
+ON public.comment_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to UPDATE their own comments
+DROP POLICY IF EXISTS update_comments ON public.comment_table;
+CREATE POLICY update_comments 
+ON public.comment_table 
+FOR UPDATE 
+USING (auth.uid() = comment_user_id) -- Users can only update their own comments
+
+-- Allow all authenticated users to DELETE their own comments
+DROP POLICY IF EXISTS delete_comments ON public.comment_table;
+CREATE POLICY "Users can delete their own comments, Admins & Managers can delete any"
+ON public.comment_table
+FOR DELETE
+USING (
+  auth.uid() = comment_user_id
+  OR (SELECT user_role FROM public.user_table WHERE user_id = auth.uid()) IN ('ADMIN', 'MANAGER')
+);
+
+--comment reply table
+DROP TABLE IF EXISTS comment_reply_table CASCADE;
 CREATE TABLE comment_reply_table (
   reply_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reply_parent_comment_id UUID NOT NULL,
@@ -96,16 +188,91 @@ CREATE TABLE comment_reply_table (
   FOREIGN KEY (reply_child_comment_id) REFERENCES comment_table(comment_id)
 );
 
+ALTER TABLE public.comment_reply_table ENABLE ROW LEVEL SECURITY;
+
+-- Allow all authenticated users to view replies
+DROP POLICY IF EXISTS select_comment_replies ON public.comment_reply_table;
+CREATE POLICY select_comment_replies 
+ON public.comment_reply_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to insert replies
+DROP POLICY IF EXISTS insert_comment_replies ON public.comment_reply_table;
+CREATE POLICY insert_comment_replies 
+ON public.comment_reply_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow users to delete only their own replies
+DROP POLICY IF EXISTS delete_comment_replies ON public.comment_reply_table;
+CREATE POLICY delete_comment_replies 
+ON public.comment_reply_table 
+FOR DELETE 
+USING (
+  auth.uid() IN (
+    SELECT c.comment_user_id 
+    FROM public.comment_table c 
+    WHERE c.comment_id = comment_reply_table.reply_child_comment_id
+  ) 
+  OR (SELECT user_role FROM public.user_table WHERE user_id = auth.uid()) IN ('ADMIN', 'MANAGER') 
+  -- Admins & Managers can delete any comment reply
+);
+
+-- Allow users to update only their own replies
+DROP POLICY IF EXISTS update_comment_replies ON public.comment_reply_table;
+CREATE POLICY update_comment_replies 
+ON public.comment_reply_table 
+FOR UPDATE 
+USING (
+  auth.uid() IN (
+    SELECT c.comment_user_id 
+    FROM public.comment_table c 
+    WHERE c.comment_id = comment_reply_table.reply_child_comment_id
+  ) -- Only the user who created the reply can update it
+);
+
 -- DROP TABLE IF EXISTS
 DROP TABLE IF EXISTS ticket_shared_with_table cascade;
-
--- CREATE SHARED TICKET TABLE
 CREATE TABLE public.ticket_shared_with_table (
     ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
     shared_user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     assigned_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()), 
     assigned_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
     PRIMARY KEY (ticket_id, shared_user_id)
+);
+
+-- Enable RLS
+ALTER TABLE public.ticket_shared_with_table ENABLE ROW LEVEL SECURITY;
+
+-- Allow shared users to SELECT their shared tickets
+DROP POLICY IF EXISTS select_shared_tickets ON public.ticket_shared_with_table;
+CREATE POLICY select_shared_tickets
+ON public.ticket_shared_with_table
+FOR SELECT
+USING (
+  auth.uid() = shared_user_id
+  OR (SELECT user_role FROM public.user_table WHERE user_id = auth.uid()) IN ('ADMIN', 'MANAGER')
+);
+
+-- Allow ticket owners & admins/managers to share tickets (INSERT)
+DROP POLICY IF EXISTS insert_shared_tickets ON public.ticket_shared_with_table;
+CREATE POLICY insert_shared_tickets
+ON public.ticket_shared_with_table
+FOR INSERT
+WITH CHECK (
+  auth.uid() = assigned_by
+  OR (SELECT user_role FROM public.user_table WHERE user_id = auth.uid()) IN ('ADMIN', 'MANAGER')
+);
+
+-- Allow ticket owners & admins/managers to remove shared users (DELETE)
+DROP POLICY IF EXISTS delete_shared_tickets ON public.ticket_shared_with_table;
+CREATE POLICY delete_shared_tickets
+ON public.ticket_shared_with_table
+FOR DELETE
+USING (
+  auth.uid() = assigned_by
+  OR (SELECT user_role FROM public.user_table WHERE user_id = auth.uid()) IN ('ADMIN', 'MANAGER')
 );
 
 -- CANVASS FORM TABLE (Stores Supplier Quotes & Submissions)
@@ -122,6 +289,37 @@ CREATE TABLE public.canvass_form_table (
     canvass_form_date_submitted TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
+-- Enable RLS
+ALTER TABLE public.canvass_form_table ENABLE ROW LEVEL SECURITY;
+
+-- Allow all authenticated users to SELECT canvass forms
+DROP POLICY IF EXISTS select_canvass_forms ON public.canvass_form_table;
+CREATE POLICY select_canvass_forms 
+ON public.canvass_form_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to INSERT new canvass forms
+DROP POLICY IF EXISTS insert_canvass_forms ON public.canvass_form_table;
+CREATE POLICY insert_canvass_forms 
+ON public.canvass_form_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to UPDATE any canvass form
+DROP POLICY IF EXISTS update_canvass_forms ON public.canvass_form_table;
+CREATE POLICY update_canvass_forms 
+ON public.canvass_form_table 
+FOR UPDATE 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to DELETE any canvass form
+DROP POLICY IF EXISTS delete_canvass_forms ON public.canvass_form_table;
+CREATE POLICY delete_canvass_forms 
+ON public.canvass_form_table 
+FOR DELETE 
+USING (auth.role() = 'authenticated');
+
 -- CANVASS ATTACHMENT TABLE (Stores Canvass Attachments)
 DROP TABLE IF EXISTS canvass_attachment_table CASCADE;
 CREATE TABLE public.canvass_attachment_table (
@@ -137,6 +335,36 @@ CREATE TABLE public.canvass_attachment_table (
         ON UPDATE CASCADE
         ON DELETE CASCADE
 ) TABLESPACE pg_default;
+-- Enable RLS
+ALTER TABLE public.canvass_attachment_table ENABLE ROW LEVEL SECURITY;
+
+-- Allow all authenticated users to SELECT canvass attachments
+DROP POLICY IF EXISTS select_canvass_attachments ON public.canvass_attachment_table;
+CREATE POLICY select_canvass_attachments 
+ON public.canvass_attachment_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to INSERT canvass attachments
+DROP POLICY IF EXISTS insert_canvass_attachments ON public.canvass_attachment_table;
+CREATE POLICY insert_canvass_attachments 
+ON public.canvass_attachment_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to UPDATE their own attachments
+DROP POLICY IF EXISTS update_canvass_attachments ON public.canvass_attachment_table;
+CREATE POLICY update_canvass_attachments 
+ON public.canvass_attachment_table 
+FOR UPDATE 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to DELETE their own attachments
+DROP POLICY IF EXISTS delete_canvass_attachments ON public.canvass_attachment_table;
+CREATE POLICY delete_canvass_attachments 
+ON public.canvass_attachment_table 
+FOR DELETE 
+USING (auth.role() = 'authenticated');
 
 -- APPROVAL TABLE (Tracks Review & Approvals)
 DROP TABLE IF EXISTS approval_table CASCADE;
@@ -147,6 +375,37 @@ CREATE TABLE public.approval_table (
     approval_review_status approval_status_enum NOT NULL, 
     approval_review_date TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
+
+-- Enable RLS
+ALTER TABLE public.approval_table ENABLE ROW LEVEL SECURITY;
+
+-- Allow all authenticated users to SELECT approvals
+DROP POLICY IF EXISTS select_approvals ON public.approval_table;
+CREATE POLICY select_approvals 
+ON public.approval_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to INSERT approvals
+DROP POLICY IF EXISTS insert_approvals ON public.approval_table;
+CREATE POLICY insert_approvals 
+ON public.approval_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to UPDATE approvals
+DROP POLICY IF EXISTS update_approvals ON public.approval_table;
+CREATE POLICY update_approvals 
+ON public.approval_table 
+FOR UPDATE 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to DELETE approvals
+DROP POLICY IF EXISTS delete_approvals ON public.approval_table;
+CREATE POLICY delete_approvals 
+ON public.approval_table 
+FOR DELETE 
+USING (auth.role() = 'authenticated');
 
 -- TICKET STATUS HISTORY TABLE (Tracks Status Changes for Workflow)
 DROP TABLE IF EXISTS ticket_status_history_table CASCADE;
@@ -159,6 +418,37 @@ CREATE TABLE public.ticket_status_history_table (
     ticket_status_history_change_date TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
+-- Enable RLS
+ALTER TABLE public.ticket_status_history_table ENABLE ROW LEVEL SECURITY;
+
+-- Allow all authenticated users to SELECT ticket status history
+DROP POLICY IF EXISTS select_ticket_status_history ON public.ticket_status_history_table;
+CREATE POLICY select_ticket_status_history 
+ON public.ticket_status_history_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to INSERT ticket status history
+DROP POLICY IF EXISTS insert_ticket_status_history ON public.ticket_status_history_table;
+CREATE POLICY insert_ticket_status_history 
+ON public.ticket_status_history_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to UPDATE ticket status history
+DROP POLICY IF EXISTS update_ticket_status_history ON public.ticket_status_history_table;
+CREATE POLICY update_ticket_status_history 
+ON public.ticket_status_history_table 
+FOR UPDATE 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to DELETE ticket status history
+DROP POLICY IF EXISTS delete_ticket_status_history ON public.ticket_status_history_table;
+CREATE POLICY delete_ticket_status_history 
+ON public.ticket_status_history_table 
+FOR DELETE 
+USING (auth.role() = 'authenticated');
+
 DROP TABLE IF EXISTS notification_table CASCADE;
 CREATE TABLE notification_table (
   notification_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -168,6 +458,37 @@ CREATE TABLE notification_table (
   notification_url TEXT NULL,
   notification_created_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
+
+-- Enable RLS
+ALTER TABLE public.notification_table ENABLE ROW LEVEL SECURITY;
+
+-- Allow all authenticated users to SELECT notifications
+DROP POLICY IF EXISTS select_notifications ON public.notification_table;
+CREATE POLICY select_notifications 
+ON public.notification_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to INSERT notifications
+DROP POLICY IF EXISTS insert_notifications ON public.notification_table;
+CREATE POLICY insert_notifications 
+ON public.notification_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to UPDATE their own notifications
+DROP POLICY IF EXISTS update_notifications ON public.notification_table;
+CREATE POLICY update_notifications 
+ON public.notification_table 
+FOR UPDATE 
+USING (auth.uid() = notification_user_id);
+
+-- Allow all authenticated users to DELETE their own notifications
+DROP POLICY IF EXISTS delete_notifications ON public.notification_table;
+CREATE POLICY delete_notifications 
+ON public.notification_table 
+FOR DELETE 
+USING (auth.uid() = notification_user_id);
 
 -- Enable Supabase Realtime on this table
 ALTER PUBLICATION supabase_realtime ADD TABLE notification_table;
@@ -320,9 +641,8 @@ AS $$
 $$;
 
 --view for realtime comment
-CREATE VIEW comment_with_avatar_view AS
-SELECT 
-    c.comment_id,
+create view public.comment_with_avatar_view with (security_invoker = on) as
+ SELECT c.comment_id,
     c.comment_ticket_id,
     c.comment_content,
     c.comment_date_created,
@@ -333,9 +653,8 @@ SELECT
     c.comment_user_id,
     u.user_full_name AS comment_user_full_name,
     u.user_avatar AS comment_user_avatar
-FROM comment_table c
-LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
-
+   FROM comment_table c
+   LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
 
 -- Function for fetching comments with avatars
 DROP FUNCTION IF EXISTS get_comments_with_avatars(UUID);
