@@ -177,18 +177,18 @@ const TicketDetailsPage = () => {
           onClick={() => router.push("/tickets")}
           leftSection={<IconArrowLeft size={16} />}
           radius="md"
-          mb="sm"
           w="fit-content"
+          mb="xl"
         >
           Back to Tickets
         </Button>
         <Group>
           <Title
             pl="xs"
-            order={3} // Changed from h1 to h3 for smaller size
+            order={2}
             styles={(theme) => ({
               root: {
-                borderLeft: `2px solid ${theme.colors.blue[5]}`,
+                borderLeft: `4px solid ${theme.colors.blue[5]}`,
                 position: "relative",
               },
             })}
