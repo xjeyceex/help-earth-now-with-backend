@@ -5,7 +5,8 @@ import {
   Box,
   Button,
   Container,
-  Flex,
+  Grid,
+  Group,
   Stack,
   Text,
   TextInput,
@@ -20,7 +21,16 @@ import { TicketDetailsType } from "@/utils/types";
 import { CanvassFormSchema } from "@/utils/zod/schema";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
-import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
+import {
+  IconClipboard,
+  IconClock,
+  IconCreditCardPay,
+  IconMoneybag,
+  IconPlus,
+  IconShoppingCart,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import DropzoneFileInput from "./ui/DropzoneFileInput";
 
 type CanvassFormProps = {
@@ -125,11 +135,12 @@ const CanvassForm = ({
   };
 
   return (
-    <Container w="100%" p={0} pt="lg">
-      <Stack>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Stack gap="lg">
-            <Box>
+    <Container size="md" px="0">
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <Stack gap="xl">
+          {/* Basic Information Section */}
+          <Grid gutter="lg">
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <DateInput
                 {...form.register("RfDateReceived")}
                 value={form.watch("RfDateReceived")}
@@ -142,21 +153,38 @@ const CanvassForm = ({
                 disabled={isPending}
                 required
                 radius="md"
+                leftSection={
+                  <IconClipboard
+                    size={16}
+                    style={{ color: "var(--mantine-color-blue-6)" }}
+                  />
+                }
+                size="md"
               />
-            </Box>
-            <Box>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
                 {...form.register("recommendedSupplier")}
                 error={form.formState.errors.recommendedSupplier?.message}
                 label="Recommended Supplier"
-                name="recommendedSupplier"
                 placeholder="Enter recommended supplier"
                 disabled={isPending}
                 required
                 radius="md"
+                size="md"
+                leftSection={
+                  <IconShoppingCart
+                    size={16}
+                    style={{ color: "var(--mantine-color-blue-6)" }}
+                  />
+                }
               />
-            </Box>
-            <Box>
+            </Grid.Col>
+          </Grid>
+
+          <Grid gutter="lg">
+            <Grid.Col span={{ base: 12, sm: 4 }}>
               <TextInput
                 {...form.register("leadTimeDay", {
                   valueAsNumber: true,
@@ -164,15 +192,23 @@ const CanvassForm = ({
                 error={form.formState.errors.leadTimeDay?.message}
                 label="Lead Time (days)"
                 name="leadTimeDay"
-                placeholder="Enter lead time in days"
+                placeholder="Enter lead time"
                 type="number"
                 required
                 disabled={isPending}
                 radius="md"
                 step="any"
+                size="md"
+                leftSection={
+                  <IconClock
+                    size={16}
+                    style={{ color: "var(--mantine-color-blue-6)" }}
+                  />
+                }
               />
-            </Box>
-            <Box>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, sm: 4 }}>
               <TextInput
                 {...form.register("totalAmount", {
                   valueAsNumber: true,
@@ -186,22 +222,47 @@ const CanvassForm = ({
                 disabled={isPending}
                 radius="md"
                 step="any"
+                size="md"
+                leftSection={
+                  <IconMoneybag
+                    size={16}
+                    style={{ color: "var(--mantine-color-blue-6)" }}
+                  />
+                }
               />
-            </Box>
-            <Box>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, sm: 4 }}>
               <TextInput
                 {...form.register("paymentTerms")}
                 error={form.formState.errors.paymentTerms?.message}
                 label="Payment Terms"
-                name="paymentTerms"
-                placeholder="Enter Payment Terms"
+                placeholder="e.g., Net 30"
                 disabled={isPending}
                 required
                 radius="md"
+                size="md"
+                leftSection={
+                  <IconCreditCardPay
+                    size={16}
+                    style={{ color: "var(--mantine-color-blue-6)" }}
+                  />
+                }
+                styles={{
+                  input: {
+                    "&:focus": {
+                      borderColor: "var(--mantine-color-blue-6)",
+                    },
+                  },
+                }}
               />
-            </Box>
+            </Grid.Col>
+          </Grid>
+
+          <Stack gap="lg">
+            {/* Canvass Sheet Upload */}
             <Box>
-              <Text size="sm" fw={500} mb={5}>
+              <Text size="md" fw={500} mb={5}>
                 Canvass Sheet{" "}
                 <Text component="span" c="red">
                   *
@@ -226,12 +287,12 @@ const CanvassForm = ({
               />
             </Box>
 
-            {/* Quotation Fields */}
+            {/* Quotations Section */}
             <Stack gap="md">
               {fields.map((field, index) => (
                 <Box key={field.id}>
-                  <Flex align="center" justify="space-between" mb={5}>
-                    <Text size="sm" fw={500}>
+                  <Group justify="space-between" mb="xs">
+                    <Text size="md" fw={500}>
                       Quotation {index + 1}
                       {index === 0 && (
                         <Text component="span" c="red">
@@ -251,7 +312,7 @@ const CanvassForm = ({
                         <IconTrash size={16} />
                       </Button>
                     )}
-                  </Flex>
+                  </Group>
                   <Controller
                     name={`quotations.${index}.file`}
                     control={form.control}
@@ -278,26 +339,23 @@ const CanvassForm = ({
                   onClick={addQuotation}
                   disabled={isPending || fields.length >= 4}
                   leftSection={<IconPlus size={16} />}
+                  color="blue"
+                  fullWidth
+                  size="md"
                 >
                   Add Quotation ({fields.length}/4)
                 </Button>
               )}
-
-              {form.formState.errors.quotations?.message && (
-                <Text c="red" size="sm">
-                  {form.formState.errors.quotations.message}
-                </Text>
-              )}
             </Stack>
-
-            <Flex justify="end">
-              <Button type="submit" loading={isPending} w="fit-content" my="md">
-                Submit
-              </Button>
-            </Flex>
           </Stack>
-        </form>
-      </Stack>
+
+          <Group justify="flex-end">
+            <Button type="submit" loading={isPending} size="md" radius="md">
+              Submit Form
+            </Button>
+          </Group>
+        </Stack>
+      </form>
     </Container>
   );
 };

@@ -1,12 +1,20 @@
-import { CloseButton, Group, Paper, rem, Stack, Text } from "@mantine/core";
-import { Dropzone, FileWithPath } from "@mantine/dropzone";
+import { convertFileSize } from "@/utils/functions";
 import {
-  IconFile,
-  IconPdf,
-  IconPhoto,
-  IconUpload,
-  IconX,
-} from "@tabler/icons-react";
+  Box,
+  CloseButton,
+  Flex,
+  Group,
+  Image,
+  Paper,
+  rem,
+  Stack,
+  Text,
+  ThemeIcon,
+  useMantineColorScheme,
+  useMantineTheme,
+} from "@mantine/core";
+import { Dropzone, FileWithPath } from "@mantine/dropzone";
+import { IconUpload, IconX } from "@tabler/icons-react";
 import { forwardRef, useEffect, useState } from "react";
 
 type DropzoneFileInputProps = {
@@ -34,6 +42,9 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
     },
     ref,
   ) => {
+    const theme = useMantineTheme();
+    const { colorScheme } = useMantineColorScheme();
+
     const [files, setFiles] = useState<FileWithPath[]>([]);
 
     useEffect(() => {
@@ -76,14 +87,37 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
       }
     };
 
-    // Get appropriate icon based on file type
     const getFileIcon = (file: File) => {
       if (file.type.includes("pdf")) {
-        return <IconPdf fontSize={rem(14)} stroke={1.5} />;
+        return (
+          <Image
+            radius="md"
+            src="/images/pdf-icon.png"
+            w={50}
+            h={50}
+            alt="PDF Icon"
+          />
+        );
       } else if (file.type.includes("image")) {
-        return <IconPhoto fontSize={rem(14)} stroke={1.5} />;
+        return (
+          <Image
+            radius="md"
+            src="/images/image-icon.png"
+            w={50}
+            h={50}
+            alt="PDF Icon"
+          />
+        );
       } else {
-        return <IconFile fontSize={rem(14)} stroke={1.5} />;
+        return (
+          <Image
+            radius="md"
+            src="/images/file-icon.png"
+            w={50}
+            h={50}
+            alt="PDF Icon"
+          />
+        );
       }
     };
 
@@ -91,18 +125,23 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
       <Paper
         key={index}
         shadow="none"
-        p="xs"
+        p="md"
         withBorder
-        style={{ display: "flex", alignItems: "center" }}
+        style={{ display: "flex", alignItems: "center", borderStyle: "dashed" }}
       >
-        <Group gap="xs" style={{ flex: 1 }}>
+        <Group gap="md" style={{ flex: 1 }}>
           {getFileIcon(file)}
-          <Text size="sm" truncate style={{ maxWidth: "80%" }}>
-            {file.name}
-          </Text>
+          <Stack gap={1}>
+            <Text size="md" truncate style={{ maxWidth: "100%" }} fw={500}>
+              {file.name}
+            </Text>
+            <Text size="sm" c="dimmed">
+              {convertFileSize(file.size)}
+            </Text>
+          </Stack>
         </Group>
         <CloseButton
-          size="xs"
+          size="md"
           onClick={() => handleRemove(index)}
           aria-label="Remove file"
         />
@@ -110,44 +149,63 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
     ));
 
     return (
-      <div ref={ref}>
+      <Box ref={ref}>
         {files.length === 0 ? (
           <Dropzone
             onDrop={handleDrop}
             maxFiles={maxFiles}
             accept={accept}
             maxSize={maxSize}
-            styles={{
-              root: {
-                minHeight: rem(60),
-                borderRadius: rem(10),
-              },
+            style={{
+              borderStyle: "dashed",
+              borderColor:
+                colorScheme === "dark"
+                  ? theme.colors.dark[4]
+                  : theme.colors.gray[4],
+              backgroundColor:
+                colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
             }}
           >
-            <Group
+            <Flex
               justify="center"
+              align="center"
               gap="sm"
-              style={{ minHeight: rem(60), pointerEvents: "none" }}
+              style={{ minHeight: rem(140), pointerEvents: "none" }}
+              direction="column"
             >
               <Dropzone.Accept>
-                <IconUpload fontSize={rem(20)} stroke={1.5} />
+                <Image
+                  radius="md"
+                  src="/images/cloud-storage-icon.png"
+                  w={60}
+                  h={60}
+                  alt="PDF Icon"
+                />
               </Dropzone.Accept>
               <Dropzone.Reject>
-                <IconX fontSize={rem(20)} stroke={1.5} />
+                <ThemeIcon size="xl" color="red" variant="light" radius={100}>
+                  <IconX fontSize={rem(20)} stroke={1.5} />
+                </ThemeIcon>
               </Dropzone.Reject>
               <Dropzone.Idle>
-                <IconUpload fontSize={rem(20)} stroke={1.5} />
+                <Image
+                  radius="md"
+                  src="/images/cloud-storage-icon.png"
+                  w={60}
+                  h={60}
+                  alt="PDF Icon"
+                />
               </Dropzone.Idle>
 
-              <div>
-                <Text fz="sm" inline>
+              <Stack gap={4}>
+                <Text fz="md" inline ta="center" fw={500}>
                   Drag files here or click to select files
                 </Text>
-                <Text fz="xs" c="dimmed" inline mt={4}>
+                <Text fz="sm" c="dimmed" inline mt={4} ta="center">
                   Files should not exceed {maxSize / 1024 / 1024}MB
                 </Text>
-              </div>
-            </Group>
+              </Stack>
+            </Flex>
           </Dropzone>
         ) : (
           <>
@@ -182,7 +240,7 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
             </Stack>
           </>
         )}
-      </div>
+      </Box>
     );
   },
 );

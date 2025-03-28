@@ -61,7 +61,7 @@ const CreateTicketPage = () => {
   const [specificationsValue, setSpecificationsValue] = useState<string>("");
   const [reviewerOptions, setReviewerOptions] = useState<ReviewerType[]>([]);
   const [selectedReviewers, setSelectedReviewers] = useState<ReviewerType[]>(
-    []
+    [],
   );
 
   const form = useForm<z.infer<typeof TicketFormSchema>>({
@@ -81,8 +81,8 @@ const CreateTicketPage = () => {
     const filteredReviewers = reviewerOptions.filter(
       (option) =>
         !selectedReviewers.some(
-          (reviewer) => reviewer.user_id === option.user_id
-        )
+          (reviewer) => reviewer.user_id === option.user_id,
+        ),
     );
 
     return filteredReviewers.map((reviewer) => ({
@@ -95,7 +95,7 @@ const CreateTicketPage = () => {
     if (!value) return;
 
     const selectedOption = reviewerOptions.find(
-      (option) => option.user_id === value
+      (option) => option.user_id === value,
     );
     if (
       selectedOption &&
@@ -119,12 +119,12 @@ const CreateTicketPage = () => {
 
   const removeReviewer = (id: string) => {
     const updatedReviewers = selectedReviewers.filter(
-      (reviewer) => reviewer.user_id !== id
+      (reviewer) => reviewer.user_id !== id,
     );
     setSelectedReviewers(updatedReviewers);
     form.setValue(
       "ticketReviewer",
-      updatedReviewers.map((r) => r.user_id)
+      updatedReviewers.map((r) => r.user_id),
     );
   };
 
@@ -223,7 +223,7 @@ const CreateTicketPage = () => {
                 required
                 radius="md"
                 leftSection={<IconClipboard size={16} />}
-                size="sm"
+                size="md"
               />
 
               <TextInput
@@ -235,7 +235,7 @@ const CreateTicketPage = () => {
                 required
                 radius="md"
                 leftSection={<IconPencil size={16} />}
-                size="sm"
+                size="md"
               />
 
               <Textarea
@@ -247,7 +247,7 @@ const CreateTicketPage = () => {
                 required
                 radius="md"
                 minRows={3}
-                size="sm"
+                size="md"
               />
 
               <TextInput
@@ -264,11 +264,12 @@ const CreateTicketPage = () => {
                 radius="md"
                 leftSection={<IconSettings size={16} />}
                 descriptionProps={{ fz: "sm" }}
+                size="md"
               />
 
               <Stack gap={8}>
                 <Group justify="space-between">
-                  <Text fw={500} size="sm">
+                  <Text fw={500} size="md">
                     Select Reviewers <span style={{ color: "red" }}> * </span>
                   </Text>
                   <Badge radius="sm" size="md">
@@ -287,7 +288,7 @@ const CreateTicketPage = () => {
                   leftSection={<IconUsers size={16} />}
                   radius="md"
                   nothingFoundMessage="No more reviewers available"
-                  size="sm"
+                  size="md"
                 />
 
                 {form.formState.errors.ticketReviewer?.message && (
@@ -369,10 +370,10 @@ const CreateTicketPage = () => {
           <Grid.Col span={{ base: 12, md: 6 }}>
             <Stack mb="lg" gap={0}>
               <Stack gap={0}>
-                <Text fw={500} size="sm">
+                <Text fw={500} size="md">
                   Specifications
                 </Text>
-                <Text size="sm" c="dimmed" mb="xs">
+                <Text size="md" c="dimmed" mb="xs">
                   Add technical specifications or requirements
                 </Text>
               </Stack>
@@ -388,10 +389,10 @@ const CreateTicketPage = () => {
 
             <Stack mb="lg" gap={0}>
               <Stack gap={0}>
-                <Text fw={500} size="sm">
+                <Text fw={500} size="md">
                   Notes
                 </Text>
-                <Text size="sm" c="dimmed" mb="xs">
+                <Text size="md" c="dimmed" mb="xs">
                   Add any additional notes or comments
                 </Text>
               </Stack>
