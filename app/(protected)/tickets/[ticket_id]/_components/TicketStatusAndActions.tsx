@@ -506,9 +506,35 @@ const TicketStatusAndActions = ({
                             />
                           </Link>
                           <Stack gap={2}>
-                            <Text size="sm" fw={500}>
-                              {manager.reviewer_name}
-                            </Text>
+                            <Link
+                              href={`/profile/${manager.reviewer_id}`}
+                              passHref
+                              legacyBehavior
+                            >
+                              <a
+                                style={{
+                                  textDecoration: "none",
+                                  color: "inherit",
+                                }}
+                              >
+                                <Text
+                                  size="sm"
+                                  fw={500}
+                                  td="none"
+                                  style={{
+                                    transition: "color 0.2s ease-in-out",
+                                  }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.color = "#228be6")
+                                  } // Change color on hover
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.color = "inherit")
+                                  }
+                                >
+                                  {manager.reviewer_name}
+                                </Text>
+                              </a>
+                            </Link>
                             <Text size="xs" c="dimmed">
                               Manager
                             </Text>
@@ -550,9 +576,35 @@ const TicketStatusAndActions = ({
                             />
                           </Link>
                           <Stack gap={2}>
-                            <Text size="sm" fw={500}>
-                              {reviewer.reviewer_name}
-                            </Text>
+                            <Link
+                              href={`/profile/${reviewer.reviewer_id}`}
+                              passHref
+                              legacyBehavior
+                            >
+                              <a
+                                style={{
+                                  textDecoration: "none",
+                                  color: "inherit",
+                                }}
+                              >
+                                <Text
+                                  size="sm"
+                                  fw={500}
+                                  td="none"
+                                  style={{
+                                    transition: "color 0.2s ease-in-out",
+                                  }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.color = "#228be6")
+                                  } // Change color on hover
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.color = "inherit")
+                                  }
+                                >
+                                  {reviewer.reviewer_name}
+                                </Text>
+                              </a>
+                            </Link>
                             <Text size="xs" c="dimmed">
                               Reviewer
                             </Text>

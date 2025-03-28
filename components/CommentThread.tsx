@@ -222,9 +222,30 @@ const CommentThread: React.FC<CommentThreadProps> = ({
                 ) : (
                   <Box style={{ flex: 1 }} pl="xs">
                     <Group gap="0" align="center">
-                      <Text size="sm" fw={500} style={{ marginRight: 10 }}>
-                        {comment.comment_user_full_name}
-                      </Text>
+                      <Link
+                        href={`/profile/${comment.comment_user_id}`}
+                        passHref
+                        legacyBehavior
+                      >
+                        <a style={{ textDecoration: "none", color: "inherit" }}>
+                          <Text
+                            size="sm"
+                            fw={500}
+                            mr={10}
+                            td="none"
+                            style={{ transition: "color 0.2s ease-in-out" }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.color = "#228be6")
+                            } // Change color on hover
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.color = "inherit")
+                            } // Reset color
+                          >
+                            {comment.comment_user_full_name}
+                          </Text>
+                        </a>
+                      </Link>
+
                       <Text size="xs" c="dimmed">
                         {new Date(
                           comment.comment_date_created
