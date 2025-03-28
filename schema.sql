@@ -189,6 +189,49 @@ CREATE TABLE comment_reply_table (
   FOREIGN KEY (reply_child_comment_id) REFERENCES comment_table(comment_id)
 );
 
+-- Allow all authenticated users to view replies
+DROP POLICY IF EXISTS select_comment_replies ON public.comment_reply_table;
+CREATE POLICY select_comment_replies 
+ON public.comment_reply_table 
+FOR SELECT 
+USING (auth.role() = 'authenticated');
+
+-- Allow all authenticated users to insert replies
+DROP POLICY IF EXISTS insert_comment_replies ON public.comment_reply_table;
+CREATE POLICY insert_comment_replies 
+ON public.comment_reply_table 
+FOR INSERT 
+WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow users to delete only their own replies
+DROP POLICY IF EXISTS delete_comment_replies ON public.comment_reply_table;
+CREATE POLICY delete_comment_replies 
+ON public.comment_reply_table 
+FOR DELETE 
+USING (
+  auth.uid() IN (
+    SELECT c.comment_user_id 
+    FROM public.comment_table c 
+    WHERE c.comment_id = comment_reply_table.reply_child_comment_id
+  ) 
+  OR (SELECT user_role FROM public.user_table WHERE user_id = auth.uid()) IN ('ADMIN', 'MANAGER') 
+  -- Admins & Managers can delete any comment reply
+);
+
+-- Allow users to update only their own replies
+DROP POLICY IF EXISTS update_comment_replies ON public.comment_reply_table;
+CREATE POLICY update_comment_replies 
+ON public.comment_reply_table 
+FOR UPDATE 
+USING (
+  auth.uid() IN (
+    SELECT c.comment_user_id 
+    FROM public.comment_table c 
+    WHERE c.comment_id = comment_reply_table.reply_child_comment_id
+  ) -- Only the user who created the reply can update it
+);
+
+
 -- DROP TABLE IF EXISTS
 DROP TABLE IF EXISTS ticket_shared_with_table cascade;
 CREATE TABLE public.ticket_shared_with_table (
@@ -292,35 +335,34 @@ CREATE TABLE public.canvass_attachment_table (
         ON UPDATE CASCADE
         ON DELETE CASCADE
 ) TABLESPACE pg_default;
-
 -- Enable RLS
-ALTER TABLE public.ticket_shared_with_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.canvass_attachment_table ENABLE ROW LEVEL SECURITY;
 
--- Allow all authenticated users to SELECT shared tickets
-DROP POLICY IF EXISTS select_shared_tickets ON public.ticket_shared_with_table;
-CREATE POLICY select_shared_tickets 
-ON public.ticket_shared_with_table 
+-- Allow all authenticated users to SELECT canvass attachments
+DROP POLICY IF EXISTS select_canvass_attachments ON public.canvass_attachment_table;
+CREATE POLICY select_canvass_attachments 
+ON public.canvass_attachment_table 
 FOR SELECT 
 USING (auth.role() = 'authenticated');
 
--- Allow all authenticated users to INSERT shared tickets
-DROP POLICY IF EXISTS insert_shared_tickets ON public.ticket_shared_with_table;
-CREATE POLICY insert_shared_tickets 
-ON public.ticket_shared_with_table 
+-- Allow all authenticated users to INSERT canvass attachments
+DROP POLICY IF EXISTS insert_canvass_attachments ON public.canvass_attachment_table;
+CREATE POLICY insert_canvass_attachments 
+ON public.canvass_attachment_table 
 FOR INSERT 
 WITH CHECK (auth.role() = 'authenticated');
 
--- Allow all authenticated users to UPDATE shared tickets
-DROP POLICY IF EXISTS update_shared_tickets ON public.ticket_shared_with_table;
-CREATE POLICY update_shared_tickets 
-ON public.ticket_shared_with_table 
+-- Allow all authenticated users to UPDATE their own attachments
+DROP POLICY IF EXISTS update_canvass_attachments ON public.canvass_attachment_table;
+CREATE POLICY update_canvass_attachments 
+ON public.canvass_attachment_table 
 FOR UPDATE 
 USING (auth.role() = 'authenticated');
 
--- Allow all authenticated users to DELETE shared tickets
-DROP POLICY IF EXISTS delete_shared_tickets ON public.ticket_shared_with_table;
-CREATE POLICY delete_shared_tickets 
-ON public.ticket_shared_with_table 
+-- Allow all authenticated users to DELETE their own attachments
+DROP POLICY IF EXISTS delete_canvass_attachments ON public.canvass_attachment_table;
+CREATE POLICY delete_canvass_attachments 
+ON public.canvass_attachment_table 
 FOR DELETE 
 USING (auth.role() = 'authenticated');
 
@@ -599,9 +641,8 @@ AS $$
 $$;
 
 --view for realtime comment
-CREATE VIEW comment_with_avatar_view AS
-SELECT 
-    c.comment_id,
+create view public.comment_with_avatar_view with (security_invoker = on) as
+ SELECT c.comment_id,
     c.comment_ticket_id,
     c.comment_content,
     c.comment_date_created,
@@ -612,9 +653,8 @@ SELECT
     c.comment_user_id,
     u.user_full_name AS comment_user_full_name,
     u.user_avatar AS comment_user_avatar
-FROM comment_table c
-LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
-
+   FROM comment_table c
+   LEFT JOIN user_table u ON c.comment_user_id = u.user_id;
 
 -- Function for fetching comments with avatars
 DROP FUNCTION IF EXISTS get_comments_with_avatars(UUID);
