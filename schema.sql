@@ -130,7 +130,6 @@ USING (auth.role() = 'authenticated');
 
 -- create comment_table
 DROP TABLE IF EXISTS comment_table CASCADE;
-
 CREATE TABLE comment_table (
   comment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comment_ticket_id UUID NOT NULL,
@@ -189,6 +188,8 @@ CREATE TABLE comment_reply_table (
   FOREIGN KEY (reply_child_comment_id) REFERENCES comment_table(comment_id)
 );
 
+ALTER TABLE public.comment_reply_table ENABLE ROW LEVEL SECURITY;
+
 -- Allow all authenticated users to view replies
 DROP POLICY IF EXISTS select_comment_replies ON public.comment_reply_table;
 CREATE POLICY select_comment_replies 
@@ -230,7 +231,6 @@ USING (
     WHERE c.comment_id = comment_reply_table.reply_child_comment_id
   ) -- Only the user who created the reply can update it
 );
-
 
 -- DROP TABLE IF EXISTS
 DROP TABLE IF EXISTS ticket_shared_with_table cascade;
