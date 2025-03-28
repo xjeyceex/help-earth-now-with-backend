@@ -555,20 +555,19 @@ const TicketStatusAndActions = ({
                   Shared with
                 </Text>
 
-                {isCreator ||
-                  (isAdmin && (
-                    <Tooltip label="Share ticket">
-                      <ActionIcon
-                        variant="light"
-                        color="blue"
-                        onClick={() => setIsSharing(true)}
-                        radius="md"
-                        size="md"
-                      >
-                        <IconPlus size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  ))}
+                {(isCreator || isAdmin || isManager) && (
+                  <Tooltip label="Share ticket">
+                    <ActionIcon
+                      variant="light"
+                      color="blue"
+                      onClick={() => setIsSharing(true)}
+                      radius="md"
+                      size="md"
+                    >
+                      <IconPlus size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
 
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
