@@ -234,12 +234,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({
                             mr={10}
                             td="none"
                             style={{ transition: "color 0.2s ease-in-out" }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.color = "#228be6")
-                            } // Change color on hover
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.color = "inherit")
-                            } // Reset color
                           >
                             {comment.comment_user_full_name}
                           </Text>

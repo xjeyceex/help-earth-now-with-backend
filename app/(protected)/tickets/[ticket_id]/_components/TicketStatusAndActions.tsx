@@ -524,12 +524,6 @@ const TicketStatusAndActions = ({
                                   style={{
                                     transition: "color 0.2s ease-in-out",
                                   }}
-                                  onMouseEnter={(e) =>
-                                    (e.currentTarget.style.color = "#228be6")
-                                  } // Change color on hover
-                                  onMouseLeave={(e) =>
-                                    (e.currentTarget.style.color = "inherit")
-                                  }
                                 >
                                   {manager.reviewer_name}
                                 </Text>
@@ -594,12 +588,6 @@ const TicketStatusAndActions = ({
                                   style={{
                                     transition: "color 0.2s ease-in-out",
                                   }}
-                                  onMouseEnter={(e) =>
-                                    (e.currentTarget.style.color = "#228be6")
-                                  } // Change color on hover
-                                  onMouseLeave={(e) =>
-                                    (e.currentTarget.style.color = "inherit")
-                                  }
                                 >
                                   {reviewer.reviewer_name}
                                 </Text>
@@ -659,14 +647,27 @@ const TicketStatusAndActions = ({
                     <Avatar
                       src={ticket.ticket_created_by_avatar}
                       radius="xl"
-                      size="md"
+                      size="sm"
                     />
                   </Link>
                   <Stack gap={2} align="flex-start">
-                    <Text size="sm" fw={500}>
-                      {ticket.ticket_created_by_name}
-                    </Text>
-                    <Text size="xs" c="dimmed">
+                    <Link
+                      href={`/profile/${ticket.ticket_created_by}`}
+                      passHref
+                      legacyBehavior
+                    >
+                      <a
+                        style={{
+                          textDecoration: "none",
+                          color: "inherit",
+                        }}
+                      >
+                        <Text size="xs" fw={500}>
+                          {ticket.ticket_created_by_name}
+                        </Text>
+                      </a>
+                    </Link>
+                    <Text size="10px" c="dimmed">
                       Creator
                     </Text>
                   </Stack>
@@ -689,9 +690,29 @@ const TicketStatusAndActions = ({
                             size="sm"
                           />
                         </Link>
-                        <Text size="xs" fw={500}>
-                          {user.user_full_name}
-                        </Text>
+                        <Link
+                          href={`/profile/${user.user_id}`}
+                          passHref
+                          legacyBehavior
+                        >
+                          <a
+                            style={{
+                              textDecoration: "none",
+                              color: "inherit",
+                            }}
+                          >
+                            <Text
+                              size="xs"
+                              fw={500}
+                              td="none"
+                              style={{
+                                transition: "color 0.2s ease-in-out",
+                              }}
+                            >
+                              {user.user_full_name}
+                            </Text>
+                          </a>
+                        </Link>
                       </Group>
                     ))}
                   </>
