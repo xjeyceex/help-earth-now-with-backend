@@ -190,6 +190,18 @@ const TicketStatusAndActions = ({
         approval_reviewed_by: user.user_id,
       });
 
+      if (allApproved) {
+        for (const manager of ticket.reviewers.filter(
+          (reviewer) => reviewer.reviewer_role === "MANAGER"
+        )) {
+          await updateApprovalStatus({
+            approval_ticket_id: ticket.ticket_id,
+            approval_review_status: "AWAITING ACTION",
+            approval_reviewed_by: manager.reviewer_id,
+          });
+        }
+      }
+
       handleCanvassAction(newTicketStatus);
       setApprovalStatus(null);
       updateTicketDetails();
