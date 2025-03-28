@@ -74,7 +74,7 @@ const TicketStatusAndActions = ({
   const [openCancelRequestModal, setOpenCancelRequestModal] = useState(false);
 
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
+    []
   );
 
   const { colorScheme } = useMantineColorScheme();
@@ -92,7 +92,7 @@ const TicketStatusAndActions = ({
 
   const isAdmin = user?.user_role === "ADMIN";
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
   const isManager = user?.user_role === "MANAGER";
   const isCreator = ticket.ticket_created_by === user?.user_id;
@@ -104,14 +104,14 @@ const TicketStatusAndActions = ({
 
     try {
       await Promise.all(
-        selectedUsers.map((userId) => shareTicket(ticket.ticket_id, userId)),
+        selectedUsers.map((userId) => shareTicket(ticket.ticket_id, userId))
       );
 
       await fetchTicketDetails!();
 
       setSelectedUsers([]);
       setAllUsers((prev) =>
-        prev.filter((user) => !selectedUsers.includes(user.value)),
+        prev.filter((user) => !selectedUsers.includes(user.value))
       );
     } catch (error) {
       console.error("Error sharing ticket:", error);
@@ -156,19 +156,19 @@ const TicketStatusAndActions = ({
     const updatedReviewers = ticket.reviewers.map((reviewer) =>
       reviewer.reviewer_id === user.user_id
         ? { ...reviewer, approval_status: newApprovalStatus }
-        : reviewer,
+        : reviewer
     );
 
     // Check if all non-managers have approved
     const nonManagerReviewers = updatedReviewers.filter(
-      (reviewer) => reviewer.reviewer_role !== "MANAGER",
+      (reviewer) => reviewer.reviewer_role !== "MANAGER"
     );
 
     const isSingleReviewer = nonManagerReviewers.length === 1;
     const allApproved =
       nonManagerReviewers.length > 0 &&
       nonManagerReviewers.every(
-        (reviewer) => reviewer.approval_status === "APPROVED",
+        (reviewer) => reviewer.approval_status === "APPROVED"
       );
 
     // Handle edge case where there's only one non-manager reviewer
@@ -337,14 +337,14 @@ const TicketStatusAndActions = ({
                   ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
                     ? "yellow"
                     : ticket?.ticket_status === "FOR APPROVAL"
-                      ? "yellow"
-                      : ticket?.ticket_status === "WORK IN PROGRESS"
-                        ? "blue"
-                        : ticket?.ticket_status === "DONE"
-                          ? "teal"
-                          : ticket?.ticket_status === "DECLINED"
-                            ? "red"
-                            : "gray"
+                    ? "yellow"
+                    : ticket?.ticket_status === "WORK IN PROGRESS"
+                    ? "blue"
+                    : ticket?.ticket_status === "DONE"
+                    ? "teal"
+                    : ticket?.ticket_status === "DECLINED"
+                    ? "red"
+                    : "gray"
                 }
                 fullWidth
               >
@@ -520,8 +520,8 @@ const TicketStatusAndActions = ({
                             manager.approval_status === "APPROVED"
                               ? "green"
                               : manager.approval_status === "REJECTED"
-                                ? "red"
-                                : "gray"
+                              ? "red"
+                              : "gray"
                           }
                         >
                           {manager.approval_status}
@@ -564,8 +564,8 @@ const TicketStatusAndActions = ({
                             reviewer.approval_status === "APPROVED"
                               ? "green"
                               : reviewer.approval_status === "REJECTED"
-                                ? "red"
-                                : "gray"
+                              ? "red"
+                              : "gray"
                           }
                         >
                           {reviewer.approval_status}
@@ -607,11 +607,11 @@ const TicketStatusAndActions = ({
                     <Avatar
                       src={ticket.ticket_created_by_avatar}
                       radius="xl"
-                      size="sm"
+                      size="md"
                     />
                   </Link>
                   <Stack gap={2} align="flex-start">
-                    <Text size="xs" fw={500}>
+                    <Text size="sm" fw={500}>
                       {ticket.ticket_created_by_name}
                     </Text>
                     <Text size="xs" c="dimmed">
