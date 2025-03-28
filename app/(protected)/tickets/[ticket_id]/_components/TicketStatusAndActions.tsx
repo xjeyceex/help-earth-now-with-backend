@@ -497,9 +497,12 @@ const TicketStatusAndActions = ({
                   Reviewers
                 </Text>
                 <Stack gap="md">
-                  {/* Managers First */}
                   {ticket.reviewers
-                    .filter((reviewer) => reviewer.reviewer_role === "MANAGER")
+                    .filter(
+                      (manager) =>
+                        manager.reviewer_role === "MANAGER" &&
+                        manager.approval_status !== "PENDING"
+                    )
                     .map((manager) => (
                       <Group
                         key={manager.reviewer_id}
