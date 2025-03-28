@@ -89,7 +89,7 @@ CREATE TABLE public.ticket_table (
   ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
   ticket_specifications TEXT,
   ticket_notes TEXT,
-  ticket_name TEXT,
+  ticket_name TEXT NOT NULL,
   ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
   ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
   ticket_rf_date_received TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
@@ -903,38 +903,3 @@ BEGIN
   );
 END;
 $$;
-
--- Drop the trigger first (to avoid dependency errors)
-DROP TRIGGER IF EXISTS trigger_generate_ticket_name ON public.ticket_table;
-DROP FUNCTION IF EXISTS generate_ticket_name;
-
-CREATE OR REPLACE FUNCTION generate_ticket_name()
-RETURNS TRIGGER AS $$ 
-DECLARE
-    latest_number INT;
-    new_ticket_name TEXT;
-    formatted_date TEXT;
-BEGIN
-    -- Format the date as DD-MMM-YY (e.g., 27MAR25)
-    formatted_date := TO_CHAR(NEW.ticket_date_created, 'DDMONYYYY');
-
-    -- Get the latest sequential number for the current date format
-    SELECT COALESCE(MAX(CAST(LEFT(ticket_name, 4) AS INT)), 0) + 1
-    INTO latest_number
-    FROM public.ticket_table
-    WHERE ticket_name LIKE '%-' || formatted_date;
-
-    -- Generate the ticket name (0001-27MAR25)
-    new_ticket_name := LPAD(latest_number::TEXT, 4, '0') || '-' || formatted_date;
-
-    -- Assign it to the new ticket
-    NEW.ticket_name := new_ticket_name;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Apply the trigger on insert
-CREATE TRIGGER trigger_generate_ticket_name
-BEFORE INSERT ON public.ticket_table
-FOR EACH ROW
-EXECUTE FUNCTION generate_ticket_name();

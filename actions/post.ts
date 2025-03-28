@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -148,15 +148,50 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
 
-  // ✅ Insert the ticket first
+  const formattedDate = new Date(validatedData.ticketRfDateReceived)
+    .toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    .replace(/ /g, "")
+    .toUpperCase();
+
+  const { data: latestTicket, error: latestTicketError } = await supabase
+    .from("ticket_table")
+    .select("ticket_name")
+    .like("ticket_name", `%-${formattedDate}`)
+    .order("ticket_name", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (latestTicketError) {
+    console.log("Error fetching latest ticket:", latestTicketError.message);
+    return {
+      success: false,
+      message: "Failed to generate ticket name",
+    };
+  }
+
+  const latestNumber = latestTicket
+    ? parseInt(latestTicket.ticket_name.split("-")[0]) + 1
+    : 1;
+
+  const newTicketName = `${String(latestNumber).padStart(
+    5,
+    "0"
+  )}-${formattedDate}`;
+
+  // ✅ Insert the ticket with the generated ticket name
   const { data: ticket, error: ticketError } = await supabase
     .from("ticket_table")
     .insert({
+      ticket_name: newTicketName, // Add the generated ticket name
       ticket_item_name: validatedData.ticketItemName,
       ticket_item_description: validatedData.ticketItemDescription,
       ticket_quantity: validatedData.ticketQuantity,
@@ -209,7 +244,7 @@ export const createTicket = async (
         approval_review_date: new Date().toLocaleString("en-US", {
           timeZone: "Asia/Manila",
         }),
-      })),
+      }))
     );
 
   if (reviewersError) {
@@ -246,7 +281,7 @@ export const createTicket = async (
           notification_message: `You've been assigned as a reviewer for the ticket: ${ticket.ticket_name}`,
           notification_read: false,
           notification_url: `/tickets/${ticket.ticket_id}`,
-        })),
+        }))
       );
 
     if (notificationError) {
@@ -288,7 +323,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -408,14 +443,14 @@ export const createCanvass = async ({
 
     if (findError) {
       throw new Error(
-        `Failed to find existing canvass forms: ${findError.message}`,
+        `Failed to find existing canvass forms: ${findError.message}`
       );
     }
 
     // If existing forms found, delete their attachments and the forms themselves
     if (existingCanvassForms && existingCanvassForms.length > 0) {
       const existingFormIds = existingCanvassForms.map(
-        (form) => form.canvass_form_id,
+        (form) => form.canvass_form_id
       );
 
       // First, get all attachment paths for the existing forms
@@ -427,7 +462,7 @@ export const createCanvass = async ({
 
       if (attachmentsError) {
         throw new Error(
-          `Failed to fetch existing attachments: ${attachmentsError.message}`,
+          `Failed to fetch existing attachments: ${attachmentsError.message}`
         );
       }
 
@@ -444,7 +479,7 @@ export const createCanvass = async ({
 
             if (deleteStorageError) {
               console.error(
-                `Failed to delete file from storage: ${deleteStorageError.message}`,
+                `Failed to delete file from storage: ${deleteStorageError.message}`
               );
             }
           }
@@ -459,7 +494,7 @@ export const createCanvass = async ({
 
       if (deleteAttachmentsError) {
         throw new Error(
-          `Failed to delete existing attachments: ${deleteAttachmentsError.message}`,
+          `Failed to delete existing attachments: ${deleteAttachmentsError.message}`
         );
       }
 
@@ -471,7 +506,7 @@ export const createCanvass = async ({
 
       if (deleteFormsError) {
         throw new Error(
-          `Failed to delete existing canvass forms: ${deleteFormsError.message}`,
+          `Failed to delete existing canvass forms: ${deleteFormsError.message}`
         );
       }
     }
@@ -506,8 +541,8 @@ export const createCanvass = async ({
     // Upload all quotations
     const quotationResults = await Promise.all(
       quotations.map((quotation, index) =>
-        uploadFile(quotation, `quotation_${index + 1}`),
-      ),
+        uploadFile(quotation, `quotation_${index + 1}`)
+      )
     );
 
     // Store canvass form data using the first quotation as the primary one
@@ -527,7 +562,7 @@ export const createCanvass = async ({
 
     if (canvassFormError) {
       throw new Error(
-        `Failed to insert canvass form: ${canvassFormError.message}`,
+        `Failed to insert canvass form: ${canvassFormError.message}`
       );
     }
 
@@ -556,7 +591,7 @@ export const createCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`,
+        `Failed to insert attachments: ${attachmentsError.message}`
       );
     }
 
@@ -581,7 +616,7 @@ export const createCanvass = async ({
 export const addComment = async (
   ticket_id: string,
   content: string,
-  user_id: string,
+  user_id: string
 ) => {
   const supabase = await createClient();
 
@@ -598,7 +633,7 @@ export const addComment = async (
         p_ticket_id: ticket_id,
         p_content: content,
         p_user_id: user_id,
-      },
+      }
     );
 
     if (error) throw error;
@@ -612,7 +647,7 @@ export const addComment = async (
 export const startCanvass = async (
   ticket_id: string,
   user_id: string,
-  status: string,
+  status: string
 ) => {
   const supabase = await createClient();
 
@@ -655,7 +690,7 @@ export const startCanvass = async (
         ticket_status_history_new_status: status,
         ticket_status_history_changed_by: user_id,
         ticket_status_history_change_date: new Date(
-          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }),
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
         ).toISOString(),
       },
     ]);
