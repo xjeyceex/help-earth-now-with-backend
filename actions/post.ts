@@ -153,150 +153,135 @@ export const createTicket = async (
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
 
-  // Format the date (keep it consistent)
-  const formattedDate = new Date(validatedData.ticketRfDateReceived)
-    .toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-    .replace(/ /g, "")
-    .toUpperCase();
+  try {
+    // 1. Format the date
+    const formattedDate = new Date(validatedData.ticketRfDateReceived)
+      .toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+      .replace(/ /g, "")
+      .toUpperCase();
 
-  // Fetch the latest ticket based on formattedDate
-  const { data: latestTicket, error: latestTicketError } = await supabase
-    .from("ticket_table")
-    .select("ticket_name", { count: "exact" })
-    .like("ticket_name", `%${formattedDate}`) // Adjusted LIKE pattern for matching
-    .order("ticket_name", { ascending: false })
-    .limit(1); // Ensures only the latest ticket is fetched
-
-  if (latestTicketError) {
-    console.log("Error fetching latest ticket:", latestTicketError.message);
-    return {
-      success: false,
-      message: "Failed to generate ticket name",
-    };
-  }
-
-  // If no tickets found, initialize latestNumber to 1
-  const latestNumber =
-    latestTicket && latestTicket.length > 0
-      ? parseInt(latestTicket[0].ticket_name.split("-")[0]) + 1
-      : 1;
-
-  const newTicketName = `${String(latestNumber).padStart(
-    5,
-    "0"
-  )}-${formattedDate}`;
-
-  // Insert the new ticket with the generated ticket name
-  const { data: ticket, error: ticketError } = await supabase
-    .from("ticket_table")
-    .insert({
-      ticket_name: newTicketName, // Generated ticket name
-      ticket_item_name: validatedData.ticketItemName,
-      ticket_item_description: validatedData.ticketItemDescription,
-      ticket_quantity: validatedData.ticketQuantity,
-      ticket_specifications: validatedData.ticketSpecification,
-      ticket_notes: validatedData.ticketNotes,
-      ticket_created_by: userId,
-      ticket_rf_date_received: validatedData.ticketRfDateReceived,
-    })
-    .select()
-    .single();
-
-  if (ticketError) {
-    console.log(ticketError);
-    return {
-      success: false,
-      message: "Failed to create ticket",
-    };
-  }
-
-  // Fetch all MANAGERS from user_table
-  const { data: managers, error: managerError } = await supabase
-    .from("user_table")
-    .select("user_id")
-    .eq("user_role", "MANAGER");
-
-  if (managerError) {
-    console.error("Error fetching managers:", managerError.message);
-    return {
-      success: false,
-      message: "Failed to fetch managers",
-    };
-  }
-
-  // Merge manually selected reviewers with managers
-  const allReviewers = [
-    ...new Set([
-      ...validatedData.ticketReviewer,
-      ...managers.map((m) => m.user_id),
-    ]),
-  ];
-
-  // Insert all reviewers into the approval_table
-  const { error: reviewersError } = await supabase
-    .from("approval_table")
-    .insert(
-      allReviewers.map((reviewerId) => ({
-        approval_ticket_id: ticket.ticket_id,
-        approval_reviewed_by: reviewerId,
-        approval_review_status: "PENDING",
-        approval_review_date: new Date().toLocaleString("en-US", {
-          timeZone: "Asia/Manila",
-        }),
-      }))
+    // 2. Use an Rpc to get the next sequence number
+    const { data: sequenceData, error: sequenceError } = await supabase.rpc(
+      "get_next_ticket_sequence", //  <-  Use this name
+      { date_prefix: formattedDate } // Pass the formatted date
     );
 
-  if (reviewersError) {
-    return {
-      success: false,
-      message: "Failed to assign reviewers",
-    };
-  }
+    if (sequenceError) {
+      console.error("Error fetching sequence value:", sequenceError);
+      return { success: false, message: "Failed to generate ticket name." };
+    }
 
-  // Notify only NON-MANAGER reviewers
-  const { data: reviewerRoles, error: roleError } = await supabase
-    .from("user_table")
-    .select("user_id, user_role")
-    .in("user_id", allReviewers);
+    const nextSequenceValue = sequenceData; // The function returns a single number
 
-  if (roleError) {
-    console.error("Error fetching user roles:", roleError.message);
-    return {
-      success: false,
-      message: "Failed to verify reviewers",
-    };
-  }
+    // 3. Construct the ticket name
+    const newTicketName = `${String(nextSequenceValue).padStart(
+      5,
+      "0"
+    )}-${formattedDate}`;
 
-  const nonManagerReviewers = reviewerRoles
-    .filter((user) => user.user_role !== "MANAGER")
-    .map((user) => user.user_id);
+    // 4. Insert the new ticket with the generated ticket name
+    const { data: ticket, error: ticketError } = await supabase
+      .from("ticket_table")
+      .insert({
+        ticket_name: newTicketName, // Use the generated name
+        ticket_item_name: validatedData.ticketItemName,
+        ticket_item_description: validatedData.ticketItemDescription,
+        ticket_quantity: validatedData.ticketQuantity,
+        ticket_specifications: validatedData.ticketSpecification,
+        ticket_notes: validatedData.ticketNotes,
+        ticket_created_by: userId,
+        ticket_rf_date_received: validatedData.ticketRfDateReceived,
+      })
+      .select()
+      .single();
 
-  if (nonManagerReviewers.length > 0) {
-    const { error: notificationError } = await supabase
-      .from("notification_table")
+    if (ticketError) {
+      console.error("Error creating ticket:", ticketError);
+      return { success: false, message: "Failed to create ticket" };
+    }
+
+    // 5. Fetch all MANAGERS from user_table
+    const { data: managers, error: managerError } = await supabase
+      .from("user_table")
+      .select("user_id")
+      .eq("user_role", "MANAGER");
+
+    if (managerError) {
+      console.error("Error fetching managers:", managerError.message);
+      return { success: false, message: "Failed to fetch managers" };
+    }
+
+    // 6. Merge manually selected reviewers with managers
+    const allReviewers = [
+      ...new Set([
+        ...validatedData.ticketReviewer,
+        ...managers.map((m) => m.user_id),
+      ]),
+    ];
+
+    // 7. Insert all reviewers into the approval_table
+    const { error: reviewersError } = await supabase
+      .from("approval_table")
       .insert(
-        nonManagerReviewers.map((reviewerId) => ({
-          notification_user_id: reviewerId,
-          notification_message: `You've been assigned as a reviewer for the ticket: ${ticket.ticket_name}`,
-          notification_read: false,
-          notification_url: `/tickets/${ticket.ticket_id}`,
+        allReviewers.map((reviewerId) => ({
+          approval_ticket_id: ticket.ticket_id,
+          approval_reviewed_by: reviewerId,
+          approval_review_status: "PENDING",
+          approval_review_date: new Date().toLocaleString("en-US", {
+            timeZone: "Asia/Manila",
+          }),
         }))
       );
 
-    if (notificationError) {
-      console.error("Error adding notifications:", notificationError.message);
-      return {
-        success: false,
-        message: "Failed to add notifications",
-      };
+    if (reviewersError) {
+      console.error("Error assigning reviewers:", reviewersError);
+      return { success: false, message: "Failed to assign reviewers" };
     }
-  }
 
-  return { success: true, ticket_id: ticket.ticket_id };
+    // 8. Notify only NON-MANAGER reviewers
+    const { data: reviewerRoles, error: roleError } = await supabase
+      .from("user_table")
+      .select("user_id, user_role")
+      .in("user_id", allReviewers);
+
+    if (roleError) {
+      console.error("Error fetching user roles:", roleError.message);
+      return { success: false, message: "Failed to verify reviewers" };
+    }
+
+    const nonManagerReviewers = reviewerRoles
+      .filter((user) => user.user_role !== "MANAGER")
+      .map((user) => user.user_id);
+
+    // Prepare the notifications for all non-manager reviewers in a single array
+    const notifications = nonManagerReviewers.map((reviewerId) => ({
+      notification_user_id: reviewerId,
+      notification_message: `You've been assigned as a reviewer for the ticket: ${ticket.ticket_name}`,
+      notification_read: false,
+      notification_url: `/tickets/${ticket.ticket_id}`,
+    }));
+
+    // Insert all notifications at once using batch insert
+    if (nonManagerReviewers.length > 0) {
+      const { error: notificationError } = await supabase
+        .from("notification_table")
+        .insert(notifications); // Inserting the entire array of notifications
+
+      if (notificationError) {
+        console.error("Error adding notifications:", notificationError.message);
+        return { success: false, message: "Failed to add notifications" };
+      }
+    }
+
+    return { success: true, ticket_id: ticket.ticket_id };
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return { success: false, message: "An unexpected error occurred." };
+  }
 };
 
 export const updateProfilePicture = async (file: File) => {

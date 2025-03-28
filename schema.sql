@@ -97,6 +97,25 @@ CREATE TABLE public.ticket_table (
   ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) 
 );
 
+CREATE OR REPLACE FUNCTION get_next_ticket_sequence(date_prefix TEXT)
+RETURNS INTEGER AS $$
+DECLARE
+    next_val INTEGER;
+BEGIN
+    -- Use a sequence, but incorporate the date prefix
+    SELECT nextval('ticket_name_seq') INTO next_val;
+    --You can add more complex logic here if needed.
+    RETURN next_val;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE SEQUENCE IF NOT EXISTS public.ticket_name_seq
+    INCREMENT BY 1
+    MINVALUE 1
+    MAXVALUE 99999
+    START WITH 1
+    CACHE 1;
+
 -- Index for ticket name for faster lookup
 CREATE INDEX idx_ticket_name ON public.ticket_table(ticket_name);
 
