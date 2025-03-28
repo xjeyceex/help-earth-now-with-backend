@@ -153,6 +153,7 @@ export const createTicket = async (
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
 
+  // Format the date (keep it consistent)
   const formattedDate = new Date(validatedData.ticketRfDateReceived)
     .toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -162,13 +163,13 @@ export const createTicket = async (
     .replace(/ /g, "")
     .toUpperCase();
 
+  // Fetch the latest ticket based on formattedDate
   const { data: latestTicket, error: latestTicketError } = await supabase
     .from("ticket_table")
-    .select("ticket_name")
-    .like("ticket_name", `%-${formattedDate}`)
+    .select("ticket_name", { count: "exact" })
+    .like("ticket_name", `%${formattedDate}`) // Adjusted LIKE pattern for matching
     .order("ticket_name", { ascending: false })
-    .limit(1)
-    .single();
+    .limit(1); // Ensures only the latest ticket is fetched
 
   if (latestTicketError) {
     console.log("Error fetching latest ticket:", latestTicketError.message);
@@ -178,20 +179,22 @@ export const createTicket = async (
     };
   }
 
-  const latestNumber = latestTicket
-    ? parseInt(latestTicket.ticket_name.split("-")[0]) + 1
-    : 1;
+  // If no tickets found, initialize latestNumber to 1
+  const latestNumber =
+    latestTicket && latestTicket.length > 0
+      ? parseInt(latestTicket[0].ticket_name.split("-")[0]) + 1
+      : 1;
 
   const newTicketName = `${String(latestNumber).padStart(
     5,
     "0"
   )}-${formattedDate}`;
 
-  // ✅ Insert the ticket with the generated ticket name
+  // Insert the new ticket with the generated ticket name
   const { data: ticket, error: ticketError } = await supabase
     .from("ticket_table")
     .insert({
-      ticket_name: newTicketName, // Add the generated ticket name
+      ticket_name: newTicketName, // Generated ticket name
       ticket_item_name: validatedData.ticketItemName,
       ticket_item_description: validatedData.ticketItemDescription,
       ticket_quantity: validatedData.ticketQuantity,
@@ -211,7 +214,7 @@ export const createTicket = async (
     };
   }
 
-  // ✅ Fetch all MANAGERS from user_table
+  // Fetch all MANAGERS from user_table
   const { data: managers, error: managerError } = await supabase
     .from("user_table")
     .select("user_id")
@@ -225,7 +228,7 @@ export const createTicket = async (
     };
   }
 
-  // ✅ Merge manually selected reviewers with managers
+  // Merge manually selected reviewers with managers
   const allReviewers = [
     ...new Set([
       ...validatedData.ticketReviewer,
@@ -233,7 +236,7 @@ export const createTicket = async (
     ]),
   ];
 
-  // ✅ Insert all reviewers into approval_table
+  // Insert all reviewers into the approval_table
   const { error: reviewersError } = await supabase
     .from("approval_table")
     .insert(
@@ -254,7 +257,7 @@ export const createTicket = async (
     };
   }
 
-  // ✅ Notify only NON-MANAGER reviewers
+  // Notify only NON-MANAGER reviewers
   const { data: reviewerRoles, error: roleError } = await supabase
     .from("user_table")
     .select("user_id, user_role")
