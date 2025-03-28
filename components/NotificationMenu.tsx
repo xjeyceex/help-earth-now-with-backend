@@ -76,13 +76,19 @@ const NotificationMenu = () => {
         return;
       }
 
-      const unreadNotifications = res.data?.filter(
-        (notification) => !notification.notification_read
-      );
-      setNotifications(unreadNotifications as NotificationType[]);
+      // Sort notifications by created_at in descending order (most recent first)
+      const sortedNotifications = res.data
+        ?.filter((notification) => !notification.notification_read)
+        .sort(
+          (a, b) =>
+            new Date(b.notification_created_at).getTime() -
+            new Date(a.notification_created_at).getTime()
+        );
+
+      setNotifications(sortedNotifications as NotificationType[]);
     };
 
-    if (pathname != "/notifications") fetchNotifications();
+    if (pathname !== "/notifications") fetchNotifications();
   }, []);
 
   // Set up real-time subscription
