@@ -49,6 +49,7 @@ const Header = () => {
     startTransition(() => {
       userLogout();
       clearUser();
+      router.push("/login"); // Redirect to login page
     });
   };
 
