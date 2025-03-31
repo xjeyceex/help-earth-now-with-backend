@@ -618,6 +618,15 @@ const TicketDetailsPage = () => {
                                   updateCanvassDetails={fetchCanvassDetails}
                                   setTicket={setTicket}
                                 />
+                              ) : ticket?.reviewers.some(
+                                  (reviewer) =>
+                                    reviewer.reviewer_id === user?.user_id
+                                ) && ticket?.ticket_status !== "CANCELED" ? (
+                                <CanvassForm
+                                  ticketId={ticket?.ticket_id}
+                                  updateCanvassDetails={fetchCanvassDetails}
+                                  setTicket={setTicket}
+                                />
                               ) : (
                                 <Alert variant="light" color="gray" radius="md">
                                   <Text>
