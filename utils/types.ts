@@ -80,7 +80,7 @@ export type CanvassAttachment = {
   canvass_attachment_id: string;
   canvass_attachment_type: string | null;
   canvass_attachment_url: string | null;
-  canvass_attchment_file_type: string | null;
+  canvass_attachment_file_type: string | null;
   canvass_attachment_file_size: number | null;
   canvass_attachment_created_at: string;
 };
@@ -93,7 +93,7 @@ export type QuotationAttachmentResult = {
   canvass_attachment_canvass_form_id?: string;
   canvass_attachment_type?: string;
   canvass_attachment_url?: string;
-  canvass_attchment_file_type?: string;
+  canvass_attachment_file_type?: string;
   canvass_attachment_file_size?: number;
 };
 

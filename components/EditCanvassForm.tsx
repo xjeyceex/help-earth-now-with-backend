@@ -15,7 +15,9 @@ import { useEffect, useState, useTransition } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { startCanvass } from "@/actions/post";
 import { updateCanvass } from "@/actions/update";
+import { useUserStore } from "@/stores/userStore";
 import { CanvassDetail, TicketDetailsType } from "@/utils/types";
 import { CanvassFormSchema } from "@/utils/zod/schema";
 import { DateInput } from "@mantine/dates";
@@ -37,9 +39,8 @@ type EditCanvassFormProps = {
   ticketId: string;
   setTicket: React.Dispatch<React.SetStateAction<TicketDetailsType | null>>;
   updateCanvassDetails: () => void;
+  updateTicketDetails: () => void;
   currentCanvassDetails: CanvassDetail[];
-  isEditCanvassVisible: boolean;
-  setIsEditCanvassVisible: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 type CanvassFormValues = z.infer<typeof CanvassFormSchema>;
@@ -48,7 +49,7 @@ type AttachmentData = {
   canvass_attachment_id: string;
   canvass_attachment_url: string;
   canvass_attachment_type: string;
-  canvass_attchment_file_type: string;
+  canvass_attachment_file_type: string;
   canvass_attachment_file_size: number;
   canvass_attachment_created_at: string;
 };
@@ -57,9 +58,10 @@ const EditCanvassForm = ({
   ticketId,
   updateCanvassDetails,
   currentCanvassDetails,
-  isEditCanvassVisible,
-  setIsEditCanvassVisible,
+  updateTicketDetails,
 }: EditCanvassFormProps) => {
+  const { user } = useUserStore();
+
   const [isPending, startTransition] = useTransition();
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
 
@@ -80,6 +82,16 @@ const EditCanvassForm = ({
     name: "quotations",
   });
 
+  const handleCanvassAction = async (status: string) => {
+    if (!user || !ticketId) return;
+
+    try {
+      await startCanvass(ticketId, user.user_id, status); // Pass the status argument
+    } catch (error) {
+      console.error("Error starting canvass:", error);
+    }
+  };
+
   const onSubmit = async (values: CanvassFormValues) => {
     const validatedFields = CanvassFormSchema.safeParse(values);
 
@@ -87,7 +99,7 @@ const EditCanvassForm = ({
       startTransition(async () => {
         // Filter out only the files that have changed (are not undefined)
         const validQuotations = values.quotations.map((q) =>
-          q.file instanceof File ? q.file : null,
+          q.file instanceof File ? q.file : null
         );
 
         const result = await updateCanvass({
@@ -117,8 +129,20 @@ const EditCanvassForm = ({
             color: "green",
             icon: <IconCheck size={16} />,
           });
-          updateCanvassDetails();
-          setIsEditCanvassVisible(false);
+
+          if (user?.user_role === "REVIEWER") {
+            await handleCanvassAction("FOR APPROVAL");
+            updateCanvassDetails();
+            updateTicketDetails();
+            return;
+          }
+
+          if (user?.user_role === "PURCHASER") {
+            await handleCanvassAction("FOR REVIEW OF SUBMISSIONS");
+            updateCanvassDetails();
+            updateTicketDetails();
+            return;
+          }
         }
       });
     }
@@ -132,7 +156,7 @@ const EditCanvassForm = ({
 
   // Convert a remote URL to a File object
   const urlToFile = async (
-    attachment: AttachmentData,
+    attachment: AttachmentData
   ): Promise<File | null> => {
     try {
       // Fetch the file
@@ -148,7 +172,7 @@ const EditCanvassForm = ({
 
       // Create a File object from the blob
       const file = new File([blob], fileName, {
-        type: attachment.canvass_attchment_file_type,
+        type: attachment.canvass_attachment_file_type,
       });
 
       return file;
@@ -166,7 +190,7 @@ const EditCanvassForm = ({
   };
 
   useEffect(() => {
-    if (!isEditCanvassVisible || !currentCanvassDetails.length) return;
+    if (!currentCanvassDetails.length) return;
 
     // Set loading state to true when form becomes visible
     setIsLoadingFiles(true);
@@ -174,23 +198,23 @@ const EditCanvassForm = ({
     // Set basic form values
     form.setValue(
       "RfDateReceived",
-      new Date(currentCanvassDetails[0].canvass_form_rf_date_received),
+      new Date(currentCanvassDetails[0].canvass_form_rf_date_received)
     );
     form.setValue(
       "recommendedSupplier",
-      currentCanvassDetails[0].canvass_form_recommended_supplier,
+      currentCanvassDetails[0].canvass_form_recommended_supplier
     );
     form.setValue(
       "leadTimeDay",
-      currentCanvassDetails[0].canvass_form_lead_time_day,
+      currentCanvassDetails[0].canvass_form_lead_time_day
     );
     form.setValue(
       "totalAmount",
-      currentCanvassDetails[0].canvass_form_total_amount,
+      currentCanvassDetails[0].canvass_form_total_amount
     );
     form.setValue(
       "paymentTerms",
-      currentCanvassDetails[0].canvass_form_payment_terms!,
+      currentCanvassDetails[0].canvass_form_payment_terms!
     );
 
     // Ensure we have attachments to process
@@ -206,7 +230,7 @@ const EditCanvassForm = ({
 
           // Find and load the canvass sheet
           const canvassSheet = attachments.find(
-            (a) => a.canvass_attachment_type === "CANVASS_SHEET",
+            (a) => a.canvass_attachment_type === "CANVASS_SHEET"
           );
 
           if (canvassSheet) {
@@ -235,12 +259,12 @@ const EditCanvassForm = ({
               quotations.map(async (q) => {
                 const file = await urlToFile(q);
                 return { file: file || undefined }; // Convert null to undefined
-              }),
+              })
             );
 
             // Filter out nulls
             const validQuotationFiles = quotationFiles.filter(
-              (q) => q.file !== null,
+              (q) => q.file !== null
             );
 
             // Ensure we have at least one entry
@@ -270,7 +294,7 @@ const EditCanvassForm = ({
       // If no attachments, still set loading to false
       setIsLoadingFiles(false);
     }
-  }, [currentCanvassDetails, isEditCanvassVisible, form]);
+  }, [currentCanvassDetails, form]);
 
   return (
     <Container size="md" px="0">
@@ -490,17 +514,6 @@ const EditCanvassForm = ({
           </Stack>
 
           <Group justify="flex-end">
-            <Button
-              variant="subtle"
-              type="button"
-              size="md"
-              radius="md"
-              color="gray"
-              onClick={() => setIsEditCanvassVisible(false)}
-              disabled={isLoadingFiles}
-            >
-              Cancel
-            </Button>
             <Button
               type="submit"
               loading={isPending}

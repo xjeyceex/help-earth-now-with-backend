@@ -50,7 +50,7 @@ export const markAllUserNotificationsAsRead = async () => {
 
 export const editComment = async (
   comment_id: string,
-  newContent: string,
+  newContent: string
 ): Promise<void> => {
   const supabase = await createClient();
 
@@ -72,7 +72,7 @@ export const editComment = async (
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -194,7 +194,7 @@ type ExistingQuotationResult = {
   canvass_attachment_canvass_form_id: string;
   canvass_attachment_type: string;
   canvass_attachment_url: string;
-  canvass_attchment_file_type: string;
+  canvass_attachment_file_type: string;
   canvass_attachment_file_size: number;
 };
 
@@ -245,7 +245,7 @@ export const updateCanvass = async ({
 
     if (fetchError) {
       throw new Error(
-        `Failed to fetch existing attachments: ${fetchError.message}`,
+        `Failed to fetch existing attachments: ${fetchError.message}`
       );
     }
 
@@ -278,14 +278,14 @@ export const updateCanvass = async ({
     // Handle canvass sheet update
     let canvassSheetData = null;
     const existingCanvassSheet = existingAttachments?.find(
-      (a) => a.canvass_attachment_type === "CANVASS_SHEET",
+      (a) => a.canvass_attachment_type === "CANVASS_SHEET"
     );
 
     if (canvassSheet) {
       // Delete old canvass sheet if it exists
       if (existingCanvassSheet) {
         const oldFilePath = new URL(
-          existingCanvassSheet.canvass_attachment_url,
+          existingCanvassSheet.canvass_attachment_url
         ).pathname
           .split("/")
           .pop();
@@ -305,7 +305,7 @@ export const updateCanvass = async ({
     const quotationResults = await Promise.all(
       quotations.map(async (quotation, index) => {
         const existingQuotation = existingAttachments?.find(
-          (a) => a.canvass_attachment_type === `QUOTATION_${index + 1}`,
+          (a) => a.canvass_attachment_type === `QUOTATION_${index + 1}`
         );
 
         if (!quotation) {
@@ -316,8 +316,8 @@ export const updateCanvass = async ({
                 canvass_attachment_type: `QUOTATION_${index + 1}`,
                 canvass_attachment_url:
                   existingQuotation.canvass_attachment_url,
-                canvass_attchment_file_type:
-                  existingQuotation.canvass_attchment_file_type,
+                canvass_attachment_file_type:
+                  existingQuotation.canvass_attachment_file_type,
                 canvass_attachment_file_size:
                   existingQuotation.canvass_attachment_file_size,
               }
@@ -327,7 +327,7 @@ export const updateCanvass = async ({
         // Delete old quotation if it exists
         if (existingQuotation) {
           const oldFilePath = new URL(
-            existingQuotation.canvass_attachment_url,
+            existingQuotation.canvass_attachment_url
           ).pathname
             .split("/")
             .pop();
@@ -341,7 +341,7 @@ export const updateCanvass = async ({
 
         // Upload new quotation
         return uploadFile(quotation, `quotation_${index + 1}`);
-      }),
+      })
     );
 
     // Update canvass form data
@@ -375,7 +375,7 @@ export const updateCanvass = async ({
               canvass_attachment_canvass_form_id: currentCanvassFormId,
               canvass_attachment_type: "CANVASS_SHEET",
               canvass_attachment_url: canvassSheetData.publicUrl,
-              canvass_attchment_file_type: canvassSheetData.fileType,
+              canvass_attachment_file_type: canvassSheetData.fileType,
               canvass_attachment_file_size: canvassSheetData.fileSize,
             },
           ]
@@ -385,8 +385,8 @@ export const updateCanvass = async ({
               canvass_attachment_type: "CANVASS_SHEET",
               canvass_attachment_url:
                 existingCanvassSheet?.canvass_attachment_url,
-              canvass_attchment_file_type:
-                existingCanvassSheet?.canvass_attchment_file_type,
+              canvass_attachment_file_type:
+                existingCanvassSheet?.canvass_attachment_file_type,
               canvass_attachment_file_size:
                 existingCanvassSheet?.canvass_attachment_file_size,
             },
@@ -394,7 +394,7 @@ export const updateCanvass = async ({
       // Add all quotation attachments
       ...quotationResults
         .filter(
-          (result): result is NonNullable<QuotationResult> => result !== null,
+          (result): result is NonNullable<QuotationResult> => result !== null
         )
         .map((result, index) => {
           if ("publicUrl" in result) {
@@ -403,7 +403,7 @@ export const updateCanvass = async ({
               canvass_attachment_canvass_form_id: currentCanvassFormId,
               canvass_attachment_type: `QUOTATION_${index + 1}`,
               canvass_attachment_url: result.publicUrl,
-              canvass_attchment_file_type: result.fileType,
+              canvass_attachment_file_type: result.fileType,
               canvass_attachment_file_size: result.fileSize,
             };
           } else {
@@ -412,7 +412,7 @@ export const updateCanvass = async ({
               canvass_attachment_canvass_form_id: currentCanvassFormId,
               canvass_attachment_type: `QUOTATION_${index + 1}`,
               canvass_attachment_url: result.canvass_attachment_url,
-              canvass_attchment_file_type: result.canvass_attchment_file_type,
+              canvass_attachment_file_type: result.canvass_attachment_file_type,
               canvass_attachment_file_size: result.canvass_attachment_file_size,
             };
           }
@@ -426,7 +426,7 @@ export const updateCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`,
+        `Failed to insert attachments: ${attachmentsError.message}`
       );
     }
 

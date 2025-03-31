@@ -1,6 +1,6 @@
 -- ENUM TYPES
 CREATE TYPE ticket_status_enum AS ENUM (
-    'FOR CANVASS', 'WORK IN PROGRESS', 'FOR APPROVAL', 'DONE', 'CANCELED', 'FOR REVIEW OF SUBMISSIONS', 'DECLINED'
+    'FOR CANVASS', 'WORK IN PROGRESS', 'FOR APPROVAL', 'DONE', 'CANCELED', 'FOR REVIEW OF SUBMISSIONS', 'DECLINED', 'FOR REVISION'
 );
 
 create policy "Allow authenticated users to insert" 
@@ -89,13 +89,34 @@ CREATE TABLE public.ticket_table (
   ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
   ticket_specifications TEXT,
   ticket_notes TEXT,
-  ticket_name TEXT,
+  ticket_name TEXT NOT NULL UNIQUE,  -- ticket_name is now UNIQUE
   ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
   ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
   ticket_rf_date_received TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
   ticket_date_created TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()),
   ticket_last_updated TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) 
 );
+
+CREATE OR REPLACE FUNCTION get_next_ticket_sequence(date_prefix TEXT)
+RETURNS INTEGER AS $$
+DECLARE
+    next_val INTEGER;
+BEGIN
+    SELECT nextval('public.ticket_name_seq') INTO next_val;
+    RETURN next_val;
+END;
+$$ LANGUAGE plpgsql
+SET search_path = public;
+
+CREATE SEQUENCE IF NOT EXISTS public.ticket_name_seq
+    INCREMENT BY 1
+    MINVALUE 1
+    MAXVALUE 99999
+    START WITH 1
+    CACHE 1;
+
+-- Index for ticket name for faster lookup
+CREATE INDEX idx_ticket_name ON public.ticket_table(ticket_name);
 
 -- Enable RLS
 ALTER TABLE public.ticket_table ENABLE ROW LEVEL SECURITY;
@@ -166,7 +187,7 @@ DROP POLICY IF EXISTS update_comments ON public.comment_table;
 CREATE POLICY update_comments 
 ON public.comment_table 
 FOR UPDATE 
-USING (auth.uid() = comment_user_id) -- Users can only update their own comments
+USING (auth.uid() = comment_user_id); -- Users can only update their own comments
 
 -- Allow all authenticated users to DELETE their own comments
 DROP POLICY IF EXISTS delete_comments ON public.comment_table;
@@ -521,15 +542,15 @@ BEGIN
       NEW.raw_user_meta_data->>'full_name', 
       'Unnamed User'
     ), 
-    NEW.email,
-    COALESCE(
-      NEW.raw_user_meta_data->>'avatar_url', 
-      ''
-    )
-  );
+    COALESCE(NEW.email, ''), -- Prevent NULL email issues
+    COALESCE(NEW.raw_user_meta_data->>'avatar_url', '')
+  )
+  ON CONFLICT (user_id) DO NOTHING; -- Avoid duplicate inserts
+
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 
 -- Recreate the trigger
 DROP TRIGGER IF EXISTS after_user_signup ON auth.users;
@@ -548,6 +569,7 @@ RETURNS TABLE (
   ticket_date_created TIMESTAMPTZ
 )
 LANGUAGE SQL
+SET search_path TO public  -- Ensures function runs in the correct schema
 AS $$
   SELECT 
     t.ticket_id,
@@ -557,16 +579,16 @@ AS $$
     t.ticket_item_description,
     t.ticket_date_created  -- No timezone conversion
   FROM 
-    ticket_table t
+    public.ticket_table t
   WHERE 
     _user_id IS NULL 
     OR t.ticket_created_by = _user_id
     OR EXISTS (
-      SELECT 1 FROM ticket_shared_with_table s
+      SELECT 1 FROM public.ticket_shared_with_table s
       WHERE s.ticket_id = t.ticket_id AND s.shared_user_id = _user_id
     )
     OR EXISTS (
-      SELECT 1 FROM approval_table a
+      SELECT 1 FROM public.approval_table a
       WHERE a.approval_ticket_id = t.ticket_id 
       AND a.approval_reviewed_by = _user_id
     )
@@ -591,6 +613,7 @@ RETURNS TABLE (
   reviewers JSON
 )
 LANGUAGE sql
+SET search_path TO public  -- Ensures function runs in the correct schema
 AS $$  
   SELECT
     t.ticket_id,
@@ -610,8 +633,8 @@ AS $$
           'user_email', u2.user_email,
           'user_avatar', u2.user_avatar
         )
-      ) FROM ticket_shared_with_table ts
-      LEFT JOIN user_table u2 ON ts.shared_user_id = u2.user_id
+      ) FROM public.ticket_shared_with_table ts
+      LEFT JOIN public.user_table u2 ON ts.shared_user_id = u2.user_id
       WHERE ts.ticket_id = t.ticket_id), '[]'::JSON
     ) AS shared_users,
 
@@ -623,18 +646,18 @@ AS $$
           'reviewer_name', u3.user_full_name,
           'approval_status', a.approval_review_status
         )
-      ) FROM approval_table a
-      LEFT JOIN user_table u3 ON u3.user_id = a.approval_reviewed_by
+      ) FROM public.approval_table a
+      LEFT JOIN public.user_table u3 ON u3.user_id = a.approval_reviewed_by
       WHERE a.approval_ticket_id = t.ticket_id), '[]'::JSON
     ) AS reviewers
 
   FROM
-    ticket_table t -- No need to sort before JOIN
+    public.ticket_table t -- No need to sort before JOIN
 
   WHERE
     user_id IN (t.ticket_created_by)
-    OR EXISTS (SELECT 1 FROM ticket_shared_with_table ts WHERE ts.ticket_id = t.ticket_id AND ts.shared_user_id = user_id)
-    OR EXISTS (SELECT 1 FROM approval_table a WHERE a.approval_ticket_id = t.ticket_id AND a.approval_reviewed_by = user_id)
+    OR EXISTS (SELECT 1 FROM public.ticket_shared_with_table ts WHERE ts.ticket_id = t.ticket_id AND ts.shared_user_id = user_id)
+    OR EXISTS (SELECT 1 FROM public.approval_table a WHERE a.approval_ticket_id = t.ticket_id AND a.approval_reviewed_by = user_id)
     AND (ticket_status IS NULL OR t.ticket_status = ticket_status)
     AND (ticket_uuid IS NULL OR t.ticket_id = ticket_uuid)
 
@@ -673,7 +696,9 @@ RETURNS TABLE(
   comment_user_id UUID,
   comment_user_avatar TEXT,
   comment_user_full_name TEXT -- Add full name column
-) LANGUAGE sql
+) 
+LANGUAGE sql
+SET search_path TO public  -- Ensures function runs in the correct schema
 AS $$
 
   SELECT
@@ -689,9 +714,9 @@ AS $$
     u.user_avatar AS comment_user_avatar,
     u.user_full_name AS comment_user_full_name
   FROM
-    comment_table c
+    public.comment_table c
   LEFT JOIN
-    user_table u ON c.comment_user_id = u.user_id
+    public.user_table u ON c.comment_user_id = u.user_id
   WHERE
     c.comment_ticket_id = ticket_id
     AND c.comment_type = 'COMMENT'
@@ -721,6 +746,7 @@ RETURNS TABLE (
   reviewers JSON 
 ) 
 LANGUAGE SQL 
+SET search_path TO public  -- Ensures function runs in the correct schema
 AS $$    
 SELECT     
   t.ticket_id,    
@@ -738,7 +764,7 @@ SELECT
   COALESCE(      
     (        
       SELECT a.approval_review_status        
-      FROM approval_table a        
+      FROM public.approval_table a        
       WHERE a.approval_ticket_id = t.ticket_id        
       ORDER BY a.approval_review_date DESC  
       LIMIT 1      
@@ -764,8 +790,8 @@ SELECT
         )        
       ), '[]'      
     )      
-    FROM ticket_shared_with_table ts      
-    LEFT JOIN user_table u2 ON u2.user_id = ts.shared_user_id      
+    FROM public.ticket_shared_with_table ts      
+    LEFT JOIN public.user_table u2 ON u2.user_id = ts.shared_user_id      
     WHERE ts.ticket_id = t.ticket_id    
   )::JSON AS shared_users,     
 
@@ -782,39 +808,40 @@ SELECT
         )        
       ), '[]'      
     )      
-    FROM approval_table a      
-    LEFT JOIN user_table u3 ON u3.user_id = a.approval_reviewed_by      
+    FROM public.approval_table a      
+    LEFT JOIN public.user_table u3 ON u3.user_id = a.approval_reviewed_by      
     WHERE a.approval_ticket_id = t.ticket_id    
   )::JSON AS reviewers   
 
 FROM     
-  ticket_table t   
-LEFT JOIN user_table u ON u.user_id = t.ticket_created_by   
+  public.ticket_table t   
+LEFT JOIN public.user_table u ON u.user_id = t.ticket_created_by   
 WHERE t.ticket_id = ticket_uuid;  
 $$;
 
 -- share ticket function
-drop function if exists share_ticket(uuid, uuid, uuid);
-create or replace function share_ticket(
+DROP FUNCTION IF EXISTS public.share_ticket(uuid, uuid, uuid);
+CREATE OR REPLACE FUNCTION public.share_ticket(
   _ticket_id uuid,
   _shared_user_id uuid,
   _assigned_by uuid
 )
-returns void
-language sql
-as $$
-  insert into ticket_shared_with_table (
+RETURNS void
+LANGUAGE sql
+SET search_path TO public
+AS $$
+  INSERT INTO public.ticket_shared_with_table (
     ticket_id,
     shared_user_id,
     assigned_by
   )
-  select 
+  SELECT 
     _ticket_id,
     _shared_user_id,
     _assigned_by
-  from ticket_table
-  where ticket_id = _ticket_id
-  and ticket_created_by != _shared_user_id;
+  FROM public.ticket_table
+  WHERE ticket_id = _ticket_id
+  AND ticket_created_by != _shared_user_id;
 $$;
 
 CREATE OR REPLACE FUNCTION public.add_comment_with_notification(
@@ -824,6 +851,7 @@ CREATE OR REPLACE FUNCTION public.add_comment_with_notification(
 ) RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path TO public
 AS $$
 DECLARE
   v_comment_id UUID;
@@ -835,17 +863,17 @@ BEGIN
   -- Get the role and name of the user who is commenting
   SELECT user_role, user_full_name
   INTO v_commenter_role, v_commenter_name
-  FROM public.user_table
+  FROM user_table
   WHERE user_id = p_user_id;
 
   -- Get the ticket creator's ID
   SELECT ticket_created_by
   INTO v_ticket_creator_id
-  FROM public.ticket_table
+  FROM ticket_table
   WHERE ticket_id = p_ticket_id;
 
   -- Insert the comment
-  INSERT INTO public.comment_table (
+  INSERT INTO comment_table (
     comment_ticket_id,
     comment_content,
     comment_type,
@@ -868,13 +896,13 @@ BEGIN
   ELSE
     -- If commenter is PURCHASER, notify a REVIEWER
     SELECT user_id INTO v_target_user_id
-    FROM public.user_table
+    FROM user_table
     WHERE user_role = 'REVIEWER'
     LIMIT 1;
   END IF;
 
   -- Insert the notification
-  INSERT INTO public.notification_table (
+  INSERT INTO notification_table (
     notification_user_id,
     notification_message,
     notification_url,
@@ -894,6 +922,7 @@ CREATE OR REPLACE FUNCTION public.check_user_password_exists(user_id UUID)
 RETURNS BOOLEAN 
 LANGUAGE plpgsql 
 SECURITY DEFINER 
+SET search_path TO public, auth  -- Ensures access to both schemas
 AS $$
 BEGIN
   RETURN EXISTS (
@@ -905,38 +934,3 @@ BEGIN
   );
 END;
 $$;
-
--- Drop the trigger first (to avoid dependency errors)
-DROP TRIGGER IF EXISTS trigger_generate_ticket_name ON public.ticket_table;
-DROP FUNCTION IF EXISTS generate_ticket_name;
-
-CREATE OR REPLACE FUNCTION generate_ticket_name()
-RETURNS TRIGGER AS $$ 
-DECLARE
-    latest_number INT;
-    new_ticket_name TEXT;
-    formatted_date TEXT;
-BEGIN
-    -- Format the date as DD-MMM-YY (e.g., 27MAR25)
-    formatted_date := TO_CHAR(NEW.ticket_date_created, 'DDMONYYYY');
-
-    -- Get the latest sequential number for the current date format
-    SELECT COALESCE(MAX(CAST(LEFT(ticket_name, 4) AS INT)), 0) + 1
-    INTO latest_number
-    FROM public.ticket_table
-    WHERE ticket_name LIKE '%-' || formatted_date;
-
-    -- Generate the ticket name (0001-27MAR25)
-    new_ticket_name := LPAD(latest_number::TEXT, 4, '0') || '-' || formatted_date;
-
-    -- Assign it to the new ticket
-    NEW.ticket_name := new_ticket_name;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Apply the trigger on insert
-CREATE TRIGGER trigger_generate_ticket_name
-BEFORE INSERT ON public.ticket_table
-FOR EACH ROW
-EXECUTE FUNCTION generate_ticket_name();

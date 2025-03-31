@@ -34,7 +34,7 @@ const NotificationMenu = () => {
   const { notifications, setNotifications } = useNotificationStore();
 
   const unreadCount = notifications.filter(
-    (notif) => !notif.notification_read,
+    (notif) => !notif.notification_read
   ).length;
 
   const getRelativeTime = (timestamp: string) => {
@@ -76,13 +76,19 @@ const NotificationMenu = () => {
         return;
       }
 
-      const unreadNotifications = res.data?.filter(
-        (notification) => !notification.notification_read,
-      );
-      setNotifications(unreadNotifications as NotificationType[]);
+      // Sort notifications by created_at in descending order (most recent first)
+      const sortedNotifications = res.data
+        ?.filter((notification) => !notification.notification_read)
+        .sort(
+          (a, b) =>
+            new Date(b.notification_created_at).getTime() -
+            new Date(a.notification_created_at).getTime()
+        );
+
+      setNotifications(sortedNotifications as NotificationType[]);
     };
 
-    if (pathname != "/notifications") fetchNotifications();
+    if (pathname !== "/notifications") fetchNotifications();
   }, []);
 
   // Set up real-time subscription
@@ -126,8 +132,8 @@ const NotificationMenu = () => {
                   prev.map((notification) =>
                     notification.notification_id === payload.new.notification_id
                       ? { ...notification, ...payload.new }
-                      : notification,
-                  ),
+                      : notification
+                  )
                 );
                 break;
 
@@ -137,12 +143,12 @@ const NotificationMenu = () => {
                   prev.filter(
                     (notification) =>
                       notification.notification_id !==
-                      payload.old.notification_id,
-                  ),
+                      payload.old.notification_id
+                  )
                 );
                 break;
             }
-          },
+          }
         )
         .subscribe();
 

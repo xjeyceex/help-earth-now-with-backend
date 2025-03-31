@@ -65,7 +65,6 @@ const TicketStatusAndActions = ({
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
 
   // Confirmation Modal States
-  const [openCanvassModal, setOpenCanvassModal] = useState(false);
   const [openReviewerApprovalModal, setOpenReviewerApprovalModal] =
     useState(false);
   const [openManagerApprovalModal, setOpenManagerApprovalModal] =
@@ -73,8 +72,9 @@ const TicketStatusAndActions = ({
   const [openReviseModal, setOpenReviseModal] = useState(false);
   const [openCancelRequestModal, setOpenCancelRequestModal] = useState(false);
 
+  const [isStatusLoading, setIsStatusLoading] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
-    [],
+    []
   );
 
   const { colorScheme } = useMantineColorScheme();
@@ -92,7 +92,7 @@ const TicketStatusAndActions = ({
 
   const isAdmin = user?.user_role === "ADMIN";
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
   const isManager = user?.user_role === "MANAGER";
   const isCreator = ticket.ticket_created_by === user?.user_id;
@@ -104,14 +104,14 @@ const TicketStatusAndActions = ({
 
     try {
       await Promise.all(
-        selectedUsers.map((userId) => shareTicket(ticket.ticket_id, userId)),
+        selectedUsers.map((userId) => shareTicket(ticket.ticket_id, userId))
       );
 
       await fetchTicketDetails!();
 
       setSelectedUsers([]);
       setAllUsers((prev) =>
-        prev.filter((user) => !selectedUsers.includes(user.value)),
+        prev.filter((user) => !selectedUsers.includes(user.value))
       );
     } catch (error) {
       console.error("Error sharing ticket:", error);
@@ -127,6 +127,7 @@ const TicketStatusAndActions = ({
       return;
     }
 
+    setIsStatusLoading(true);
     try {
       if (newComment.trim()) {
         await addComment(ticket.ticket_id, newComment, user.user_id);
@@ -138,6 +139,8 @@ const TicketStatusAndActions = ({
       updateTicketDetails();
     } catch (error) {
       console.error("Error adding comment or starting canvass:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -146,6 +149,7 @@ const TicketStatusAndActions = ({
       console.error("User not logged in.");
       return;
     }
+    setIsStatusLoading(true);
 
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
@@ -156,27 +160,27 @@ const TicketStatusAndActions = ({
     const updatedReviewers = ticket.reviewers.map((reviewer) =>
       reviewer.reviewer_id === user.user_id
         ? { ...reviewer, approval_status: newApprovalStatus }
-        : reviewer,
+        : reviewer
     );
 
     // Check if all non-managers have approved
     const nonManagerReviewers = updatedReviewers.filter(
-      (reviewer) => reviewer.reviewer_role !== "MANAGER",
+      (reviewer) => reviewer.reviewer_role !== "MANAGER"
     );
 
     const isSingleReviewer = nonManagerReviewers.length === 1;
     const allApproved =
       nonManagerReviewers.length > 0 &&
       nonManagerReviewers.every(
-        (reviewer) => reviewer.approval_status === "APPROVED",
+        (reviewer) => reviewer.approval_status === "APPROVED"
       );
 
     // Handle edge case where there's only one non-manager reviewer
     const newTicketStatus = allApproved
       ? "FOR APPROVAL"
       : isSingleReviewer && newApprovalStatus === "REJECTED"
-        ? "REJECTED"
-        : ticket.ticket_status;
+      ? "REJECTED"
+      : ticket.ticket_status;
 
     try {
       if (newComment.trim()) {
@@ -190,11 +194,25 @@ const TicketStatusAndActions = ({
         approval_reviewed_by: user.user_id,
       });
 
+      if (allApproved) {
+        for (const manager of ticket.reviewers.filter(
+          (reviewer) => reviewer.reviewer_role === "MANAGER"
+        )) {
+          await updateApprovalStatus({
+            approval_ticket_id: ticket.ticket_id,
+            approval_review_status: "AWAITING ACTION",
+            approval_reviewed_by: manager.reviewer_id,
+          });
+        }
+      }
+
       handleCanvassAction(newTicketStatus);
       setApprovalStatus(null);
       updateTicketDetails();
     } catch (error) {
       console.error("Error updating approval:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -205,6 +223,7 @@ const TicketStatusAndActions = ({
     }
 
     if (!ticket) return;
+    setIsStatusLoading(true);
 
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
@@ -214,27 +233,27 @@ const TicketStatusAndActions = ({
       reviewer.reviewer_role === "MANAGER" &&
       reviewer.reviewer_id === user.user_id
         ? { ...reviewer, approval_status: newApprovalStatus }
-        : reviewer,
+        : reviewer
     );
 
     // Filter only managers
     const managerReviewers = updatedReviewers.filter(
-      (reviewer) => reviewer.reviewer_role === "MANAGER",
+      (reviewer) => reviewer.reviewer_role === "MANAGER"
     );
 
     const isSingleManager = managerReviewers.length === 1;
     const allManagersApproved =
       managerReviewers.length > 0 &&
       managerReviewers.every(
-        (reviewer) => reviewer.approval_status === "APPROVED",
+        (reviewer) => reviewer.approval_status === "APPROVED"
       );
 
     // Handle single or multiple manager approvals
     const newTicketStatus = allManagersApproved
       ? "DONE"
       : isSingleManager && newApprovalStatus === "REJECTED"
-        ? "REJECTED"
-        : ticket.ticket_status;
+      ? "REJECTED"
+      : ticket.ticket_status;
 
     try {
       if (newComment.trim()) {
@@ -253,6 +272,8 @@ const TicketStatusAndActions = ({
       updateTicketDetails();
     } catch (error) {
       console.error("Error finalizing approval:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -261,6 +282,7 @@ const TicketStatusAndActions = ({
       console.error("User not logged in or ticket is undefined.");
       return;
     }
+    setIsStatusLoading(true);
 
     try {
       if (newComment.trim()) {
@@ -270,11 +292,13 @@ const TicketStatusAndActions = ({
 
       // Revert approval status
       await revertApprovalStatus(ticket.ticket_id);
-      handleCanvassAction("WORK IN PROGRESS");
+      handleCanvassAction("FOR REVISION");
       updateTicketDetails();
       setApprovalStatus(null);
     } catch (error) {
       console.error("Error requesting revision:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -283,6 +307,7 @@ const TicketStatusAndActions = ({
       console.error("User not logged in or ticket is undefined.");
       return;
     }
+    setIsStatusLoading(true);
 
     try {
       if (newComment.trim()) {
@@ -299,6 +324,8 @@ const TicketStatusAndActions = ({
       updateTicketDetails();
     } catch (error) {
       console.error("Error requesting revision:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -329,27 +356,34 @@ const TicketStatusAndActions = ({
               <Text size="md" fw={500} c="dimmed" mb="sm">
                 Status
               </Text>
-              <Badge
-                py="md"
-                size="lg"
-                radius="md"
-                color={
-                  ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
-                    ? "yellow"
-                    : ticket?.ticket_status === "FOR APPROVAL"
+
+              {isStatusLoading ? (
+                <Skeleton height={40} radius="md" />
+              ) : (
+                <Badge
+                  py="md"
+                  size="lg"
+                  radius="md"
+                  color={
+                    ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
+                      ? "yellow"
+                      : ticket?.ticket_status === "FOR APPROVAL"
                       ? "yellow"
                       : ticket?.ticket_status === "WORK IN PROGRESS"
-                        ? "blue"
-                        : ticket?.ticket_status === "DONE"
-                          ? "teal"
-                          : ticket?.ticket_status === "DECLINED"
-                            ? "red"
-                            : "gray"
-                }
-                fullWidth
-              >
-                {ticket?.ticket_status}
-              </Badge>
+                      ? "blue"
+                      : ticket?.ticket_status === "FOR REVISION"
+                      ? "orange"
+                      : ticket?.ticket_status === "DONE"
+                      ? "teal"
+                      : ticket?.ticket_status === "DECLINED"
+                      ? "red"
+                      : "gray"
+                  }
+                  fullWidth
+                >
+                  {ticket?.ticket_status}
+                </Badge>
+              )}
             </Box>
 
             {/* Actions Section */}
@@ -370,10 +404,10 @@ const TicketStatusAndActions = ({
                         radius="md"
                         variant="light"
                         color="blue"
-                        style={{ flex: 1 }} // Takes full width when alone
-                        onClick={() => {
-                          setOpenCanvassModal(true);
-                        }}
+                        loading={isStatusLoading}
+                        disabled={isStatusLoading}
+                        style={{ flex: 1 }}
+                        onClick={handleStartCanvass} // Directly call the function
                       >
                         Start Canvass
                       </Button>
@@ -388,6 +422,7 @@ const TicketStatusAndActions = ({
                           leftSection={<IconClipboardCheck size={18} />}
                           radius="md"
                           color="teal"
+                          loading={isStatusLoading}
                           disabled={isDisabled}
                           onClick={() => {
                             setApprovalStatus("APPROVED");
@@ -401,6 +436,7 @@ const TicketStatusAndActions = ({
                           radius="md"
                           color="yellow"
                           variant="light"
+                          loading={isStatusLoading}
                           disabled={isDisabled}
                           onClick={() => {
                             setApprovalStatus("NEEDS_REVISION");
@@ -418,6 +454,8 @@ const TicketStatusAndActions = ({
                         leftSection={<IconClipboardCheck size={18} />}
                         radius="md"
                         color="teal"
+                        loading={isStatusLoading}
+                        disabled={isStatusLoading}
                         onClick={() => {
                           setApprovalStatus("APPROVED");
                           setOpenManagerApprovalModal(true);
@@ -429,6 +467,8 @@ const TicketStatusAndActions = ({
                         leftSection={<IconClipboardX size={18} />}
                         radius="md"
                         color="red"
+                        loading={isStatusLoading}
+                        disabled={isStatusLoading}
                         variant="light"
                         onClick={() => {
                           setApprovalStatus("DECLINED");
@@ -444,6 +484,8 @@ const TicketStatusAndActions = ({
                       color="red"
                       leftSection={<IconX size={18} />}
                       radius="md"
+                      loading={isStatusLoading}
+                      disabled={isStatusLoading}
                       style={{ flex: 1 }} // Takes full width when alone
                       onClick={() => setOpenCancelRequestModal(true)}
                     >
@@ -485,9 +527,12 @@ const TicketStatusAndActions = ({
                   Reviewers
                 </Text>
                 <Stack gap="md">
-                  {/* Managers First */}
                   {ticket.reviewers
-                    .filter((reviewer) => reviewer.reviewer_role === "MANAGER")
+                    .filter(
+                      (manager) =>
+                        manager.reviewer_role === "MANAGER" &&
+                        manager.approval_status !== "PENDING"
+                    )
                     .map((manager) => (
                       <Group
                         key={manager.reviewer_id}
@@ -540,8 +585,8 @@ const TicketStatusAndActions = ({
                             manager.approval_status === "APPROVED"
                               ? "green"
                               : manager.approval_status === "REJECTED"
-                                ? "red"
-                                : "gray"
+                              ? "red"
+                              : "gray"
                           }
                         >
                           {manager.approval_status}
@@ -604,8 +649,8 @@ const TicketStatusAndActions = ({
                             reviewer.approval_status === "APPROVED"
                               ? "green"
                               : reviewer.approval_status === "REJECTED"
-                                ? "red"
-                                : "gray"
+                              ? "red"
+                              : "gray"
                           }
                         >
                           {reviewer.approval_status}
@@ -749,18 +794,6 @@ const TicketStatusAndActions = ({
           </Modal>
         )}
       </Grid.Col>
-
-      {/* Start Canvass Modal */}
-      <ConfirmationModal
-        title="Start Canvass"
-        isOpen={openCanvassModal}
-        onClose={() => setOpenCanvassModal(false)}
-        onConfirm={handleStartCanvass}
-        confirmText="Confirm"
-        withComment
-        commentState={newComment}
-        setCommentState={setNewComment}
-      />
 
       {/* Reviewer Approval Modal */}
       <ConfirmationModal

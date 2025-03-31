@@ -45,7 +45,6 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconClock,
-  IconEdit,
   IconFile,
   IconFileText,
 } from "@tabler/icons-react";
@@ -66,17 +65,16 @@ const TicketDetailsPage = () => {
   const [comments, setComments] = useState<CommentType[]>([]);
   const [ticket, setTicket] = useState<TicketDetailsType | null>(null);
   const [canvassDetails, setCanvassDetails] = useState<CanvassDetail[] | null>(
-    null,
+    null
   );
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
   const [loading, setLoading] = useState(true);
   const [canvasLoading, setCanvasLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isEditCanvassVisible, setIsEditCanvassVisible] = useState(false);
 
   const userApprovalStatus = ticket?.reviewers.find(
-    (reviewer) => reviewer.reviewer_id === user?.user_id,
+    (reviewer) => reviewer.reviewer_id === user?.user_id
   )?.approval_status;
 
   const isDisabled =
@@ -149,10 +147,10 @@ const TicketDetailsPage = () => {
 
   const isAdmin = user?.user_role === "ADMIN";
   const isSharedToMe = ticket.shared_users?.some(
-    (u) => u.user_id === user?.user_id,
+    (u) => u.user_id === user?.user_id
   );
   const isReviewer = ticket.reviewers?.some(
-    (r) => r.reviewer_id === user?.user_id,
+    (r) => r.reviewer_id === user?.user_id
   );
   // const isManager = user?.user_role === "MANAGER";
 
@@ -308,7 +306,7 @@ const TicketDetailsPage = () => {
                             <Text
                               dangerouslySetInnerHTML={{
                                 __html: DOMPurify.sanitize(
-                                  ticket.ticket_specifications,
+                                  ticket.ticket_specifications
                                 ),
                               }}
                             />
@@ -327,7 +325,7 @@ const TicketDetailsPage = () => {
                           </Text>
                           <Text fw={500}>
                             {new Date(
-                              ticket.ticket_rf_date_received,
+                              ticket.ticket_rf_date_received
                             ).toLocaleString("en-US", {
                               day: "2-digit",
                               month: "short",
@@ -407,7 +405,7 @@ const TicketDetailsPage = () => {
                             <Collapse in={isCanvasVisible}>
                               {/* Case 1: Show existing canvass details */}
                               {ticket.ticket_status !== "WORK IN PROGRESS" &&
-                              !isEditCanvassVisible &&
+                              ticket.ticket_status !== "FOR REVISION" &&
                               (canvassDetails?.length ?? 0) > 0 ? (
                                 <>
                                   {canvassDetails?.map(
@@ -430,7 +428,7 @@ const TicketDetailsPage = () => {
                                                 </Text>
                                                 <Text fw={500}>
                                                   {new Date(
-                                                    canvass.canvass_form_rf_date_received,
+                                                    canvass.canvass_form_rf_date_received
                                                   ).toLocaleString("en-US", {
                                                     day: "2-digit",
                                                     month: "short",
@@ -485,9 +483,13 @@ const TicketDetailsPage = () => {
                                                     variant="light"
                                                     radius="xl"
                                                     size="md"
+                                                    src={
+                                                      canvass.submitted_by
+                                                        .user_avatar
+                                                    }
                                                   >
                                                     {canvass.submitted_by.user_full_name?.charAt(
-                                                      0,
+                                                      0
                                                     )}
                                                   </Avatar>
                                                   <Stack gap={0}>
@@ -499,10 +501,10 @@ const TicketDetailsPage = () => {
                                                     <Text size="xs" c="dimmed">
                                                       {moment
                                                         .utc(
-                                                          canvass.canvass_form_date_submitted,
+                                                          canvass.canvass_form_date_submitted
                                                         )
                                                         .format(
-                                                          "MMM D, YYYY [at] h:mm A",
+                                                          "MMM D, YYYY [at] h:mm A"
                                                         )}
                                                     </Text>
                                                   </Stack>
@@ -540,7 +542,7 @@ const TicketDetailsPage = () => {
                                                 <Text fw={500}>
                                                   ₱
                                                   {canvass.canvass_form_total_amount.toFixed(
-                                                    2,
+                                                    2
                                                   )}
                                                 </Text>
                                               </Stack>
@@ -559,7 +561,7 @@ const TicketDetailsPage = () => {
                                                   <Group gap="xs">
                                                     {canvass.attachments.map(
                                                       (
-                                                        attachment: CanvassAttachment,
+                                                        attachment: CanvassAttachment
                                                       ) => (
                                                         <Link
                                                           key={
@@ -576,7 +578,7 @@ const TicketDetailsPage = () => {
                                                               attachment.canvass_attachment_type ||
                                                               "Document"
                                                             } - ${new Date(
-                                                              attachment.canvass_attachment_created_at,
+                                                              attachment.canvass_attachment_created_at
                                                             ).toLocaleDateString()}`}
                                                           >
                                                             <ActionIcon
@@ -591,7 +593,7 @@ const TicketDetailsPage = () => {
                                                             </ActionIcon>
                                                           </Tooltip>
                                                         </Link>
-                                                      ),
+                                                      )
                                                     )}
                                                   </Group>
                                                 </Stack>
@@ -600,67 +602,38 @@ const TicketDetailsPage = () => {
                                           </Grid.Col>
                                         </Grid>
                                       </Box>
-                                    ),
+                                    )
                                   )}
-
-                                  {/* Add Edit Button here if user is authorized */}
-                                  {user?.user_id ===
-                                    ticket?.ticket_created_by &&
-                                    ticket?.ticket_status !== "CANCELED" && (
-                                      <Group justify="flex-end" mt="md">
-                                        <Button
-                                          onClick={() =>
-                                            setIsEditCanvassVisible(true)
-                                          }
-                                          variant="light"
-                                          leftSection={<IconEdit size={16} />}
-                                        >
-                                          Edit Canvass Form
-                                        </Button>
-                                      </Group>
-                                    )}
                                 </>
-                              ) : null}
-
-                              {/* Case 2: Show Edit Form */}
-                              {isEditCanvassVisible &&
-                              canvassDetails &&
-                              canvassDetails.length > 0 ? (
-                                <EditCanvassForm
-                                  ticketId={ticket?.ticket_id}
-                                  updateCanvassDetails={fetchCanvassDetails}
-                                  setTicket={setTicket}
-                                  currentCanvassDetails={canvassDetails}
-                                  isEditCanvassVisible={isEditCanvassVisible}
-                                  setIsEditCanvassVisible={
-                                    setIsEditCanvassVisible
-                                  }
-                                />
-                              ) : null}
-
-                              {/* Case 3: Show New Canvass Form */}
-                              {user?.user_id === ticket?.ticket_created_by &&
-                              ticket?.ticket_status !== "CANCELED" &&
-                              !isEditCanvassVisible &&
-                              (canvassDetails?.length ?? 0) === 0 ? (
-                                <CanvassForm
-                                  ticketId={ticket?.ticket_id}
-                                  updateCanvassDetails={fetchCanvassDetails}
-                                  setTicket={setTicket}
-                                />
-                              ) : null}
-
-                              {/* Case 4: Show Not Available Message */}
-                              {!isEditCanvassVisible &&
-                              (canvassDetails?.length ?? 0) === 0 &&
-                              (user?.user_id !== ticket?.ticket_created_by ||
-                                ticket?.ticket_status === "CANCELED") ? (
+                              ) : user?.user_id === ticket?.ticket_created_by &&
+                                ticket?.ticket_status !== "CANCELED" ? (
+                                <>
+                                  <CanvassForm
+                                    ticketId={ticket?.ticket_id}
+                                    updateCanvassDetails={fetchCanvassDetails}
+                                    setTicket={setTicket}
+                                  />
+                                </>
+                              ) : ticket?.reviewers.some(
+                                  (reviewer) =>
+                                    reviewer.reviewer_id === user?.user_id
+                                ) && ticket?.ticket_status !== "CANCELED" ? (
+                                <>
+                                  <EditCanvassForm
+                                    ticketId={ticket?.ticket_id}
+                                    updateCanvassDetails={fetchCanvassDetails}
+                                    setTicket={setTicket}
+                                    currentCanvassDetails={canvassDetails!}
+                                    updateTicketDetails={fetchTicketDetails}
+                                  />
+                                </>
+                              ) : (
                                 <Alert variant="light" color="gray" radius="md">
                                   <Text>
                                     Canvass form is not available yet.
                                   </Text>
                                 </Alert>
-                              ) : null}
+                              )}
                             </Collapse>
                           </Stack>
                         )}

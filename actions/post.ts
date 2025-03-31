@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -148,117 +148,140 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
 
-  // ✅ Insert the ticket first
-  const { data: ticket, error: ticketError } = await supabase
-    .from("ticket_table")
-    .insert({
-      ticket_item_name: validatedData.ticketItemName,
-      ticket_item_description: validatedData.ticketItemDescription,
-      ticket_quantity: validatedData.ticketQuantity,
-      ticket_specifications: validatedData.ticketSpecification,
-      ticket_notes: validatedData.ticketNotes,
-      ticket_created_by: userId,
-      ticket_rf_date_received: validatedData.ticketRfDateReceived,
-    })
-    .select()
-    .single();
+  try {
+    // 1. Format the date
+    const formattedDate = new Date(validatedData.ticketRfDateReceived)
+      .toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+      .replace(/ /g, "")
+      .toUpperCase();
 
-  if (ticketError) {
-    console.log(ticketError);
-    return {
-      success: false,
-      message: "Failed to create ticket",
-    };
-  }
-
-  // ✅ Fetch all MANAGERS from user_table
-  const { data: managers, error: managerError } = await supabase
-    .from("user_table")
-    .select("user_id")
-    .eq("user_role", "MANAGER");
-
-  if (managerError) {
-    console.error("Error fetching managers:", managerError.message);
-    return {
-      success: false,
-      message: "Failed to fetch managers",
-    };
-  }
-
-  // ✅ Merge manually selected reviewers with managers
-  const allReviewers = [
-    ...new Set([
-      ...validatedData.ticketReviewer,
-      ...managers.map((m) => m.user_id),
-    ]),
-  ];
-
-  // ✅ Insert all reviewers into approval_table
-  const { error: reviewersError } = await supabase
-    .from("approval_table")
-    .insert(
-      allReviewers.map((reviewerId) => ({
-        approval_ticket_id: ticket.ticket_id,
-        approval_reviewed_by: reviewerId,
-        approval_review_status: "PENDING",
-        approval_review_date: new Date().toLocaleString("en-US", {
-          timeZone: "Asia/Manila",
-        }),
-      })),
+    // 2. Use an Rpc to get the next sequence number
+    const { data: sequenceData, error: sequenceError } = await supabase.rpc(
+      "get_next_ticket_sequence", //  <-  Use this name
+      { date_prefix: formattedDate } // Pass the formatted date
     );
 
-  if (reviewersError) {
-    return {
-      success: false,
-      message: "Failed to assign reviewers",
-    };
-  }
+    if (sequenceError) {
+      console.error("Error fetching sequence value:", sequenceError);
+      return { success: false, message: "Failed to generate ticket name." };
+    }
 
-  // ✅ Notify only NON-MANAGER reviewers
-  const { data: reviewerRoles, error: roleError } = await supabase
-    .from("user_table")
-    .select("user_id, user_role")
-    .in("user_id", allReviewers);
+    const nextSequenceValue = sequenceData; // The function returns a single number
 
-  if (roleError) {
-    console.error("Error fetching user roles:", roleError.message);
-    return {
-      success: false,
-      message: "Failed to verify reviewers",
-    };
-  }
+    // 3. Construct the ticket name
+    const newTicketName = `${String(nextSequenceValue).padStart(
+      5,
+      "0"
+    )}-${formattedDate}`;
 
-  const nonManagerReviewers = reviewerRoles
-    .filter((user) => user.user_role !== "MANAGER")
-    .map((user) => user.user_id);
+    // 4. Insert the new ticket with the generated ticket name
+    const { data: ticket, error: ticketError } = await supabase
+      .from("ticket_table")
+      .insert({
+        ticket_name: newTicketName, // Use the generated name
+        ticket_item_name: validatedData.ticketItemName,
+        ticket_item_description: validatedData.ticketItemDescription,
+        ticket_quantity: validatedData.ticketQuantity,
+        ticket_specifications: validatedData.ticketSpecification,
+        ticket_notes: validatedData.ticketNotes,
+        ticket_created_by: userId,
+        ticket_rf_date_received: validatedData.ticketRfDateReceived,
+      })
+      .select()
+      .single();
 
-  if (nonManagerReviewers.length > 0) {
-    const { error: notificationError } = await supabase
-      .from("notification_table")
+    if (ticketError) {
+      console.error("Error creating ticket:", ticketError);
+      return { success: false, message: "Failed to create ticket" };
+    }
+
+    // 5. Fetch all MANAGERS from user_table
+    const { data: managers, error: managerError } = await supabase
+      .from("user_table")
+      .select("user_id")
+      .eq("user_role", "MANAGER");
+
+    if (managerError) {
+      console.error("Error fetching managers:", managerError.message);
+      return { success: false, message: "Failed to fetch managers" };
+    }
+
+    // 6. Merge manually selected reviewers with managers
+    const allReviewers = [
+      ...new Set([
+        ...validatedData.ticketReviewer,
+        ...managers.map((m) => m.user_id),
+      ]),
+    ];
+
+    // 7. Insert all reviewers into the approval_table
+    const { error: reviewersError } = await supabase
+      .from("approval_table")
       .insert(
-        nonManagerReviewers.map((reviewerId) => ({
-          notification_user_id: reviewerId,
-          notification_message: `You've been assigned as a reviewer for the ticket: ${ticket.ticket_name}`,
-          notification_read: false,
-          notification_url: `/tickets/${ticket.ticket_id}`,
-        })),
+        allReviewers.map((reviewerId) => ({
+          approval_ticket_id: ticket.ticket_id,
+          approval_reviewed_by: reviewerId,
+          approval_review_status: "PENDING",
+          approval_review_date: new Date().toLocaleString("en-US", {
+            timeZone: "Asia/Manila",
+          }),
+        }))
       );
 
-    if (notificationError) {
-      console.error("Error adding notifications:", notificationError.message);
-      return {
-        success: false,
-        message: "Failed to add notifications",
-      };
+    if (reviewersError) {
+      console.error("Error assigning reviewers:", reviewersError);
+      return { success: false, message: "Failed to assign reviewers" };
     }
-  }
 
-  return { success: true, ticket_id: ticket.ticket_id };
+    // 8. Notify only NON-MANAGER reviewers
+    const { data: reviewerRoles, error: roleError } = await supabase
+      .from("user_table")
+      .select("user_id, user_role")
+      .in("user_id", allReviewers);
+
+    if (roleError) {
+      console.error("Error fetching user roles:", roleError.message);
+      return { success: false, message: "Failed to verify reviewers" };
+    }
+
+    const nonManagerReviewers = reviewerRoles
+      .filter((user) => user.user_role !== "MANAGER")
+      .map((user) => user.user_id);
+
+    // Prepare the notifications for all non-manager reviewers in a single array
+    const notifications = nonManagerReviewers.map((reviewerId) => ({
+      notification_user_id: reviewerId,
+      notification_message: `You've been assigned as a reviewer for the ticket: ${ticket.ticket_name}`,
+      notification_read: false,
+      notification_url: `/tickets/${ticket.ticket_id}`,
+    }));
+
+    // Insert all notifications at once using batch insert
+    if (nonManagerReviewers.length > 0) {
+      const { error: notificationError } = await supabase
+        .from("notification_table")
+        .insert(notifications); // Inserting the entire array of notifications
+
+      if (notificationError) {
+        console.error("Error adding notifications:", notificationError.message);
+        return { success: false, message: "Failed to add notifications" };
+      }
+    }
+
+    return { success: true, ticket_id: ticket.ticket_id };
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return { success: false, message: "An unexpected error occurred." };
+  }
 };
 
 export const updateProfilePicture = async (file: File) => {
@@ -288,7 +311,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -408,14 +431,14 @@ export const createCanvass = async ({
 
     if (findError) {
       throw new Error(
-        `Failed to find existing canvass forms: ${findError.message}`,
+        `Failed to find existing canvass forms: ${findError.message}`
       );
     }
 
     // If existing forms found, delete their attachments and the forms themselves
     if (existingCanvassForms && existingCanvassForms.length > 0) {
       const existingFormIds = existingCanvassForms.map(
-        (form) => form.canvass_form_id,
+        (form) => form.canvass_form_id
       );
 
       // First, get all attachment paths for the existing forms
@@ -427,7 +450,7 @@ export const createCanvass = async ({
 
       if (attachmentsError) {
         throw new Error(
-          `Failed to fetch existing attachments: ${attachmentsError.message}`,
+          `Failed to fetch existing attachments: ${attachmentsError.message}`
         );
       }
 
@@ -444,7 +467,7 @@ export const createCanvass = async ({
 
             if (deleteStorageError) {
               console.error(
-                `Failed to delete file from storage: ${deleteStorageError.message}`,
+                `Failed to delete file from storage: ${deleteStorageError.message}`
               );
             }
           }
@@ -459,7 +482,7 @@ export const createCanvass = async ({
 
       if (deleteAttachmentsError) {
         throw new Error(
-          `Failed to delete existing attachments: ${deleteAttachmentsError.message}`,
+          `Failed to delete existing attachments: ${deleteAttachmentsError.message}`
         );
       }
 
@@ -471,7 +494,7 @@ export const createCanvass = async ({
 
       if (deleteFormsError) {
         throw new Error(
-          `Failed to delete existing canvass forms: ${deleteFormsError.message}`,
+          `Failed to delete existing canvass forms: ${deleteFormsError.message}`
         );
       }
     }
@@ -508,8 +531,8 @@ export const createCanvass = async ({
     // Upload all quotations
     const quotationResults = await Promise.all(
       quotations.map((quotation, index) =>
-        uploadFile(quotation, `quotation_${index + 1}`),
-      ),
+        uploadFile(quotation, `quotation_${index + 1}`)
+      )
     );
 
     // Store canvass form data using the first quotation as the primary one
@@ -529,7 +552,7 @@ export const createCanvass = async ({
 
     if (canvassFormError) {
       throw new Error(
-        `Failed to insert canvass form: ${canvassFormError.message}`,
+        `Failed to insert canvass form: ${canvassFormError.message}`
       );
     }
 
@@ -542,7 +565,7 @@ export const createCanvass = async ({
         canvass_attachment_canvass_form_id: canvassFormId,
         canvass_attachment_type: "CANVASS_SHEET",
         canvass_attachment_url: canvassSheetResult.publicUrl,
-        canvass_attchment_file_type: canvassSheetResult.fileType,
+        canvass_attachment_file_type: canvassSheetResult.fileType,
         canvass_attachment_file_size: canvassSheetResult.fileSize,
       },
       // Add all quotation attachments
@@ -550,7 +573,7 @@ export const createCanvass = async ({
         canvass_attachment_canvass_form_id: canvassFormId,
         canvass_attachment_type: `QUOTATION_${index + 1}`,
         canvass_attachment_url: result.publicUrl,
-        canvass_attchment_file_type: result.fileType,
+        canvass_attachment_file_type: result.fileType,
         canvass_attachment_file_size: result.fileSize,
       })),
     ];
@@ -562,7 +585,7 @@ export const createCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`,
+        `Failed to insert attachments: ${attachmentsError.message}`
       );
     }
 
@@ -587,7 +610,7 @@ export const createCanvass = async ({
 export const addComment = async (
   ticket_id: string,
   content: string,
-  user_id: string,
+  user_id: string
 ) => {
   const supabase = await createClient();
 
@@ -604,7 +627,7 @@ export const addComment = async (
         p_ticket_id: ticket_id,
         p_content: content,
         p_user_id: user_id,
-      },
+      }
     );
 
     if (error) throw error;
@@ -618,7 +641,7 @@ export const addComment = async (
 export const startCanvass = async (
   ticket_id: string,
   user_id: string,
-  status: string,
+  status: string
 ) => {
   const supabase = await createClient();
 
@@ -661,7 +684,7 @@ export const startCanvass = async (
         ticket_status_history_new_status: status,
         ticket_status_history_changed_by: user_id,
         ticket_status_history_change_date: new Date(
-          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }),
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
         ).toISOString(),
       },
     ]);

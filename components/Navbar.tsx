@@ -14,6 +14,7 @@ import {
   Group,
   Menu,
   rem,
+  Stack,
   Text,
   Tooltip,
   useMantineColorScheme,
@@ -174,13 +175,19 @@ const Navbar = () => {
 
                 <Menu.Dropdown>
                   <Menu.Label>
-                    <Text size="sm" fw={500} c="dark">
-                      {user.user_full_name}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {user.user_email}
-                    </Text>
+                    <Stack gap={4}>
+                      <Text size="sm" fw={500} c="dark">
+                        {user.user_full_name}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {user.user_email}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {user.user_role}
+                      </Text>
+                    </Stack>
                   </Menu.Label>
+
                   <Divider my={8} />
                   <Menu.Item
                     component={Link}
