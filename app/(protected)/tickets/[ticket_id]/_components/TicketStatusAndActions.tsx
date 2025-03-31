@@ -65,7 +65,6 @@ const TicketStatusAndActions = ({
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
 
   // Confirmation Modal States
-  const [openCanvassModal, setOpenCanvassModal] = useState(false);
   const [openReviewerApprovalModal, setOpenReviewerApprovalModal] =
     useState(false);
   const [openManagerApprovalModal, setOpenManagerApprovalModal] =
@@ -73,6 +72,7 @@ const TicketStatusAndActions = ({
   const [openReviseModal, setOpenReviseModal] = useState(false);
   const [openCancelRequestModal, setOpenCancelRequestModal] = useState(false);
 
+  const [isStatusLoading, setIsStatusLoading] = useState(false);
   const [allUsers, setAllUsers] = useState<{ value: string; label: string }[]>(
     []
   );
@@ -127,6 +127,7 @@ const TicketStatusAndActions = ({
       return;
     }
 
+    setIsStatusLoading(true);
     try {
       if (newComment.trim()) {
         await addComment(ticket.ticket_id, newComment, user.user_id);
@@ -138,6 +139,8 @@ const TicketStatusAndActions = ({
       updateTicketDetails();
     } catch (error) {
       console.error("Error adding comment or starting canvass:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -146,6 +149,7 @@ const TicketStatusAndActions = ({
       console.error("User not logged in.");
       return;
     }
+    setIsStatusLoading(true);
 
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
@@ -207,6 +211,8 @@ const TicketStatusAndActions = ({
       updateTicketDetails();
     } catch (error) {
       console.error("Error updating approval:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -217,6 +223,7 @@ const TicketStatusAndActions = ({
     }
 
     if (!ticket) return;
+    setIsStatusLoading(true);
 
     const newApprovalStatus =
       approvalStatus === "APPROVED" ? "APPROVED" : "REJECTED";
@@ -265,6 +272,8 @@ const TicketStatusAndActions = ({
       updateTicketDetails();
     } catch (error) {
       console.error("Error finalizing approval:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -273,6 +282,7 @@ const TicketStatusAndActions = ({
       console.error("User not logged in or ticket is undefined.");
       return;
     }
+    setIsStatusLoading(true);
 
     try {
       if (newComment.trim()) {
@@ -287,6 +297,8 @@ const TicketStatusAndActions = ({
       setApprovalStatus(null);
     } catch (error) {
       console.error("Error requesting revision:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -295,6 +307,7 @@ const TicketStatusAndActions = ({
       console.error("User not logged in or ticket is undefined.");
       return;
     }
+    setIsStatusLoading(true);
 
     try {
       if (newComment.trim()) {
@@ -311,6 +324,8 @@ const TicketStatusAndActions = ({
       updateTicketDetails();
     } catch (error) {
       console.error("Error requesting revision:", error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -341,27 +356,32 @@ const TicketStatusAndActions = ({
               <Text size="md" fw={500} c="dimmed" mb="sm">
                 Status
               </Text>
-              <Badge
-                py="md"
-                size="lg"
-                radius="md"
-                color={
-                  ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
-                    ? "yellow"
-                    : ticket?.ticket_status === "FOR APPROVAL"
-                    ? "yellow"
-                    : ticket?.ticket_status === "WORK IN PROGRESS"
-                    ? "blue"
-                    : ticket?.ticket_status === "DONE"
-                    ? "teal"
-                    : ticket?.ticket_status === "DECLINED"
-                    ? "red"
-                    : "gray"
-                }
-                fullWidth
-              >
-                {ticket?.ticket_status}
-              </Badge>
+
+              {isStatusLoading ? (
+                <Skeleton height={40} radius="md" />
+              ) : (
+                <Badge
+                  py="md"
+                  size="lg"
+                  radius="md"
+                  color={
+                    ticket?.ticket_status === "FOR REVIEW OF SUBMISSIONS"
+                      ? "yellow"
+                      : ticket?.ticket_status === "FOR APPROVAL"
+                      ? "yellow"
+                      : ticket?.ticket_status === "WORK IN PROGRESS"
+                      ? "blue"
+                      : ticket?.ticket_status === "DONE"
+                      ? "teal"
+                      : ticket?.ticket_status === "DECLINED"
+                      ? "red"
+                      : "gray"
+                  }
+                  fullWidth
+                >
+                  {ticket?.ticket_status}
+                </Badge>
+              )}
             </Box>
 
             {/* Actions Section */}
@@ -382,10 +402,10 @@ const TicketStatusAndActions = ({
                         radius="md"
                         variant="light"
                         color="blue"
-                        style={{ flex: 1 }} // Takes full width when alone
-                        onClick={() => {
-                          setOpenCanvassModal(true);
-                        }}
+                        loading={isStatusLoading}
+                        disabled={isStatusLoading}
+                        style={{ flex: 1 }}
+                        onClick={handleStartCanvass} // Directly call the function
                       >
                         Start Canvass
                       </Button>
@@ -400,6 +420,7 @@ const TicketStatusAndActions = ({
                           leftSection={<IconClipboardCheck size={18} />}
                           radius="md"
                           color="teal"
+                          loading={isStatusLoading}
                           disabled={isDisabled}
                           onClick={() => {
                             setApprovalStatus("APPROVED");
@@ -413,6 +434,7 @@ const TicketStatusAndActions = ({
                           radius="md"
                           color="yellow"
                           variant="light"
+                          loading={isStatusLoading}
                           disabled={isDisabled}
                           onClick={() => {
                             setApprovalStatus("NEEDS_REVISION");
@@ -430,6 +452,8 @@ const TicketStatusAndActions = ({
                         leftSection={<IconClipboardCheck size={18} />}
                         radius="md"
                         color="teal"
+                        loading={isStatusLoading}
+                        disabled={isStatusLoading}
                         onClick={() => {
                           setApprovalStatus("APPROVED");
                           setOpenManagerApprovalModal(true);
@@ -441,6 +465,8 @@ const TicketStatusAndActions = ({
                         leftSection={<IconClipboardX size={18} />}
                         radius="md"
                         color="red"
+                        loading={isStatusLoading}
+                        disabled={isStatusLoading}
                         variant="light"
                         onClick={() => {
                           setApprovalStatus("DECLINED");
@@ -456,6 +482,8 @@ const TicketStatusAndActions = ({
                       color="red"
                       leftSection={<IconX size={18} />}
                       radius="md"
+                      loading={isStatusLoading}
+                      disabled={isStatusLoading}
                       style={{ flex: 1 }} // Takes full width when alone
                       onClick={() => setOpenCancelRequestModal(true)}
                     >
@@ -764,18 +792,6 @@ const TicketStatusAndActions = ({
           </Modal>
         )}
       </Grid.Col>
-
-      {/* Start Canvass Modal */}
-      <ConfirmationModal
-        title="Start Canvass"
-        isOpen={openCanvassModal}
-        onClose={() => setOpenCanvassModal(false)}
-        onConfirm={handleStartCanvass}
-        confirmText="Confirm"
-        withComment
-        commentState={newComment}
-        setCommentState={setNewComment}
-      />
 
       {/* Reviewer Approval Modal */}
       <ConfirmationModal
