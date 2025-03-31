@@ -292,7 +292,7 @@ const TicketStatusAndActions = ({
 
       // Revert approval status
       await revertApprovalStatus(ticket.ticket_id);
-      handleCanvassAction("WORK IN PROGRESS");
+      handleCanvassAction("FOR REVISION");
       updateTicketDetails();
       setApprovalStatus(null);
     } catch (error) {
@@ -371,6 +371,8 @@ const TicketStatusAndActions = ({
                       ? "yellow"
                       : ticket?.ticket_status === "WORK IN PROGRESS"
                       ? "blue"
+                      : ticket?.ticket_status === "FOR REVISION"
+                      ? "orange"
                       : ticket?.ticket_status === "DONE"
                       ? "teal"
                       : ticket?.ticket_status === "DECLINED"
