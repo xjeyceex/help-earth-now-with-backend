@@ -99,7 +99,7 @@ const EditCanvassForm = ({
       startTransition(async () => {
         // Filter out only the files that have changed (are not undefined)
         const validQuotations = values.quotations.map((q) =>
-          q.file instanceof File ? q.file : null
+          q.file instanceof File ? q.file : null,
         );
 
         const result = await updateCanvass({
@@ -156,7 +156,7 @@ const EditCanvassForm = ({
 
   // Convert a remote URL to a File object
   const urlToFile = async (
-    attachment: AttachmentData
+    attachment: AttachmentData,
   ): Promise<File | null> => {
     try {
       // Fetch the file
@@ -198,23 +198,23 @@ const EditCanvassForm = ({
     // Set basic form values
     form.setValue(
       "RfDateReceived",
-      new Date(currentCanvassDetails[0].canvass_form_rf_date_received)
+      new Date(currentCanvassDetails[0].canvass_form_rf_date_received),
     );
     form.setValue(
       "recommendedSupplier",
-      currentCanvassDetails[0].canvass_form_recommended_supplier
+      currentCanvassDetails[0].canvass_form_recommended_supplier,
     );
     form.setValue(
       "leadTimeDay",
-      currentCanvassDetails[0].canvass_form_lead_time_day
+      currentCanvassDetails[0].canvass_form_lead_time_day,
     );
     form.setValue(
       "totalAmount",
-      currentCanvassDetails[0].canvass_form_total_amount
+      currentCanvassDetails[0].canvass_form_total_amount,
     );
     form.setValue(
       "paymentTerms",
-      currentCanvassDetails[0].canvass_form_payment_terms!
+      currentCanvassDetails[0].canvass_form_payment_terms!,
     );
 
     // Ensure we have attachments to process
@@ -230,7 +230,7 @@ const EditCanvassForm = ({
 
           // Find and load the canvass sheet
           const canvassSheet = attachments.find(
-            (a) => a.canvass_attachment_type === "CANVASS_SHEET"
+            (a) => a.canvass_attachment_type === "CANVASS_SHEET",
           );
 
           if (canvassSheet) {
@@ -259,12 +259,12 @@ const EditCanvassForm = ({
               quotations.map(async (q) => {
                 const file = await urlToFile(q);
                 return { file: file || undefined }; // Convert null to undefined
-              })
+              }),
             );
 
             // Filter out nulls
             const validQuotationFiles = quotationFiles.filter(
-              (q) => q.file !== null
+              (q) => q.file !== null,
             );
 
             // Ensure we have at least one entry
