@@ -15,7 +15,7 @@ import { useTransition } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { createCanvass, startCanvass } from "@/actions/post";
+import { canvassAction, createCanvass } from "@/actions/post";
 import { useUserStore } from "@/stores/userStore";
 import { TicketDetailsType } from "@/utils/types";
 import { CanvassFormSchema } from "@/utils/zod/schema";
@@ -64,7 +64,7 @@ const CanvassForm = ({
     if (!user || !ticketId) return;
 
     try {
-      await startCanvass(ticketId, user.user_id, status); // Pass the status argument
+      await canvassAction(ticketId, user.user_id, status); // Pass the status argument
     } catch (error) {
       console.error("Error starting canvass:", error);
     }
@@ -120,7 +120,7 @@ const CanvassForm = ({
           setTicket((prev) =>
             prev
               ? { ...prev, ticket_status: "FOR REVIEW OF SUBMISSIONS" }
-              : null,
+              : null
           );
           updateCanvassDetails();
         }

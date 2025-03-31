@@ -47,6 +47,7 @@ CREATE TABLE user_table (
     user_avatar TEXT,
     user_full_name TEXT,
     user_email TEXT
+    user_revised_ticket_count INT DEFAULT 0;
 );
 
 -- Enable Row-Level Security
