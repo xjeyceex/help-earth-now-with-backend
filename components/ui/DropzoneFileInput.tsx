@@ -7,6 +7,7 @@ import {
   Image,
   Paper,
   rem,
+  Skeleton,
   Stack,
   Text,
   ThemeIcon,
@@ -23,6 +24,7 @@ type DropzoneFileInputProps = {
   maxFiles?: number;
   accept?: string[];
   maxSize?: number;
+  isLoading?: boolean;
 };
 
 const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
@@ -39,8 +41,9 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
         "application/pdf",
       ],
       maxSize = 5 * 1024 * 1024,
+      isLoading = false,
     },
-    ref,
+    ref
   ) => {
     const theme = useMantineTheme();
     const { colorScheme } = useMantineColorScheme();
@@ -144,9 +147,48 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
           size="md"
           onClick={() => handleRemove(index)}
           aria-label="Remove file"
+          disabled={isLoading}
         />
       </Paper>
     ));
+
+    // Loading state for empty dropzone
+    if (isLoading && files.length === 0) {
+      return (
+        <Box ref={ref}>
+          <Skeleton height={rem(140)} radius="md" />
+        </Box>
+      );
+    }
+
+    // Loading state for files preview
+    if (isLoading && files.length > 0) {
+      return (
+        <Box ref={ref}>
+          <Stack gap="xs">
+            {Array(files.length)
+              .fill(0)
+              .map((_, index) => (
+                <Paper
+                  key={index}
+                  shadow="none"
+                  p="md"
+                  withBorder
+                  style={{ borderStyle: "dashed" }}
+                >
+                  <Group gap="md" style={{ flex: 1 }}>
+                    <Skeleton height={50} width={50} radius="md" />
+                    <Stack gap={8} style={{ flex: 1 }}>
+                      <Skeleton height={18} radius="sm" width="70%" />
+                      <Skeleton height={14} radius="sm" width="40%" />
+                    </Stack>
+                  </Group>
+                </Paper>
+              ))}
+          </Stack>
+        </Box>
+      );
+    }
 
     return (
       <Box ref={ref}>
@@ -156,6 +198,7 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
             maxFiles={maxFiles}
             accept={accept}
             maxSize={maxSize}
+            disabled={isLoading}
             style={{
               borderStyle: "dashed",
               borderColor:
@@ -217,6 +260,7 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
                   maxFiles={maxFiles - files.length}
                   accept={accept}
                   maxSize={maxSize}
+                  disabled={isLoading}
                   styles={{
                     root: {
                       minHeight: rem(40),
@@ -242,7 +286,7 @@ const DropzoneFileInput = forwardRef<HTMLDivElement, DropzoneFileInputProps>(
         )}
       </Box>
     );
-  },
+  }
 );
 
 DropzoneFileInput.displayName = "DropzoneFileInput";

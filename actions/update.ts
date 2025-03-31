@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { v4 as uuidv4 } from "uuid";
 
 export const markNotificationAsRead = async ({
   notification_id,
@@ -49,7 +50,7 @@ export const markAllUserNotificationsAsRead = async () => {
 
 export const editComment = async (
   comment_id: string,
-  newContent: string,
+  newContent: string
 ): Promise<void> => {
   const supabase = await createClient();
 
@@ -71,7 +72,7 @@ export const editComment = async (
 
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const supabase = await createClient();
 
@@ -180,4 +181,265 @@ export const revertApprovalStatus = async (approval_ticket_id: string) => {
   }
 
   return { success: true };
+};
+
+type FileUploadResult = {
+  path: string;
+  publicUrl: string;
+  fileType: string;
+  fileSize: number;
+};
+
+type ExistingQuotationResult = {
+  canvass_attachment_canvass_form_id: string;
+  canvass_attachment_type: string;
+  canvass_attachment_url: string;
+  canvass_attchment_file_type: string;
+  canvass_attachment_file_size: number;
+};
+
+type QuotationResult = FileUploadResult | ExistingQuotationResult | null;
+
+export const updateCanvass = async ({
+  RfDateReceived,
+  recommendedSupplier,
+  leadTimeDay,
+  totalAmount,
+  paymentTerms,
+  canvassSheet,
+  quotations,
+  ticketId,
+  currentCanvassFormId,
+}: {
+  RfDateReceived: Date;
+  recommendedSupplier: string;
+  leadTimeDay: number;
+  totalAmount: number;
+  paymentTerms: string;
+  canvassSheet: File | null; // null if unchanged
+  quotations: (File | null)[]; // null for unchanged files
+  ticketId: string;
+  currentCanvassFormId: string;
+}) => {
+  try {
+    const BUCKET_NAME = "canvass-attachments";
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user?.id) {
+      return {
+        error: true,
+        message: "User not authenticated.",
+      };
+    }
+
+    // Get existing attachments for comparison
+    const { data: existingAttachments, error: fetchError } = await supabase
+      .from("canvass_attachment_table")
+      .select("*")
+      .eq("canvass_attachment_canvass_form_id", currentCanvassFormId);
+
+    if (fetchError) {
+      throw new Error(
+        `Failed to fetch existing attachments: ${fetchError.message}`
+      );
+    }
+
+    // Helper function to upload a file and get its URL
+    const uploadFile = async (file: File, fileType: string) => {
+      const extension = file.name.split(".").pop();
+      const fileName = `${fileType}_${uuidv4()}.${extension}`;
+      const filePath = `${ticketId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw new Error(`Failed to upload ${fileType}: ${uploadError.message}`);
+      }
+
+      const { data: urlData } = await supabase.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(filePath);
+
+      return {
+        path: filePath,
+        publicUrl: urlData?.publicUrl,
+        fileType: file.type,
+        fileSize: file.size,
+      };
+    };
+
+    // Handle canvass sheet update
+    let canvassSheetData = null;
+    const existingCanvassSheet = existingAttachments?.find(
+      (a) => a.canvass_attachment_type === "CANVASS_SHEET"
+    );
+
+    if (canvassSheet) {
+      // Delete old canvass sheet if it exists
+      if (existingCanvassSheet) {
+        const oldFilePath = new URL(
+          existingCanvassSheet.canvass_attachment_url
+        ).pathname
+          .split("/")
+          .pop();
+
+        if (oldFilePath) {
+          await supabase.storage
+            .from(BUCKET_NAME)
+            .remove([`${ticketId}/${oldFilePath}`]);
+        }
+      }
+
+      // Upload new canvass sheet
+      canvassSheetData = await uploadFile(canvassSheet, "canvass_sheet");
+    }
+
+    // Handle quotations updates
+    const quotationResults = await Promise.all(
+      quotations.map(async (quotation, index) => {
+        const existingQuotation = existingAttachments?.find(
+          (a) => a.canvass_attachment_type === `QUOTATION_${index + 1}`
+        );
+
+        if (!quotation) {
+          // Keep existing quotation
+          return existingQuotation
+            ? {
+                canvass_attachment_canvass_form_id: currentCanvassFormId,
+                canvass_attachment_type: `QUOTATION_${index + 1}`,
+                canvass_attachment_url:
+                  existingQuotation.canvass_attachment_url,
+                canvass_attchment_file_type:
+                  existingQuotation.canvass_attchment_file_type,
+                canvass_attachment_file_size:
+                  existingQuotation.canvass_attachment_file_size,
+              }
+            : null;
+        }
+
+        // Delete old quotation if it exists
+        if (existingQuotation) {
+          const oldFilePath = new URL(
+            existingQuotation.canvass_attachment_url
+          ).pathname
+            .split("/")
+            .pop();
+
+          if (oldFilePath) {
+            await supabase.storage
+              .from(BUCKET_NAME)
+              .remove([`${ticketId}/${oldFilePath}`]);
+          }
+        }
+
+        // Upload new quotation
+        return uploadFile(quotation, `quotation_${index + 1}`);
+      })
+    );
+
+    // Update canvass form data
+    const { error: updateError } = await supabase
+      .from("canvass_form_table")
+      .update({
+        canvass_form_rf_date_received: RfDateReceived,
+        canvass_form_recommended_supplier: recommendedSupplier,
+        canvass_form_lead_time_day: leadTimeDay,
+        canvass_form_total_amount: totalAmount,
+        canvass_form_payment_terms: paymentTerms,
+      })
+      .eq("canvass_form_id", currentCanvassFormId);
+
+    if (updateError) {
+      throw new Error(`Failed to update canvass form: ${updateError.message}`);
+    }
+
+    // Delete all existing attachments from database
+    await supabase
+      .from("canvass_attachment_table")
+      .delete()
+      .eq("canvass_attachment_canvass_form_id", currentCanvassFormId);
+
+    // Prepare new attachments data
+    const attachments = [
+      // Add canvass sheet attachment if updated
+      ...(canvassSheetData
+        ? [
+            {
+              canvass_attachment_canvass_form_id: currentCanvassFormId,
+              canvass_attachment_type: "CANVASS_SHEET",
+              canvass_attachment_url: canvassSheetData.publicUrl,
+              canvass_attchment_file_type: canvassSheetData.fileType,
+              canvass_attachment_file_size: canvassSheetData.fileSize,
+            },
+          ]
+        : [
+            {
+              canvass_attachment_canvass_form_id: currentCanvassFormId,
+              canvass_attachment_type: "CANVASS_SHEET",
+              canvass_attachment_url:
+                existingCanvassSheet?.canvass_attachment_url,
+              canvass_attchment_file_type:
+                existingCanvassSheet?.canvass_attchment_file_type,
+              canvass_attachment_file_size:
+                existingCanvassSheet?.canvass_attachment_file_size,
+            },
+          ]),
+      // Add all quotation attachments
+      ...quotationResults
+        .filter(
+          (result): result is NonNullable<QuotationResult> => result !== null
+        )
+        .map((result, index) => {
+          if ("publicUrl" in result) {
+            // This is a FileUploadResult
+            return {
+              canvass_attachment_canvass_form_id: currentCanvassFormId,
+              canvass_attachment_type: `QUOTATION_${index + 1}`,
+              canvass_attachment_url: result.publicUrl,
+              canvass_attchment_file_type: result.fileType,
+              canvass_attachment_file_size: result.fileSize,
+            };
+          } else {
+            // This is an ExistingQuotationResult
+            return {
+              canvass_attachment_canvass_form_id: currentCanvassFormId,
+              canvass_attachment_type: `QUOTATION_${index + 1}`,
+              canvass_attachment_url: result.canvass_attachment_url,
+              canvass_attchment_file_type: result.canvass_attchment_file_type,
+              canvass_attachment_file_size: result.canvass_attachment_file_size,
+            };
+          }
+        }),
+    ];
+
+    // Insert updated attachments
+    const { error: attachmentsError } = await supabase
+      .from("canvass_attachment_table")
+      .insert(attachments);
+
+    if (attachmentsError) {
+      throw new Error(
+        `Failed to insert attachments: ${attachmentsError.message}`
+      );
+    }
+
+    return {
+      success: true,
+      message: "Canvass updated successfully",
+      canvassFormId: currentCanvassFormId,
+    };
+  } catch (error) {
+    console.error("Error updating canvass:", error);
+    return {
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred",
+    };
+  }
 };

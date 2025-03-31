@@ -327,6 +327,8 @@ CREATE TABLE public.canvass_attachment_table (
     canvass_attachment_canvass_form_id UUID NULL DEFAULT gen_random_uuid(),
     canvass_attachment_type TEXT NULL,
     canvass_attachment_url TEXT NULL,
+    canvass_attachment_file_type TEXT,
+    canvass_attachment_file_size BIGINT,
     canvass_attachment_created_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL,
     CONSTRAINT canvass_attachment_table_pkey PRIMARY KEY (canvass_attachment_id),
     CONSTRAINT canvass_attachment_table_canvass_attachment_canvass_form_id_fkey

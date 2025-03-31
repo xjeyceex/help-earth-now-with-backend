@@ -32,3 +32,30 @@ export const getNameInitials = (fullName: string): string => {
 
   return firstInitial + lastInitial;
 };
+
+export const getFileNameFromUrl = (url: string) => {
+  const urlPath = new URL(url).pathname;
+  return urlPath.split("/").pop() || "File";
+};
+
+export const getFileMetadataFromUrl = async (url: string) => {
+  try {
+    const response = await fetch(url, { method: "HEAD" });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch file metadata");
+    }
+
+    // Get basic metadata from headers
+    const metadata = {
+      contentType: response.headers.get("content-type"),
+      contentLength: response.headers.get("content-length"),
+      lastModified: response.headers.get("last-modified"),
+    };
+
+    return metadata;
+  } catch (error) {
+    console.error("Error fetching file metadata:", error);
+    throw error;
+  }
+};
