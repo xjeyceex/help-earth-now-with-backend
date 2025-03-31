@@ -493,6 +493,10 @@ const TicketDetailsPage = () => {
                                                     variant="light"
                                                     radius="xl"
                                                     size="md"
+                                                    src={
+                                                      canvass.submitted_by
+                                                        .user_avatar
+                                                    }
                                                   >
                                                     {canvass.submitted_by.user_full_name?.charAt(
                                                       0
