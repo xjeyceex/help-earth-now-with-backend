@@ -612,7 +612,9 @@ export const createCanvass = async ({
           notification_message: notificationMessage,
           notification_read: false,
           notification_ticket_id: ticketId,
-          notification_created_at: new Date().toISOString(),
+          notification_created_at: new Date().toLocaleString("en-US", {
+            timeZone: "Asia/Manila",
+          }),
           notification_comment_id: null,
         });
       }
