@@ -27,6 +27,7 @@ import {
   IconCreditCardPay,
   IconMoneybag,
   IconPlus,
+  IconSend,
   IconShoppingCart,
   IconTrash,
   IconX,
@@ -120,7 +121,7 @@ const CanvassForm = ({
           setTicket((prev) =>
             prev
               ? { ...prev, ticket_status: "FOR REVIEW OF SUBMISSIONS" }
-              : null,
+              : null
           );
           updateCanvassDetails();
         }
@@ -350,7 +351,13 @@ const CanvassForm = ({
           </Stack>
 
           <Group justify="flex-end">
-            <Button type="submit" loading={isPending} size="md" radius="md">
+            <Button
+              type="submit"
+              loading={isPending}
+              size="md"
+              radius="md"
+              leftSection={<IconSend size={18} />}
+            >
               Submit Form
             </Button>
           </Group>
