@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -148,7 +148,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -167,7 +167,7 @@ export const createTicket = async (
     // 2. Use an Rpc to get the next sequence number
     const { data: sequenceData, error: sequenceError } = await supabase.rpc(
       "get_next_ticket_sequence", //  <-  Use this name
-      { date_prefix: formattedDate }, // Pass the formatted date
+      { date_prefix: formattedDate } // Pass the formatted date
     );
 
     if (sequenceError) {
@@ -180,7 +180,7 @@ export const createTicket = async (
     // 3. Construct the ticket name
     const newTicketName = `${String(nextSequenceValue).padStart(
       5,
-      "0",
+      "0"
     )}-${formattedDate}`;
 
     // 4. Insert the new ticket with the generated ticket name
@@ -234,7 +234,7 @@ export const createTicket = async (
           approval_review_date: new Date().toLocaleString("en-US", {
             timeZone: "Asia/Manila",
           }),
-        })),
+        }))
       );
 
     if (reviewersError) {
@@ -311,7 +311,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -431,14 +431,14 @@ export const createCanvass = async ({
 
     if (findError) {
       throw new Error(
-        `Failed to find existing canvass forms: ${findError.message}`,
+        `Failed to find existing canvass forms: ${findError.message}`
       );
     }
 
     // If existing forms found, delete their attachments and the forms themselves
     if (existingCanvassForms && existingCanvassForms.length > 0) {
       const existingFormIds = existingCanvassForms.map(
-        (form) => form.canvass_form_id,
+        (form) => form.canvass_form_id
       );
 
       // First, get all attachment paths for the existing forms
@@ -450,7 +450,7 @@ export const createCanvass = async ({
 
       if (attachmentsError) {
         throw new Error(
-          `Failed to fetch existing attachments: ${attachmentsError.message}`,
+          `Failed to fetch existing attachments: ${attachmentsError.message}`
         );
       }
 
@@ -467,7 +467,7 @@ export const createCanvass = async ({
 
             if (deleteStorageError) {
               console.error(
-                `Failed to delete file from storage: ${deleteStorageError.message}`,
+                `Failed to delete file from storage: ${deleteStorageError.message}`
               );
             }
           }
@@ -482,7 +482,7 @@ export const createCanvass = async ({
 
       if (deleteAttachmentsError) {
         throw new Error(
-          `Failed to delete existing attachments: ${deleteAttachmentsError.message}`,
+          `Failed to delete existing attachments: ${deleteAttachmentsError.message}`
         );
       }
 
@@ -494,7 +494,7 @@ export const createCanvass = async ({
 
       if (deleteFormsError) {
         throw new Error(
-          `Failed to delete existing canvass forms: ${deleteFormsError.message}`,
+          `Failed to delete existing canvass forms: ${deleteFormsError.message}`
         );
       }
     }
@@ -531,8 +531,8 @@ export const createCanvass = async ({
     // Upload all quotations
     const quotationResults = await Promise.all(
       quotations.map((quotation, index) =>
-        uploadFile(quotation, `quotation_${index + 1}`),
-      ),
+        uploadFile(quotation, `quotation_${index + 1}`)
+      )
     );
 
     // Store canvass form data using the first quotation as the primary one
@@ -552,7 +552,7 @@ export const createCanvass = async ({
 
     if (canvassFormError) {
       throw new Error(
-        `Failed to insert canvass form: ${canvassFormError.message}`,
+        `Failed to insert canvass form: ${canvassFormError.message}`
       );
     }
 
@@ -585,7 +585,7 @@ export const createCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`,
+        `Failed to insert attachments: ${attachmentsError.message}`
       );
     }
 
@@ -610,7 +610,7 @@ export const createCanvass = async ({
 export const addComment = async (
   ticket_id: string,
   content: string,
-  user_id: string,
+  user_id: string
 ) => {
   const supabase = await createClient();
 
@@ -627,7 +627,7 @@ export const addComment = async (
         p_ticket_id: ticket_id,
         p_content: content,
         p_user_id: user_id,
-      },
+      }
     );
 
     if (error) throw error;
@@ -638,10 +638,10 @@ export const addComment = async (
   }
 };
 
-export const startCanvass = async (
+export const canvassAction = async (
   ticket_id: string,
   user_id: string,
-  status: string,
+  status: string
 ) => {
   const supabase = await createClient();
 
@@ -652,7 +652,7 @@ export const startCanvass = async (
   // Fetch the current ticket status before updating
   const { data: ticketData, error: fetchError } = await supabase
     .from("ticket_table")
-    .select("ticket_status")
+    .select("ticket_status, ticket_created_by, ticket_is_revised")
     .eq("ticket_id", ticket_id)
     .single();
 
@@ -662,6 +662,7 @@ export const startCanvass = async (
   }
 
   const previousStatus = ticketData?.ticket_status || "UNKNOWN";
+  const isAlreadyRevised = ticketData?.ticket_is_revised;
 
   // Update ticket status
   const { error: updateError } = await supabase
@@ -684,7 +685,7 @@ export const startCanvass = async (
         ticket_status_history_new_status: status,
         ticket_status_history_changed_by: user_id,
         ticket_status_history_change_date: new Date(
-          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }),
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
         ).toISOString(),
       },
     ]);
@@ -692,6 +693,22 @@ export const startCanvass = async (
   if (historyError) {
     console.error("Error inserting into status history:", historyError.message);
     throw new Error("Failed to insert status history.");
+  }
+
+  // If the status is "FOR REVISION" and the ticket was created by the user, update the revised ticket flag
+  if (status === "FOR REVISION" && !isAlreadyRevised) {
+    const { error: revisionError } = await supabase
+      .from("ticket_table")
+      .update({ ticket_is_revised: true })
+      .eq("ticket_id", ticket_id);
+
+    if (revisionError) {
+      console.error(
+        "Error updating ticket revision flag:",
+        revisionError.message
+      );
+      throw new Error("Failed to mark ticket as revised.");
+    }
   }
 
   return { success: true, message: "Canvassing started successfully" };

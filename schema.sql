@@ -89,6 +89,7 @@ CREATE TABLE public.ticket_table (
   ticket_quantity INT NOT NULL CHECK (ticket_quantity > 0), 
   ticket_specifications TEXT,
   ticket_notes TEXT,
+  ticket_is_revised BOOLEAN DEFAULT FALSE,
   ticket_name TEXT NOT NULL UNIQUE,  -- ticket_name is now UNIQUE
   ticket_status ticket_status_enum NOT NULL DEFAULT 'FOR CANVASS', 
   ticket_created_by UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
@@ -557,7 +558,7 @@ DROP TRIGGER IF EXISTS after_user_signup ON auth.users;
 CREATE TRIGGER after_user_signup
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.create_user();
-
+  
 DROP FUNCTION IF EXISTS get_dashboard_tickets(UUID);
 CREATE OR REPLACE FUNCTION get_dashboard_tickets(_user_id UUID)
 RETURNS TABLE (
@@ -565,19 +566,21 @@ RETURNS TABLE (
   ticket_name TEXT,
   ticket_item_name TEXT,
   ticket_status TEXT,
+  ticket_is_revised BOOLEAN, 
   ticket_item_description TEXT,
   ticket_date_created TIMESTAMPTZ
 )
 LANGUAGE SQL
-SET search_path TO public  -- Ensures function runs in the correct schema
+SET search_path TO public  
 AS $$
   SELECT 
     t.ticket_id,
     t.ticket_name, 
     t.ticket_item_name,
     t.ticket_status,
+    t.ticket_is_revised,
     t.ticket_item_description,
-    t.ticket_date_created  -- No timezone conversion
+    t.ticket_date_created 
   FROM 
     public.ticket_table t
   WHERE 
@@ -606,6 +609,7 @@ RETURNS TABLE (
   ticket_name TEXT, 
   ticket_item_name TEXT,
   ticket_status TEXT,
+  ticket_is_revised BOOLEAN,  -- Added ticket_is_revised
   ticket_item_description TEXT,
   ticket_created_by UUID,
   ticket_date_created TIMESTAMPTZ,
@@ -620,6 +624,7 @@ AS $$
     t.ticket_name, 
     t.ticket_item_name,
     t.ticket_status,
+    t.ticket_is_revised,  -- Now included in the selection
     t.ticket_item_description,
     t.ticket_created_by,
     t.ticket_date_created, -- No timezone conversion
@@ -732,6 +737,7 @@ RETURNS TABLE (
   ticket_item_name TEXT,    
   ticket_item_description TEXT,   
   ticket_status TEXT,   
+  ticket_is_revised BOOLEAN,  -- Added this column
   ticket_created_by UUID,   
   ticket_created_by_name TEXT,    
   ticket_created_by_avatar TEXT,    
@@ -746,7 +752,7 @@ RETURNS TABLE (
   reviewers JSON 
 ) 
 LANGUAGE SQL 
-SET search_path TO public  -- Ensures function runs in the correct schema
+SET search_path TO public  
 AS $$    
 SELECT     
   t.ticket_id,    
@@ -754,6 +760,7 @@ SELECT
   t.ticket_item_name,     
   t.ticket_item_description,    
   t.ticket_status,    
+  t.ticket_is_revised,  -- Now included in the selection
   t.ticket_created_by,     
   u.user_full_name AS ticket_created_by_name,    
   u.user_avatar AS ticket_created_by_avatar,       

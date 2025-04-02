@@ -24,6 +24,7 @@ import {
   IconCheck,
   IconChevronRight,
   IconClockHour4,
+  IconEdit,
   IconRefresh,
   IconTicket,
 } from "@tabler/icons-react";
@@ -44,6 +45,7 @@ const DashboardPage = () => {
     open: countUserTicketsByStatus(tickets, "OPEN"),
     completed: countUserTicketsByStatus(tickets, "COMPLETED"),
     total: tickets.length,
+    revised: tickets.filter((ticket) => ticket.ticket_is_revised).length,
   };
 
   const completionRate =
@@ -51,9 +53,15 @@ const DashboardPage = () => {
       ? Math.round((ticketStats.completed / ticketStats.total) * 100)
       : 0;
 
+  const revisedPercentage = (
+    (tickets.filter((ticket) => ticket.ticket_is_revised).length /
+      tickets.length) *
+    100
+  ).toFixed(2);
+
   function countUserTicketsByStatus(
     tickets: DashboardTicketType[],
-    statusType: "OPEN" | "COMPLETED",
+    statusType: "OPEN" | "COMPLETED"
   ) {
     if (statusType === "OPEN") {
       return tickets.filter(
@@ -62,7 +70,7 @@ const DashboardPage = () => {
           ticket.ticket_status === "FOR APPROVAL" ||
           ticket.ticket_status === "FOR REVIEW OF SUBMISSIONS" ||
           ticket.ticket_status === "WORK IN PROGRESS" ||
-          ticket.ticket_status === "FOR REVISION",
+          ticket.ticket_status === "FOR REVISION"
       ).length;
     }
 
@@ -77,7 +85,7 @@ const DashboardPage = () => {
     try {
       setLoading(true);
       const data = await getDashboardTickets(
-        isAdmin ? undefined : user?.user_id,
+        isAdmin ? undefined : user?.user_id
       );
       setTickets(data ?? []);
     } catch (error) {
@@ -134,7 +142,10 @@ const DashboardPage = () => {
       </Flex>
 
       <Grid gutter="lg" mb="xl">
-        <Grid.Col span={{ base: 12, md: 4 }}>
+        {/* Open Tickets */}
+        <Grid.Col
+          span={{ base: 12, md: user.user_role === "PURCHASER" ? 3 : 4 }}
+        >
           <Paper
             shadow="xs"
             p="lg"
@@ -147,6 +158,7 @@ const DashboardPage = () => {
                   ? theme.colors.dark[4]
                   : theme.colors.gray[2]
               }`,
+              padding: "10px",
             })}
           >
             <Group gap="xs" mb="xs">
@@ -170,7 +182,10 @@ const DashboardPage = () => {
           </Paper>
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, md: 4 }}>
+        {/* Completed Tickets */}
+        <Grid.Col
+          span={{ base: 12, md: user.user_role === "PURCHASER" ? 3 : 4 }}
+        >
           <Paper
             shadow="xs"
             p="lg"
@@ -183,6 +198,7 @@ const DashboardPage = () => {
                   ? theme.colors.dark[4]
                   : theme.colors.gray[2]
               }`,
+              padding: "10px",
             })}
           >
             <Group gap="xs" mb="xs">
@@ -194,7 +210,7 @@ const DashboardPage = () => {
                 }}
               />
               <Text size="sm" fw={500} c="dimmed">
-                Completed
+                Completed Tickets
               </Text>
             </Group>
             <Text fz={32} fw={600}>
@@ -206,7 +222,10 @@ const DashboardPage = () => {
           </Paper>
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, md: 4 }}>
+        {/* Total Tickets */}
+        <Grid.Col
+          span={{ base: 12, md: user.user_role === "PURCHASER" ? 3 : 4 }}
+        >
           <Paper
             shadow="xs"
             p="lg"
@@ -219,6 +238,7 @@ const DashboardPage = () => {
                   ? theme.colors.dark[4]
                   : theme.colors.gray[2]
               }`,
+              padding: "10px",
             })}
           >
             <Group gap="xs" mb="xs">
@@ -241,6 +261,46 @@ const DashboardPage = () => {
             </Text>
           </Paper>
         </Grid.Col>
+
+        {/* Revised Tickets - Show only for PURCHASER role */}
+        {user.user_role === "PURCHASER" && (
+          <Grid.Col span={{ base: 12, md: 3 }}>
+            <Paper
+              shadow="xs"
+              p="lg"
+              radius="md"
+              style={(theme) => ({
+                backgroundColor:
+                  colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
+                border: `1px solid ${
+                  colorScheme === "dark"
+                    ? theme.colors.dark[4]
+                    : theme.colors.gray[2]
+                }`,
+                padding: "10px",
+              })}
+            >
+              <Group gap="xs" mb="xs">
+                <IconEdit
+                  style={{
+                    width: rem(20),
+                    height: rem(20),
+                    color: "var(--mantine-color-orange-5)",
+                  }}
+                />
+                <Text size="sm" fw={500} c="dimmed">
+                  Revised Tickets
+                </Text>
+              </Group>
+              <Text fz={32} fw={600}>
+                {ticketStats.revised} / {ticketStats.total}
+              </Text>
+              <Text c="dimmed" size="sm" mt={4}>
+                {revisedPercentage}% of Tickets Revised
+              </Text>
+            </Paper>
+          </Grid.Col>
+        )}
       </Grid>
 
       <Box mt={70}>
@@ -286,7 +346,7 @@ const DashboardPage = () => {
                 .sort(
                   (a, b) =>
                     new Date(b.ticket_date_created).getTime() -
-                    new Date(a.ticket_date_created).getTime(),
+                    new Date(a.ticket_date_created).getTime()
                 )
                 .slice(0, 5)
                 .map((ticket, index) => (

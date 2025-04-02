@@ -5,7 +5,7 @@ import {
   getComments,
   getTicketDetails,
 } from "@/actions/get";
-import { startCanvass } from "@/actions/post";
+import { canvassAction } from "@/actions/post";
 import TicketStatusAndActions from "@/app/(protected)/tickets/[ticket_id]/_components/TicketStatusAndActions";
 import CanvassForm from "@/components/CanvassForm";
 import CommentThread from "@/components/CommentThread";
@@ -115,7 +115,7 @@ const TicketDetailsPage = () => {
 
     setIsProcessing(true);
     try {
-      await startCanvass(ticket_id, user.user_id, status); // Pass the status argument
+      await canvassAction(ticket_id, user.user_id, status); // Pass the status argument
     } catch (error) {
       console.error("Error starting canvass:", error);
     } finally {
