@@ -65,6 +65,8 @@ export type MyTicketType = {
   ticket_name: string;
   ticket_item_name: string;
   ticket_item_description: string;
+  ticket_notes: string;
+  ticket_specifications: string;
   ticket_created_by: string;
   ticket_date_created: string;
   ticket_is_revised: boolean;

@@ -612,6 +612,8 @@ RETURNS TABLE (
   ticket_status TEXT,
   ticket_is_revised BOOLEAN,  -- Added ticket_is_revised
   ticket_item_description TEXT,
+  ticket_specifications TEXT,
+  ticket_notes TEXT,
   ticket_created_by UUID,
   ticket_date_created TIMESTAMPTZ,
   shared_users JSON,
@@ -627,6 +629,8 @@ AS $$
     t.ticket_status,
     t.ticket_is_revised,  -- Now included in the selection
     t.ticket_item_description,
+    t.ticket_specifications,
+    t.ticket_notes,
     t.ticket_created_by,
     t.ticket_date_created, -- No timezone conversion
 
