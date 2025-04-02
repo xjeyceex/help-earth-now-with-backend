@@ -27,6 +27,7 @@ export type TicketDetailsType = {
   ticket_created_by_avatar: string;
   ticket_quantity: number;
   ticket_specifications: string;
+  ticket_is_revised: boolean;
   ticket_rf_date_received: string;
   ticket_notes: string;
   ticket_created_by_name: string;
@@ -54,6 +55,7 @@ export type DashboardTicketType = {
   ticket_name: string;
   ticket_item_name: string;
   ticket_date_created: string;
+  ticket_is_revised: boolean;
   ticket_item_description: string;
 };
 
@@ -65,6 +67,7 @@ export type MyTicketType = {
   ticket_item_description: string;
   ticket_created_by: string;
   ticket_date_created: string;
+  ticket_is_revised: boolean;
   shared_user_id: string | null;
   approval_status: string | null;
   approval_reviewed_by: string | null;

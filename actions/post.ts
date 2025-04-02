@@ -652,7 +652,7 @@ export const canvassAction = async (
   // Fetch the current ticket status before updating
   const { data: ticketData, error: fetchError } = await supabase
     .from("ticket_table")
-    .select("ticket_status, ticket_created_by")
+    .select("ticket_status, ticket_created_by, ticket_is_revised")
     .eq("ticket_id", ticket_id)
     .single();
 
@@ -662,7 +662,7 @@ export const canvassAction = async (
   }
 
   const previousStatus = ticketData?.ticket_status || "UNKNOWN";
-  const ticketCreatedBy = ticketData?.ticket_created_by;
+  const isAlreadyRevised = ticketData?.ticket_is_revised;
 
   // Update ticket status
   const { error: updateError } = await supabase
@@ -695,35 +695,19 @@ export const canvassAction = async (
     throw new Error("Failed to insert status history.");
   }
 
-  // If the status is "FOR REVISION" and the ticket was created by the user, update the revised ticket count
-  if (status === "FOR REVISION") {
-    const { data: userData, error: fetchUserError } = await supabase
-      .from("user_table")
-      .select("user_revised_ticket_count")
-      .eq("user_id", ticketCreatedBy)
-      .single();
+  // If the status is "FOR REVISION" and the ticket was created by the user, update the revised ticket flag
+  if (status === "FOR REVISION" && !isAlreadyRevised) {
+    const { error: revisionError } = await supabase
+      .from("ticket_table")
+      .update({ ticket_is_revised: true })
+      .eq("ticket_id", ticket_id);
 
-    if (fetchUserError) {
-      console.error("Error fetching user data:", fetchUserError.message);
-      throw new Error("Failed to fetch user data.");
-    }
-
-    const newRevisedTicketCount =
-      (userData?.user_revised_ticket_count || 0) + 1;
-
-    const { error: updateRevisionError } = await supabase
-      .from("user_table")
-      .update({
-        user_revised_ticket_count: newRevisedTicketCount,
-      })
-      .eq("user_id", ticketCreatedBy);
-
-    if (updateRevisionError) {
+    if (revisionError) {
       console.error(
-        "Error updating revised ticket count:",
-        updateRevisionError.message
+        "Error updating ticket revision flag:",
+        revisionError.message
       );
-      throw new Error("Failed to update revised ticket count.");
+      throw new Error("Failed to mark ticket as revised.");
     }
   }
 
