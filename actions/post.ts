@@ -164,10 +164,9 @@ export const createTicket = async (
       .replace(/ /g, "")
       .toUpperCase();
 
-    // 2. Use an Rpc to get the next sequence number
     const { data: sequenceData, error: sequenceError } = await supabase.rpc(
-      "get_next_ticket_sequence", //  <-  Use this name
-      { date_prefix: formattedDate } // Pass the formatted date
+      "get_next_ticket_sequence",
+      { date_prefix: formattedDate }
     );
 
     if (sequenceError) {
@@ -175,9 +174,8 @@ export const createTicket = async (
       return { success: false, message: "Failed to generate ticket name." };
     }
 
-    const nextSequenceValue = sequenceData; // The function returns a single number
+    const nextSequenceValue = sequenceData;
 
-    // 3. Construct the ticket name
     const newTicketName = `${String(nextSequenceValue).padStart(
       5,
       "0"
@@ -240,41 +238,6 @@ export const createTicket = async (
     if (reviewersError) {
       console.error("Error assigning reviewers:", reviewersError);
       return { success: false, message: "Failed to assign reviewers" };
-    }
-
-    // 8. Notify only NON-MANAGER reviewers
-    const { data: reviewerRoles, error: roleError } = await supabase
-      .from("user_table")
-      .select("user_id, user_role")
-      .in("user_id", allReviewers);
-
-    if (roleError) {
-      console.error("Error fetching user roles:", roleError.message);
-      return { success: false, message: "Failed to verify reviewers" };
-    }
-
-    const nonManagerReviewers = reviewerRoles
-      .filter((user) => user.user_role !== "MANAGER")
-      .map((user) => user.user_id);
-
-    // Prepare the notifications for all non-manager reviewers in a single array
-    const notifications = nonManagerReviewers.map((reviewerId) => ({
-      notification_user_id: reviewerId,
-      notification_message: `You've been assigned as a reviewer for the ticket: ${ticket.ticket_name}`,
-      notification_read: false,
-      notification_url: `/tickets/${ticket.ticket_id}`,
-    }));
-
-    // Insert all notifications at once using batch insert
-    if (nonManagerReviewers.length > 0) {
-      const { error: notificationError } = await supabase
-        .from("notification_table")
-        .insert(notifications); // Inserting the entire array of notifications
-
-      if (notificationError) {
-        console.error("Error adding notifications:", notificationError.message);
-        return { success: false, message: "Failed to add notifications" };
-      }
     }
 
     return { success: true, ticket_id: ticket.ticket_id };
