@@ -906,7 +906,7 @@ BEGIN
     notification_user_id,
     notification_message,
     notification_url,
-    notification_read
+    notification_read,
   ) VALUES (
     v_target_user_id,
     v_commenter_name || ' has added a new comment on ticket ' || p_ticket_id,

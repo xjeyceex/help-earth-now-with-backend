@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Group, Modal, Stack, Text, Textarea } from "@mantine/core";
+import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { Dispatch, SetStateAction, useTransition } from "react";
 
 type ConfirmationModalProps = {
@@ -30,9 +30,6 @@ const ConfirmationModal = ({
   confirmText = "Confirm",
   confirmColor = "blue",
   variant = "default",
-  withComment = false,
-  commentState,
-  setCommentState,
 }: ConfirmationModalProps) => {
   const [isPending, startTransition] = useTransition();
 
@@ -55,10 +52,6 @@ const ConfirmationModal = ({
     startTransition(() => {
       onConfirm();
       onClose();
-
-      if (setCommentState) {
-        setCommentState("");
-      }
     });
   };
 
@@ -87,25 +80,6 @@ const ConfirmationModal = ({
       size="sm"
     >
       <Stack gap="md" py={0}>
-        {withComment && (
-          <Textarea
-            value={commentState}
-            onChange={(event) => setCommentState!(event.currentTarget.value)}
-            placeholder="Add your comment here..."
-            autosize
-            minRows={3}
-            styles={{
-              root: {
-                input: {
-                  "&:focus": {
-                    borderColor: buttonColor,
-                  },
-                },
-              },
-            }}
-          />
-        )}
-
         <Group justify="flex-end" gap="sm">
           <Button
             variant="subtle"
