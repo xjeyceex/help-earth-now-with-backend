@@ -34,7 +34,7 @@ const NotificationMenu = () => {
   const { notifications, setNotifications } = useNotificationStore();
 
   const unreadCount = notifications.filter(
-    (notif) => !notif.notification_read,
+    (notif) => !notif.notification_read
   ).length;
 
   const getRelativeTime = (timestamp: string) => {
@@ -42,7 +42,7 @@ const NotificationMenu = () => {
   };
 
   const handleNotificationClick = async (notifications: NotificationType) => {
-    if (!notifications.notification_url) return null;
+    if (!notifications.notification_ticket_id) return null; // Use ticket_id instead of notification_url
 
     const res = await markNotificationAsRead({
       notification_id: notifications.notification_id,
@@ -58,7 +58,8 @@ const NotificationMenu = () => {
       return;
     }
 
-    router.push(notifications.notification_url);
+    // Navigate to the ticket page using the ticket_id
+    router.push(`/tickets/${notifications.notification_ticket_id}`);
   };
 
   // Fetch initial notifications
@@ -82,7 +83,7 @@ const NotificationMenu = () => {
         .sort(
           (a, b) =>
             new Date(b.notification_created_at).getTime() -
-            new Date(a.notification_created_at).getTime(),
+            new Date(a.notification_created_at).getTime()
         );
 
       setNotifications(sortedNotifications as NotificationType[]);
@@ -132,8 +133,8 @@ const NotificationMenu = () => {
                   prev.map((notification) =>
                     notification.notification_id === payload.new.notification_id
                       ? { ...notification, ...payload.new }
-                      : notification,
-                  ),
+                      : notification
+                  )
                 );
                 break;
 
@@ -143,12 +144,12 @@ const NotificationMenu = () => {
                   prev.filter(
                     (notification) =>
                       notification.notification_id !==
-                      payload.old.notification_id,
-                  ),
+                      payload.old.notification_id
+                  )
                 );
                 break;
             }
-          },
+          }
         )
         .subscribe();
 
