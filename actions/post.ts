@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 export async function userLogin(
-  formData: FormData,
+  formData: FormData
 ): Promise<{ error?: LoginError }> {
   const supabase = await createClient();
 
@@ -148,7 +148,7 @@ export const updateDisplayName = async (newDisplayName: string) => {
 
 export const createTicket = async (
   values: z.infer<typeof TicketFormSchema>,
-  userId: string,
+  userId: string
 ) => {
   const supabase = await createClient();
   const validatedData = TicketFormSchema.parse(values);
@@ -166,7 +166,7 @@ export const createTicket = async (
 
     const { data: sequenceData, error: sequenceError } = await supabase.rpc(
       "get_next_ticket_sequence",
-      { date_prefix: formattedDate },
+      { date_prefix: formattedDate }
     );
 
     if (sequenceError) {
@@ -178,7 +178,7 @@ export const createTicket = async (
 
     const newTicketName = `${String(nextSequenceValue).padStart(
       5,
-      "0",
+      "0"
     )}-${formattedDate}`;
 
     // 4. Insert the new ticket with the generated ticket name
@@ -232,7 +232,7 @@ export const createTicket = async (
           approval_review_date: new Date().toLocaleString("en-US", {
             timeZone: "Asia/Manila",
           }),
-        })),
+        }))
       );
 
     if (reviewersError) {
@@ -274,7 +274,7 @@ export const updateProfilePicture = async (file: File) => {
   // Remove old avatar if it exists
   const oldFilePath = userData?.user_avatar?.replace(
     /^.*\/avatars\//,
-    "avatars/",
+    "avatars/"
   );
   if (oldFilePath) await supabase.storage.from("avatars").remove([oldFilePath]);
 
@@ -354,6 +354,7 @@ export const createCanvass = async ({
   recommendedSupplier,
   leadTimeDay,
   totalAmount,
+  ticketName,
   paymentTerms,
   canvassSheet,
   quotations,
@@ -363,6 +364,7 @@ export const createCanvass = async ({
   recommendedSupplier: string;
   leadTimeDay: number;
   totalAmount: number;
+  ticketName: string;
   paymentTerms: string;
   canvassSheet: File;
   quotations: File[];
@@ -394,14 +396,14 @@ export const createCanvass = async ({
 
     if (findError) {
       throw new Error(
-        `Failed to find existing canvass forms: ${findError.message}`,
+        `Failed to find existing canvass forms: ${findError.message}`
       );
     }
 
     // If existing forms found, delete their attachments and the forms themselves
     if (existingCanvassForms && existingCanvassForms.length > 0) {
       const existingFormIds = existingCanvassForms.map(
-        (form) => form.canvass_form_id,
+        (form) => form.canvass_form_id
       );
 
       // First, get all attachment paths for the existing forms
@@ -413,7 +415,7 @@ export const createCanvass = async ({
 
       if (attachmentsError) {
         throw new Error(
-          `Failed to fetch existing attachments: ${attachmentsError.message}`,
+          `Failed to fetch existing attachments: ${attachmentsError.message}`
         );
       }
 
@@ -430,7 +432,7 @@ export const createCanvass = async ({
 
             if (deleteStorageError) {
               console.error(
-                `Failed to delete file from storage: ${deleteStorageError.message}`,
+                `Failed to delete file from storage: ${deleteStorageError.message}`
               );
             }
           }
@@ -445,7 +447,7 @@ export const createCanvass = async ({
 
       if (deleteAttachmentsError) {
         throw new Error(
-          `Failed to delete existing attachments: ${deleteAttachmentsError.message}`,
+          `Failed to delete existing attachments: ${deleteAttachmentsError.message}`
         );
       }
 
@@ -457,7 +459,7 @@ export const createCanvass = async ({
 
       if (deleteFormsError) {
         throw new Error(
-          `Failed to delete existing canvass forms: ${deleteFormsError.message}`,
+          `Failed to delete existing canvass forms: ${deleteFormsError.message}`
         );
       }
     }
@@ -494,8 +496,8 @@ export const createCanvass = async ({
     // Upload all quotations
     const quotationResults = await Promise.all(
       quotations.map((quotation, index) =>
-        uploadFile(quotation, `quotation_${index + 1}`),
-      ),
+        uploadFile(quotation, `quotation_${index + 1}`)
+      )
     );
 
     // Store canvass form data using the first quotation as the primary one
@@ -515,7 +517,7 @@ export const createCanvass = async ({
 
     if (canvassFormError) {
       throw new Error(
-        `Failed to insert canvass form: ${canvassFormError.message}`,
+        `Failed to insert canvass form: ${canvassFormError.message}`
       );
     }
 
@@ -548,7 +550,7 @@ export const createCanvass = async ({
 
     if (attachmentsError) {
       throw new Error(
-        `Failed to insert attachments: ${attachmentsError.message}`,
+        `Failed to insert attachments: ${attachmentsError.message}`
       );
     }
 
@@ -556,9 +558,67 @@ export const createCanvass = async ({
     revalidatePath(`/canvass/${canvassFormId}`);
     revalidatePath(`/canvass`);
 
+    // Fetch all the reviewer approval data for the ticket
+    const { data: approvalData, error: approvalError } = await supabase
+      .from("approval_table")
+      .select("approval_reviewed_by")
+      .eq("approval_ticket_id", ticketId);
+
+    if (approvalError) {
+      throw new Error(
+        `Failed to fetch approval data: ${approvalError.message}`
+      );
+    }
+
+    // If there's no reviewer, return error
+    if (!approvalData || approvalData.length === 0) {
+      throw new Error("No reviewer found for this ticket.");
+    }
+
+    // Iterate through each reviewer and check their role
+    for (const approval of approvalData) {
+      const { data: userRoleData, error: roleError } = await supabase
+        .from("user_table")
+        .select("user_role")
+        .eq("user_id", approval.approval_reviewed_by)
+        .single();
+
+      if (roleError) {
+        throw new Error(`Failed to fetch user role: ${roleError.message}`);
+      }
+
+      // Only update if the user is a REVIEWER
+      if (userRoleData?.user_role === "REVIEWER") {
+        const { error: updateApprovalError } = await supabase
+          .from("approval_table")
+          .update({
+            approval_review_status: "AWAITING ACTION",
+          })
+          .eq("approval_ticket_id", ticketId)
+          .eq("approval_reviewed_by", approval.approval_reviewed_by); // Update for each reviewer individually
+
+        if (updateApprovalError) {
+          throw new Error(
+            `Failed to update approval status for reviewer: ${updateApprovalError.message}`
+          );
+        }
+
+        // Notify the reviewer
+        const notificationMessage = `A new canvass form has been submitted for ticket ${ticketName}. Please review the submission.`;
+        await supabase.from("notification_table").insert({
+          notification_user_id: approval.approval_reviewed_by,
+          notification_message: notificationMessage,
+          notification_read: false,
+          notification_ticket_id: ticketId,
+          notification_created_at: new Date().toISOString(),
+          notification_comment_id: null,
+        });
+      }
+    }
+
     return {
       success: true,
-      message: "Canvass created successfully",
+      message: "Canvass created and reviewer notified successfully",
       canvassFormId,
     };
   } catch (error) {
@@ -573,7 +633,7 @@ export const createCanvass = async ({
 export const addComment = async (
   ticket_id: string,
   content: string,
-  user_id: string,
+  user_id: string
 ) => {
   const supabase = await createClient();
 
@@ -590,7 +650,7 @@ export const addComment = async (
         p_ticket_id: ticket_id,
         p_content: content,
         p_user_id: user_id,
-      },
+      }
     );
 
     if (error) throw error;
@@ -604,7 +664,7 @@ export const addComment = async (
 export const canvassAction = async (
   ticket_id: string,
   user_id: string,
-  status: string,
+  status: string
 ) => {
   const supabase = await createClient();
 
@@ -648,7 +708,7 @@ export const canvassAction = async (
         ticket_status_history_new_status: status,
         ticket_status_history_changed_by: user_id,
         ticket_status_history_change_date: new Date(
-          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }),
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
         ).toISOString(),
       },
     ]);
@@ -668,7 +728,7 @@ export const canvassAction = async (
     if (revisionError) {
       console.error(
         "Error updating ticket revision flag:",
-        revisionError.message,
+        revisionError.message
       );
       throw new Error("Failed to mark ticket as revised.");
     }

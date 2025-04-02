@@ -36,6 +36,7 @@ import DropzoneFileInput from "./ui/DropzoneFileInput";
 
 type CanvassFormProps = {
   ticketId: string;
+  ticketName: string;
   setTicket: React.Dispatch<React.SetStateAction<TicketDetailsType | null>>;
   updateCanvassDetails: () => void;
 };
@@ -44,6 +45,7 @@ type CanvassFormValues = z.infer<typeof CanvassFormSchema>;
 
 const CanvassForm = ({
   ticketId,
+  ticketName,
   updateCanvassDetails,
   setTicket,
 }: CanvassFormProps) => {
@@ -95,6 +97,7 @@ const CanvassForm = ({
           canvassSheet: values.canvassSheet,
           quotations: validQuotations,
           ticketId: ticketId,
+          ticketName: ticketName,
         });
 
         if (res.error) {
@@ -120,7 +123,15 @@ const CanvassForm = ({
           handleCanvassAction("FOR REVIEW OF SUBMISSIONS");
           setTicket((prev) =>
             prev
-              ? { ...prev, ticket_status: "FOR REVIEW OF SUBMISSIONS" }
+              ? {
+                  ...prev,
+                  ticket_status: "FOR REVIEW OF SUBMISSIONS",
+                  reviewers: prev.reviewers.map((reviewer) =>
+                    reviewer.reviewer_role === "REVIEWER"
+                      ? { ...reviewer, approval_status: "AWAITING ACTION" }
+                      : reviewer
+                  ),
+                }
               : null
           );
           updateCanvassDetails();
