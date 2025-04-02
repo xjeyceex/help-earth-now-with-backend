@@ -19,7 +19,7 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useDebouncedCallback } from "use-debounce";
 import { z } from "zod";
 
-import { canvassAction } from "@/actions/post";
+import { canvassAction, notifyUser } from "@/actions/post";
 import { updateApprovalStatus, updateCanvass } from "@/actions/update";
 import { useUserStore } from "@/stores/userStore";
 import { CanvassDetail, TicketDetailsType } from "@/utils/types";
@@ -218,6 +218,12 @@ const EditCanvassForm = ({
                     approval_review_status: "AWAITING ACTION",
                     approval_reviewed_by: manager.reviewer_id,
                   });
+                  const message = `The ticket ${ticket.ticket_name} has been approved by all reviewers and is now awaiting your action.`;
+                  await notifyUser(
+                    manager.reviewer_id,
+                    message,
+                    ticket.ticket_id
+                  );
                 }
               } else {
                 await handleCanvassAction("FOR REVIEW OF SUBMISSIONS");

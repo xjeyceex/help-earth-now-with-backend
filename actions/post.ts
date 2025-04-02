@@ -756,3 +756,33 @@ export const updateUserRole = async (user_id: string, user_role: string) => {
 
   return true; // Indicate success
 };
+
+export const notifyUser = async (
+  user_id: string,
+  message: string,
+  ticket_id: string,
+  comment_id: string | null = null
+) => {
+  const supabase = await createClient();
+
+  // Insert notification into the notification_table
+  const { error: notificationError } = await supabase
+    .from("notification_table")
+    .insert({
+      notification_user_id: user_id,
+      notification_message: message,
+      notification_read: false,
+      notification_ticket_id: ticket_id,
+      notification_created_at: new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Manila",
+      }),
+      notification_comment_id: comment_id,
+    });
+
+  if (notificationError) {
+    console.error("Error sending notification:", notificationError.message);
+    return false;
+  }
+
+  return true;
+};
