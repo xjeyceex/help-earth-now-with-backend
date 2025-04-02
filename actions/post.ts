@@ -336,7 +336,9 @@ export const shareTicket = async (ticket_id: string, user_id: string) => {
     .from("notification_table")
     .insert({
       notification_user_id: user_id,
-      notification_message: `${user?.user_metadata.display_name} has shared ticket with you`,
+      notification_message: `${
+        user?.user_metadata.name || user?.user_metadata.display_name
+      } has shared ticket with you`,
       notification_read: false,
       notification_ticket_id: ticket_id,
     });
