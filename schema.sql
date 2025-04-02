@@ -480,6 +480,7 @@ CREATE TABLE notification_table (
   notification_message TEXT NOT NULL,
   notification_read BOOLEAN DEFAULT FALSE,
   notification_ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
+  notification_comment_id UUID REFERENCES public.comment_table(comment_id) ON DELETE CASCADE,  
   notification_created_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
@@ -859,13 +860,14 @@ CREATE OR REPLACE FUNCTION public.add_comment_with_notification(
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path TO public
-AS $$
+AS $$ 
 DECLARE
   v_comment_id UUID;
   v_commenter_role user_role_enum;
   v_target_user_id UUID;
   v_commenter_name TEXT;
   v_ticket_creator_id UUID;
+  v_ticket_name TEXT;  -- Variable to store the ticket's name
 BEGIN
   -- Get the role and name of the user who is commenting
   SELECT user_role, user_full_name
@@ -873,9 +875,9 @@ BEGIN
   FROM user_table
   WHERE user_id = p_user_id;
 
-  -- Get the ticket creator's ID
-  SELECT ticket_created_by
-  INTO v_ticket_creator_id
+  -- Get the ticket creator's ID and the ticket name
+  SELECT ticket_created_by, ticket_name
+  INTO v_ticket_creator_id, v_ticket_name
   FROM ticket_table
   WHERE ticket_id = p_ticket_id;
 
@@ -908,16 +910,18 @@ BEGIN
     LIMIT 1;
   END IF;
 
-  -- Insert the notification
+  -- Insert the notification with the new comment_id reference
   INSERT INTO notification_table (
     notification_user_id,
     notification_message,
     notification_ticket_id,
+    notification_comment_id,
     notification_read
   ) VALUES (
     v_target_user_id,
-    v_commenter_name || ' has added a new comment on ticket ' || p_ticket_id,
-    p_ticket_id,  
+    v_commenter_name || ' has added a new comment on ticket ' || v_ticket_name,  -- Using ticket_name here
+    p_ticket_id,
+    v_comment_id,
     false
   );
 
