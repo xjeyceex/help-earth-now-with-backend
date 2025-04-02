@@ -2,9 +2,9 @@
 
 import { AppShell } from "@mantine/core";
 
-import Header from "@/app/(public)/_components/Header";
 import LoadingStatePublic from "@/components/LoadingStatePublic";
 import { useEffect, useState } from "react";
+import Navbar from "./_components/Navbar";
 
 type PublicLayoutProps = {
   children: React.ReactNode;
@@ -27,7 +27,7 @@ const PublicLayout = ({ children }: PublicLayoutProps) => {
       }}
     >
       <AppShell.Header>
-        <Header />
+        <Navbar />
       </AppShell.Header>
 
       <AppShell.Main>{children}</AppShell.Main>

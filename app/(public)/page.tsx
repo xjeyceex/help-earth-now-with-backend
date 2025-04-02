@@ -1,6 +1,5 @@
 "use client";
 
-import Footer from "@/app/(public)/_components/Footer";
 import {
   Box,
   Button,
@@ -503,7 +502,6 @@ export default function HomePage() {
       {/* ----------------------- */}
       {/*  Footer Section         */}
       {/* ----------------------- */}
-      <Footer />
     </main>
   );
 }
