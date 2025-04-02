@@ -479,7 +479,7 @@ CREATE TABLE notification_table (
   notification_user_id UUID NOT NULL REFERENCES public.user_table(user_id) ON DELETE CASCADE,
   notification_message TEXT NOT NULL,
   notification_read BOOLEAN DEFAULT FALSE,
-  notification_url TEXT NULL,
+  notification_ticket_id UUID NOT NULL REFERENCES public.ticket_table(ticket_id) ON DELETE CASCADE,
   notification_created_at TIMESTAMPTZ DEFAULT timezone('Asia/Manila', now()) NOT NULL
 );
 
@@ -912,12 +912,12 @@ BEGIN
   INSERT INTO notification_table (
     notification_user_id,
     notification_message,
-    notification_url,
+    notification_ticket_id,
     notification_read
   ) VALUES (
     v_target_user_id,
     v_commenter_name || ' has added a new comment on ticket ' || p_ticket_id,
-    '/tickets/' || p_ticket_id,
+    p_ticket_id,  
     false
   );
 

@@ -338,7 +338,7 @@ export const shareTicket = async (ticket_id: string, user_id: string) => {
       notification_user_id: user_id,
       notification_message: `${user?.user_metadata.display_name} has shared ticket with you`,
       notification_read: false,
-      notification_url: `/tickets/${ticket_id}`,
+      notification_ticket_id: ticket_id,
     });
 
   if (notificationError) {

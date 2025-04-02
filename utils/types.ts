@@ -126,7 +126,7 @@ export type NotificationType = {
   notification_user_id: string;
   notification_message: string;
   notification_read: boolean;
-  notification_url: string;
+  notification_ticket_id: string;
   notification_created_at: string;
 };
 
