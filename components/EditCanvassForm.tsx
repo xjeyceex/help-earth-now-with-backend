@@ -20,7 +20,7 @@ import { useDebouncedCallback } from "use-debounce";
 import { z } from "zod";
 
 import { canvassAction } from "@/actions/post";
-import { updateCanvass } from "@/actions/update";
+import { updateApprovalStatus, updateCanvass } from "@/actions/update";
 import { useUserStore } from "@/stores/userStore";
 import { CanvassDetail, TicketDetailsType } from "@/utils/types";
 import { CanvassFormSchema } from "@/utils/zod/schema";
@@ -42,7 +42,7 @@ import {
 import DropzoneFileInput from "./ui/DropzoneFileInput";
 
 type EditCanvassFormProps = {
-  ticketId: string;
+  ticket: TicketDetailsType;
   setTicket: React.Dispatch<React.SetStateAction<TicketDetailsType | null>>;
   updateCanvassDetails: () => void;
   updateTicketDetails: () => void;
@@ -61,7 +61,8 @@ type AttachmentData = {
 };
 
 const EditCanvassForm = ({
-  ticketId,
+  ticket,
+  setTicket,
   updateCanvassDetails,
   currentCanvassDetails,
   updateTicketDetails,
@@ -94,10 +95,10 @@ const EditCanvassForm = ({
   });
 
   const handleCanvassAction = async (status: string) => {
-    if (!user || !ticketId) return;
+    if (!user || !ticket?.ticket_id) return;
 
     try {
-      await canvassAction(ticketId, user.user_id, status);
+      await canvassAction(ticket?.ticket_id, user.user_id, status);
     } catch (error) {
       console.error("Error starting canvass:", error);
     }
@@ -134,7 +135,7 @@ const EditCanvassForm = ({
           canvassSheet:
             values.canvassSheet instanceof File ? values.canvassSheet : null,
           quotations: validQuotations,
-          ticketId,
+          ticketId: ticket?.ticket_id,
           currentCanvassFormId: currentCanvassDetails[0].canvass_form_id,
         });
 
@@ -153,16 +154,77 @@ const EditCanvassForm = ({
             icon: <IconCheck size={16} />,
           });
 
-          // Update related data based on user role
+          // Update ticket status
+          const newTicketStatus =
+            user?.user_role === "REVIEWER"
+              ? "FOR APPROVAL"
+              : "FOR REVIEW OF SUBMISSIONS";
+
+          // Optimistically update ticket status and reviewer statuses
+          setTicket((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  ticket_status: newTicketStatus,
+                  reviewers: prev.reviewers.map((reviewer) =>
+                    reviewer.reviewer_id === user?.user_id
+                      ? { ...reviewer, approval_status: "APPROVED" } // Current reviewer approved
+                      : reviewer.reviewer_role === "MANAGER" // Keep managers as "AWAITING ACTION"
+                      ? { ...reviewer, approval_status: "AWAITING ACTION" }
+                      : reviewer
+                  ),
+                }
+              : null
+          );
+
           if (user?.user_role === "REVIEWER") {
-            await handleCanvassAction("FOR APPROVAL");
-            updateCanvassDetails();
-            updateTicketDetails();
+            await updateApprovalStatus({
+              approval_ticket_id: ticket?.ticket_id,
+              approval_review_status: "APPROVED",
+              approval_reviewed_by: user?.user_id, // Mark the current reviewer as "APPROVED"
+            });
+
+            // Check if the current user is the only reviewer (excluding managers)
+            const isOnlyReviewer =
+              ticket?.reviewers.filter(
+                (reviewer) => reviewer.reviewer_role !== "MANAGER"
+              ).length === 1;
+
+            if (isOnlyReviewer) {
+              // If the reviewer is the only one, directly move to "FOR APPROVAL" for managers
+              await handleCanvassAction("FOR APPROVAL");
+            } else {
+              // If there are multiple reviewers, check if all have approved
+              const allReviewersApproved = ticket?.reviewers.every(
+                (reviewer) => reviewer.approval_status === "APPROVED"
+              );
+
+              if (allReviewersApproved) {
+                // All reviewers have approved, move to "FOR APPROVAL"
+                await handleCanvassAction("FOR APPROVAL");
+              } else {
+                // Not all reviewers have approved, keep it in "FOR REVIEW OF SUBMISSIONS"
+                await handleCanvassAction("FOR REVIEW OF SUBMISSIONS");
+              }
+            }
+
+            // Change managers' approval status to "AWAITING ACTION"
+            for (const manager of ticket?.reviewers.filter(
+              (reviewer) => reviewer.reviewer_role === "MANAGER"
+            ) || []) {
+              await updateApprovalStatus({
+                approval_ticket_id: ticket?.ticket_id,
+                approval_review_status: "AWAITING ACTION",
+                approval_reviewed_by: manager.reviewer_id,
+              });
+            }
           } else if (user?.user_role === "PURCHASER") {
             await handleCanvassAction("FOR REVIEW OF SUBMISSIONS");
-            updateCanvassDetails();
-            updateTicketDetails();
           }
+
+          // Update canvass details and ticket details
+          updateCanvassDetails();
+          updateTicketDetails();
         }
       } catch (error) {
         console.error("Form submission error:", error);
@@ -218,7 +280,7 @@ const EditCanvassForm = ({
             canvassSheet:
               values.canvassSheet instanceof File ? values.canvassSheet : null,
             quotations: validQuotations,
-            ticketId,
+            ticketId: ticket?.ticket_id,
             currentCanvassFormId: currentCanvassDetails[0].canvass_form_id,
           });
 

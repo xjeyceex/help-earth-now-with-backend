@@ -621,7 +621,7 @@ const TicketDetailsPage = () => {
                                 ) && ticket?.ticket_status !== "CANCELED" ? (
                                 <>
                                   <EditCanvassForm
-                                    ticketId={ticket?.ticket_id}
+                                    ticket={ticket}
                                     updateCanvassDetails={fetchCanvassDetails}
                                     setTicket={setTicket}
                                     currentCanvassDetails={canvassDetails!}
